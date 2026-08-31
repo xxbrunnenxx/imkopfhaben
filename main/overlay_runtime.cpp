@@ -61,33 +61,34 @@ epaper_ui::CardModalState BuildCardModalState(CardModalPurpose purpose)
     state.visible = true;
     switch (purpose) {
         case CardModalPurpose::kShutdownConfirm:
-            state.title_text = "Shut down device?";
-            state.body_text = "Your device will power off. Do you want to continue?";
-            state.action_labels = {"Cancel", "Shut down"};
+            state.title_text = "Gerät ausschalten?";
+            state.body_text = "Das Gerät schaltet sich aus. Möchtest du fortfahren?";
+            state.action_labels = {"Abbrechen", "Ausschalten"};
             break;
         case CardModalPurpose::kStorageNoSdCard:
-            state.title_text = "No SD card";
-            state.body_text = "No SD card is inserted. Insert an SD card to continue.";
+            state.title_text = "Keine SD-Karte";
+            state.body_text = "Es ist keine SD-Karte eingesteckt. Für die Fortsetzung eine SD-Karte "
+                              "einstecken.";
             state.action_labels = {"OK"};
             break;
         case CardModalPurpose::kStorageConfirmFormat:
-            state.title_text = "Format SD card?";
-            state.body_text = "Formatting the SD card will erase everything on the card.";
-            state.action_labels = {"Cancel", "Format"};
+            state.title_text = "SD-Karte formatieren?";
+            state.body_text = "Beim Formatieren werden alle Daten auf der SD-Karte gelöscht.";
+            state.action_labels = {"Abbrechen", "Formatieren"};
             break;
         case CardModalPurpose::kStorageFormatting:
-            state.title_text = "Formatting SD card";
-            state.body_text = "Formatting in progress. Please wait...";
+            state.title_text = "SD-Karte wird formatiert";
+            state.body_text = "Formatierung läuft. Bitte warten...";
             state.action_labels = {};
             break;
         case CardModalPurpose::kStorageFormatSuccess:
-            state.title_text = "Format success";
-            state.body_text = "The SD card was formatted successfully.";
+            state.title_text = "Formatierung erfolgreich";
+            state.body_text = "Die SD-Karte wurde erfolgreich formatiert.";
             state.action_labels = {"OK"};
             break;
         case CardModalPurpose::kStorageFormatError:
-            state.title_text = "Format failed";
-            state.body_text = "There was an error and the SD card could not be formatted.";
+            state.title_text = "Formatierung fehlgeschlagen";
+            state.body_text = "Beim Formatieren der SD-Karte ist ein Fehler aufgetreten.";
             state.action_labels = {"OK"};
             break;
         case CardModalPurpose::kNone:

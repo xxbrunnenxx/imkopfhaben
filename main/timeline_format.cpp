@@ -9,6 +9,31 @@ namespace timeline_format {
 
 using recording_archive_service::RecordingTag;
 
+namespace {
+
+constexpr const char* kWeekdayAbbrevDe[7] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
+constexpr const char* kWeekdayFullDe[7] = {"Sonntag",    "Montag", "Dienstag", "Mittwoch",
+                                            "Donnerstag", "Freitag", "Samstag"};
+constexpr const char* kMonthAbbrevDe[12] = {"Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
+                                             "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"};
+
+}  // namespace
+
+const char* WeekdayAbbrevDe(int tm_wday)
+{
+    return (tm_wday >= 0 && tm_wday < 7) ? kWeekdayAbbrevDe[tm_wday] : "";
+}
+
+const char* WeekdayFullDe(int tm_wday)
+{
+    return (tm_wday >= 0 && tm_wday < 7) ? kWeekdayFullDe[tm_wday] : "";
+}
+
+const char* MonthAbbrevDe(int tm_mon)
+{
+    return (tm_mon >= 0 && tm_mon < 12) ? kMonthAbbrevDe[tm_mon] : "";
+}
+
 std::string DateKey(const std::string& created_local_date)
 {
     const auto space = created_local_date.find(' ');
@@ -19,11 +44,11 @@ std::string FormatDateLabel(const std::string& created_local_date)
 {
     const std::string day_key = DateKey(created_local_date);
 
-    // "Today" only while the recording's day equals the current local date. GetSnapshot().current_date
-    // is the live "YYYY-MM-DD", so this stops reading "Today" as soon as the date rolls over.
+    // "Heute" only while the recording's day equals the current local date. GetSnapshot().current_date
+    // is the live "YYYY-MM-DD", so this stops reading "Heute" as soon as the date rolls over.
     if (!day_key.empty() &&
         day_key == timezone_service::GetSnapshot().runtime.current_date) {
-        return "Today";
+        return "Heute";
     }
 
     int year = 0;
@@ -38,13 +63,11 @@ std::string FormatDateLabel(const std::string& created_local_date)
         if (stamp != static_cast<std::time_t>(-1)) {
             std::tm local = {};
             localtime_r(&stamp, &local);
-            char buffer[24] = {};
-            if (std::strftime(buffer, sizeof(buffer), "%a %b %d", &local) > 0) {
-                return buffer;
-            }
+            return std::string(WeekdayAbbrevDe(local.tm_wday)) + ", " +
+                   std::to_string(local.tm_mday) + ". " + MonthAbbrevDe(local.tm_mon);
         }
     }
-    return created_local_date.empty() ? "Today" : created_local_date;
+    return created_local_date.empty() ? "Heute" : created_local_date;
 }
 
 std::string FormatTimeLabel(bool time_valid, int64_t created_unix_seconds)
@@ -54,12 +77,8 @@ std::string FormatTimeLabel(bool time_valid, int64_t created_unix_seconds)
         std::tm local = {};
         localtime_r(&stamp, &local);
         char buffer[16] = {};
-        if (std::strftime(buffer, sizeof(buffer), "%I:%M %p", &local) > 0) {
-            std::string text = buffer;
-            if (text.size() > 1 && text.front() == '0') {
-                text.erase(0, 1);
-            }
-            return text;
+        if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local) > 0) {
+            return buffer;
         }
     }
     return "--:--";
@@ -88,12 +107,12 @@ std::string TagText(RecordingTag tag)
 {
     switch (tag) {
         case RecordingTag::kTask:
-            return "Task";
+            return "Aufgabe";
         case RecordingTag::kIdea:
-            return "Idea";
+            return "Idee";
         case RecordingTag::kNote:
         default:
-            return "Note";
+            return "Notiz";
     }
 }
 

@@ -378,16 +378,16 @@ bool ShowItemActionsModal()
             .follow_up_completed = entry->follow_up_completed,
         };
         s_item_actions.clear();
-        modal.title_text = "Note";
-        modal.items.push_back({"View details"});
+        modal.title_text = "Notiz";
+        modal.items.push_back({"Details ansehen"});
         s_item_actions.push_back(ItemAction::kViewDetails);
-        modal.items.push_back({entry->follow_up ? "Remove follow-up" : "Follow up"});
+        modal.items.push_back({entry->follow_up ? "Wiedervorlage entfernen" : "Vormerken"});
         s_item_actions.push_back(ItemAction::kFollowUp);
-        modal.items.push_back({"Turn to task"});
+        modal.items.push_back({"Zu Aufgabe machen"});
         s_item_actions.push_back(ItemAction::kTurnToTask);
-        modal.items.push_back({"Delete"});
+        modal.items.push_back({"Löschen"});
         s_item_actions.push_back(ItemAction::kDelete);
-        modal.items.push_back({"Close"});
+        modal.items.push_back({"Schließen"});
         s_item_actions.push_back(ItemAction::kClose);
         modal.selected_index = 0;
         s_item_actions_pending = true;

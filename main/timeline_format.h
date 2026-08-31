@@ -15,14 +15,14 @@ namespace timeline_format {
 // stable grouping identity -- it never changes as the calendar rolls over.
 std::string DateKey(const std::string& created_local_date);
 
-// Human label for a recording's day: "Today" while its day matches the current local date,
-// otherwise the absolute "%a %b %d" (e.g. "Fri Jul 10"). Because the comparison is against the
-// live current date, a recording labelled "Today" automatically re-labels to its absolute date
-// once midnight passes. Empty / unparseable dates fall back to "Today".
+// Human label for a recording's day: "Heute" while its day matches the current local date,
+// otherwise the absolute "Mo, 10. Jul". Because the comparison is against the live current date,
+// a recording labelled "Heute" automatically re-labels to its absolute date once midnight passes.
+// Empty / unparseable dates fall back to "Heute".
 std::string FormatDateLabel(const std::string& created_local_date);
 
-// Clock time for a recording's header: "%I:%M %p" (leading zero stripped) when the timestamp is
-// valid, otherwise "--:--".
+// Clock time for a recording's header: 24-hour "HH:MM" when the timestamp is valid, otherwise
+// "--:--".
 std::string FormatTimeLabel(bool time_valid, int64_t created_unix_seconds);
 
 // Compact duration: "<Ns>" under a minute, otherwise "<Nm>".
@@ -31,8 +31,15 @@ std::string FormatDurationLabel(uint32_t duration_ms);
 // Trim leading/trailing whitespace from a transcript (empty when all whitespace).
 std::string TrimTranscript(const std::string& text);
 
-// Human tag label: kTask -> "Task", kIdea -> "Idea", otherwise "Note".
+// Human tag label: kTask -> "Aufgabe", kIdea -> "Idee", otherwise "Notiz".
 std::string TagText(recording_archive_service::RecordingTag tag);
+
+// German weekday/month name lookups for on-device date rendering. ESP-IDF's default "C" locale
+// has no German locale data, so strftime can't produce these directly -- callers build the date
+// string by hand from std::tm fields using these instead.
+const char* WeekdayAbbrevDe(int tm_wday);
+const char* WeekdayFullDe(int tm_wday);
+const char* MonthAbbrevDe(int tm_mon);
 
 }  // namespace timeline_format
 

@@ -17,27 +17,29 @@ struct Slide {
 };
 
 constexpr std::array<Slide, 6> kSlides = {{
-    {"Welcome to Folloup",
-     "Your pocket voice notebook. Capture thoughts out loud and let Folloup keep them organized.",
+    {"Willkommen bei Followup",
+     "Dein Notizbuch für die Hosentasche. Sprich Gedanken laut aus und lass Followup sie für dich "
+     "ordnen.",
      EmbeddedImageId::kSlide1},
-    {"Capture in a tap",
-     "Press the mic to record a note, an idea, or a task. Everything is saved straight to the SD "
-     "card. Double-press to lock the screen.",
+    {"Aufnehmen mit einem Tipp",
+     "Drück das Mikro, um eine Notiz, eine Idee oder eine Aufgabe aufzunehmen. Alles wird direkt "
+     "auf der SD-Karte gespeichert. Doppelt drücken sperrt den Bildschirm.",
      EmbeddedImageId::kSlide2},
-    {"Navigate with keys",
-     "Key 1 selects, key 2 navigates up, and key 3 navigates down. Hold key 3 to exit certain "
-     "components.",
+    {"Navigation mit den Tasten",
+     "Taste 1 wählt aus, Taste 2 navigiert nach oben, Taste 3 nach unten. Taste 3 gedrückt halten "
+     "verlässt bestimmte Elemente.",
      EmbeddedImageId::kSlide3},
-    {"Sleep & power",
-     "The device sleeps when inactive. Hold keys 1 and 2 to shut it down; press and hold key 1 to "
-     "turn it on.",
+    {"Schlaf & Strom",
+     "Das Gerät schläft bei Inaktivität ein. Tasten 1 und 2 gedrückt halten schaltet es aus; Taste "
+     "1 gedrückt halten schaltet es wieder ein.",
      EmbeddedImageId::kSlide4},
-    {"Summaries with Gemini",
-     "Connect Gemini and let Folloup transcribe your recordings and summarize your day for you.",
+    {"Zusammenfassungen mit Gemini",
+     "Verbinde Gemini und lass Followup deine Aufnahmen transkribieren und deinen Tag für dich "
+     "zusammenfassen.",
      EmbeddedImageId::kSlide5},
-    {"Notes, Todos & Follow-ups",
-     "Recordings are grouped by day. Browse them as Notes, mark tasks as Todos, and pin anything as "
-     "a follow-up.",
+    {"Notizen, Aufgaben & Wiedervorlage",
+     "Aufnahmen werden nach Tag gruppiert. Durchstöbere sie als Notizen, markiere Aufgaben als "
+     "To-do und pinne alles Wichtige zur Wiedervorlage.",
      EmbeddedImageId::kSlide6},
 }};
 

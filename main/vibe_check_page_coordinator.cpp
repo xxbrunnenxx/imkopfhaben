@@ -6,6 +6,7 @@
 
 #include "esp_random.h"
 #include "generated_epaper_icons.h"
+#include "timeline_format.h"
 
 namespace {
 
@@ -15,15 +16,16 @@ using recording_archive_service::RecordingMetadata;
 using recording_archive_service::RecordingTag;
 
 constexpr const char* kMessageText =
-    "Some thoughts are passing vibes. Drop it, or follow up on what still hits.";
-constexpr const char* kEmptyStateMessage = "Get the ball rolling! Capture some ideas!";
-constexpr const char* kAudioOnlyMessage = "Audio only note...";
+    "Manche Gedanken sind nur eine flüchtige Laune. Verwirf sie, oder merk dir vor, was noch "
+    "zählt.";
+constexpr const char* kEmptyStateMessage = "Leg los! Nimm ein paar Ideen auf!";
+constexpr const char* kAudioOnlyMessage = "Nur Audio, keine Notiz...";
 
-// "Mon Jan 3" from the stored YYYY-MM-DD; falls back to the raw date or "Today".
+// "Mo, 3. Jan" from the stored YYYY-MM-DD; falls back to the raw date or "Heute".
 std::string FormatArchiveDateLabel(const RecordingMetadata& metadata)
 {
     if (metadata.created_local_date.empty()) {
-        return "Today";
+        return "Heute";
     }
     int year = 0;
     int month = 0;
@@ -34,15 +36,8 @@ std::string FormatArchiveDateLabel(const RecordingMetadata& metadata)
         local_tm.tm_mon = month - 1;
         local_tm.tm_mday = day;
         if (std::mktime(&local_tm) != static_cast<time_t>(-1)) {
-            char weekday_buffer[8] = {};
-            char month_buffer[8] = {};
-            if (std::strftime(weekday_buffer, sizeof(weekday_buffer), "%a", &local_tm) > 0 &&
-                std::strftime(month_buffer, sizeof(month_buffer), "%b", &local_tm) > 0) {
-                char label_buffer[24] = {};
-                std::snprintf(label_buffer, sizeof(label_buffer), "%s %s %d", weekday_buffer,
-                              month_buffer, day);
-                return label_buffer;
-            }
+            return std::string(timeline_format::WeekdayAbbrevDe(local_tm.tm_wday)) + ", " +
+                   std::to_string(day) + ". " + timeline_format::MonthAbbrevDe(local_tm.tm_mon);
         }
     }
     return metadata.created_local_date;
@@ -55,10 +50,7 @@ std::string FormatArchiveTimeLabel(const RecordingEntry& entry)
         std::tm local_tm = {};
         localtime_r(&epoch_seconds, &local_tm);
         char buffer[16] = {};
-        if (std::strftime(buffer, sizeof(buffer), "%I:%M %p", &local_tm) > 0) {
-            if (buffer[0] == '0') {
-                return std::string(buffer + 1);
-            }
+        if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local_tm) > 0) {
             return buffer;
         }
     }
@@ -82,12 +74,12 @@ std::string TagTextForRecording(const RecordingMetadata& metadata)
 {
     switch (metadata.tag) {
         case RecordingTag::kIdea:
-            return "Idea";
+            return "Idee";
         case RecordingTag::kTask:
-            return "Task";
+            return "Aufgabe";
         case RecordingTag::kNote:
         default:
-            return "Note";
+            return "Notiz";
     }
 }
 
@@ -346,8 +338,8 @@ void VibeCheckPageCoordinator::RebuildCardState()
     const RecordingEntry* entry = FindCurrentIdea();
     if (entry == nullptr) {
         card_state_.empty = true;
-        progress_state_.label_text = "Your ideas";
-        progress_state_.status_text = "0/0 ideas";
+        progress_state_.label_text = "Deine Ideen";
+        progress_state_.status_text = "0/0 Ideen";
         progress_state_.progress_percent = 0;
         return;
     }
@@ -365,11 +357,11 @@ void VibeCheckPageCoordinator::RebuildCardState()
         entry->metadata.has_transcript && !transcript.empty() ? transcript : kAudioOnlyMessage;
 
     const size_t remaining = ideas_.size();
-    progress_state_.label_text = "Your ideas";
+    progress_state_.label_text = "Deine Ideen";
     progress_state_.status_text =
-        remaining == 0 ? "0/0 ideas"
+        remaining == 0 ? "0/0 Ideen"
                        : std::to_string(remaining) + "/" + std::to_string(initial_idea_count_) +
-                             " ideas";
+                             " Ideen";
     progress_state_.progress_percent =
         initial_idea_count_ == 0 ? 0
                                  : static_cast<int>((remaining * 100U) / initial_idea_count_);

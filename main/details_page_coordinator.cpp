@@ -5,6 +5,7 @@
 #include <ctime>
 
 #include "project_assets.h"
+#include "timeline_format.h"
 
 namespace {
 
@@ -14,7 +15,7 @@ using recording_archive_service::RecordingTag;
 using page_navigation::NavigationItemRole;
 
 constexpr int kScrollStepPercent = 10;
-constexpr const char* kNoTranscriptMessage = "No transcript available.";
+constexpr const char* kNoTranscriptMessage = "Kein Transkript verfügbar.";
 
 std::string TrimTranscript(const std::string& text)
 {
@@ -40,10 +41,8 @@ std::string FormatDateLabel(const RecordingMetadata& metadata)
         if (stamp != static_cast<std::time_t>(-1)) {
             std::tm local = {};
             localtime_r(&stamp, &local);
-            char buffer[24] = {};
-            if (std::strftime(buffer, sizeof(buffer), "%a %b %d", &local) > 0) {
-                return buffer;
-            }
+            return std::string(timeline_format::WeekdayAbbrevDe(local.tm_wday)) + ", " +
+                   std::to_string(day) + ". " + timeline_format::MonthAbbrevDe(local.tm_mon);
         }
     }
     return metadata.created_local_date.empty() ? "Details" : metadata.created_local_date;
@@ -56,12 +55,8 @@ std::string FormatTimeLabel(const RecordingEntry& entry)
         std::tm local = {};
         localtime_r(&stamp, &local);
         char buffer[16] = {};
-        if (std::strftime(buffer, sizeof(buffer), "%I:%M %p", &local) > 0) {
-            std::string text = buffer;
-            if (text.size() > 1 && text.front() == '0') {
-                text.erase(0, 1);
-            }
-            return text;
+        if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local) > 0) {
+            return buffer;
         }
     }
     return "--:--";
@@ -80,12 +75,12 @@ std::string TagText(RecordingTag tag)
 {
     switch (tag) {
         case RecordingTag::kTask:
-            return "Task";
+            return "Aufgabe";
         case RecordingTag::kIdea:
-            return "Idea";
+            return "Idee";
         case RecordingTag::kNote:
         default:
-            return "Note";
+            return "Notiz";
     }
 }
 
@@ -215,11 +210,11 @@ epaper_ui::DetailsPageState DetailsPageCoordinator::BuildState() const
         IsRoleFocused(NavigationItemRole::kDetailsPageScrollContainer) || scroll_container_active_;
     state.scroll_container.active = scroll_container_active_;
     state.scroll_container.scroll_position_percent = scroll_position_percent_;
-    state.back_button.label_text = "Back";
+    state.back_button.label_text = "Zurück";
     state.back_button.selected = IsRoleFocused(NavigationItemRole::kDetailsPageBackButton);
     // Audio-only recordings (no transcript) offer a primary Transcribe button beside Back.
     state.show_transcribe_button = !has_transcript_;
-    state.transcribe_button.label_text = "Transcribe";
+    state.transcribe_button.label_text = "Transkribieren";
     state.transcribe_button.selected =
         IsRoleFocused(NavigationItemRole::kDetailsPageTranscribeButton);
     return state;

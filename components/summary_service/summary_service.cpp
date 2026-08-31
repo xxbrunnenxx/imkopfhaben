@@ -77,7 +77,7 @@ std::string TrimCopy(std::string value)
 
 const char* SegmentLabelForKind(SummaryKind kind)
 {
-    return kind == SummaryKind::kTodos ? "Todos" : "Notes";
+    return kind == SummaryKind::kTodos ? "Aufgaben" : "Notizen";
 }
 
 // Tag -> bucket mapping mirrors recording_archive_service: Task is a Todo; everything else
@@ -116,7 +116,8 @@ bool GeneratePromptTextResult(const std::string& prompt, std::string* text_out,
         }
         if (error_message_out != nullptr) {
             *error_message_out =
-                result.error_message.empty() ? "Gemini summary request failed" : result.error_message;
+                result.error_message.empty() ? "Gemini-Zusammenfassung fehlgeschlagen"
+                                             : result.error_message;
         }
         return false;
     }
@@ -919,8 +920,9 @@ void CompleteSummaryRequest(SummaryKind kind, const GenerationResult& result)
     s_snapshot.request.kind = kind;
     s_snapshot.request.phase = result.success ? RequestPhase::kSucceeded : RequestPhase::kFailed;
     s_snapshot.request.status_message =
-        result.success ? std::string(SegmentLabelForKind(kind)) + " summary updated"
-                       : std::string("Unable to summarize ") + SegmentLabelForKind(kind);
+        result.success ? std::string(SegmentLabelForKind(kind)) + "-Zusammenfassung aktualisiert"
+                       : std::string("Zusammenfassung von ") + SegmentLabelForKind(kind) +
+                             " nicht möglich";
     s_snapshot.request.error_code = result.error_code;
     s_snapshot.request.error_message = result.error_message;
     ++s_snapshot.request_generation;
@@ -946,7 +948,7 @@ void ProcessSummaryRequest(SummaryKind kind)
     if (result.success && !PersistSummary(kind, result)) {
         result.success = false;
         result.error_code = "summary_save_failed";
-        result.error_message = "Unable to save summary to SD card";
+        result.error_message = "Zusammenfassung konnte nicht auf SD-Karte gespeichert werden";
     }
     CompleteSummaryRequest(kind, result);
 }
@@ -1053,7 +1055,8 @@ bool RequestSummary(SummaryKind kind)
         s_snapshot.request.in_flight = true;
         s_snapshot.request.kind = kind;
         s_snapshot.request.phase = RequestPhase::kStarted;
-        s_snapshot.request.status_message = std::string("Summarizing ") + SegmentLabelForKind(kind);
+        s_snapshot.request.status_message =
+            SegmentLabelForKind(kind) + std::string(" werden zusammengefasst");
         s_snapshot.request.error_code.clear();
         s_snapshot.request.error_message.clear();
         ++s_snapshot.request_generation;
@@ -1069,9 +1072,9 @@ bool RequestSummary(SummaryKind kind)
     std::lock_guard<std::mutex> lock(s_mutex);
     s_snapshot.request.in_flight = false;
     s_snapshot.request.phase = RequestPhase::kFailed;
-    s_snapshot.request.status_message = "Unable to queue summary request";
+    s_snapshot.request.status_message = "Zusammenfassung konnte nicht eingereiht werden";
     s_snapshot.request.error_code = "queue_full";
-    s_snapshot.request.error_message = "Unable to queue summary request";
+    s_snapshot.request.error_message = "Zusammenfassung konnte nicht eingereiht werden";
     ++s_snapshot.request_generation;
     NotifyLocked();
     return false;

@@ -187,7 +187,7 @@ void DrawSettingsPage(uint8_t* framebuffer,
                        portrait_height,
                        title_x,
                        layout.wifi_toggle.y - kNetworkHeadingGap - LineHeight(kSectionRole),
-                       "Network",
+                       "Netzwerk",
                        kSectionRole,
                        design::color::kBlack);
 
@@ -223,7 +223,7 @@ void DrawSettingsPage(uint8_t* framebuffer,
                        portrait_height,
                        title_x,
                        layout.storage_status.y - kStorageStatusGap - LineHeight(kSectionRole),
-                       "Storage",
+                       "Speicher",
                        kSectionRole,
                        design::color::kBlack);
 

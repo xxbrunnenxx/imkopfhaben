@@ -11,8 +11,8 @@ namespace epaper_ui {
 namespace {
 
 constexpr std::array<const char*, 5> kTitles = {
-    "What's on your mind?", "Let's jump back in!", "Got a cool idea?",
-    "Capture that thought!", "What's the plan?",
+    "Was geht dir durch den Kopf?", "Weiter geht's!", "Eine coole Idee?",
+    "Halt den Gedanken fest!", "Was steht an?",
 };
 
 const EmbeddedImageAsset* TitleIcon(const WelcomeMessageStyle& style)

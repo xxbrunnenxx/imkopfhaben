@@ -7,6 +7,7 @@
 #include "esp_random.h"
 #include "esp_timer.h"
 #include "sdkconfig.h"
+#include "timeline_format.h"
 
 namespace {
 
@@ -50,12 +51,10 @@ void FillCurrentDate(epaper_ui::CurrentDateState* date)
     std::tm local_tm = {};
     localtime_r(&now, &local_tm);
 
-    char weekday[16] = {};
-    char date_text[24] = {};
-    std::strftime(weekday, sizeof(weekday), "%A", &local_tm);
-    std::strftime(date_text, sizeof(date_text), "%b %d, %Y", &local_tm);
-    date->weekday_text = weekday;
-    date->date_text = date_text;
+    date->weekday_text = timeline_format::WeekdayFullDe(local_tm.tm_wday);
+    date->date_text = std::to_string(local_tm.tm_mday) + ". " +
+                       timeline_format::MonthAbbrevDe(local_tm.tm_mon) + " " +
+                       std::to_string(local_tm.tm_year + 1900);
 }
 
 }  // namespace
@@ -142,18 +141,18 @@ epaper_ui::DashboardPageState DashboardPageCoordinator::BuildState() const
     if (archive_.recording_count == 0) {
         state.shows_completion_banner = true;
         state.completion_banner.icon = EmbeddedIconId::kTaskStart;
-        state.completion_banner.message_text = "Capture your first note with the mic";
+        state.completion_banner.message_text = "Nimm deine erste Notiz mit dem Mikro auf";
     } else {
         state.shows_completion_banner = false;
-        state.current_progress.label_text = "Task tracker";
+        state.current_progress.label_text = "Aufgaben";
         const int total = archive_.todo_recording_count;
         const int done = archive_.completed_todo_count;
         if (total > 0) {
             state.current_progress.status_text =
-                std::to_string(done) + "/" + std::to_string(total) + " completed";
+                std::to_string(done) + "/" + std::to_string(total) + " erledigt";
             state.current_progress.progress_percent = (done * 100) / total;
         } else {
-            state.current_progress.status_text = "No tasks yet";
+            state.current_progress.status_text = "Noch keine Aufgaben";
             state.current_progress.progress_percent = 0;
         }
     }

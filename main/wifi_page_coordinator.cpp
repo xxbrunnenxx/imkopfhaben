@@ -4,8 +4,8 @@
 
 namespace {
 
-constexpr const char* kPasswordLabel = "Password";
-constexpr const char* kPasswordPlaceholder = "Enter password";
+constexpr const char* kPasswordLabel = "Passwort";
+constexpr const char* kPasswordPlaceholder = "Passwort eingeben";
 
 int NextPageIndex(int current_index, int total_items, int items_per_page)
 {
@@ -250,7 +250,7 @@ epaper_ui::WifiPageState WifiPageCoordinator::BuildState() const
 {
     epaper_ui::WifiPageState state = {};
     state.navigation_focus_index = focus_.index();
-    state.title_text = "WiFi Setup";
+    state.title_text = "WLAN-Einrichtung";
     state.network_list = {
         .status = network_status_,
         .focused =
@@ -283,11 +283,11 @@ epaper_ui::WifiPageState WifiPageCoordinator::BuildState() const
     }
 
     state.scan_button = {
-        .label_text = "Scan",
+        .label_text = "Suchen",
         .selected = IsRoleFocused(page_navigation::NavigationItemRole::kWifiPageScanButton),
     };
     state.connect_button = {
-        .label_text = SelectedNetworkIsCurrent() ? "Disconnect" : "Connect",
+        .label_text = SelectedNetworkIsCurrent() ? "Trennen" : "Verbinden",
         .selected = IsRoleFocused(page_navigation::NavigationItemRole::kWifiPageConnectButton),
     };
     return state;

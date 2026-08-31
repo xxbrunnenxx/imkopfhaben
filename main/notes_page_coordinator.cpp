@@ -83,14 +83,14 @@ void NotesPageCoordinator::BuildGroups(const std::vector<RecordingEntry>& record
         timeline_entry.item.header.minute_seconds_text =
             timeline_format::FormatDurationLabel(entry.metadata.duration_ms);
         timeline_entry.item.header.tag_text = timeline_format::TagText(entry.metadata.tag);
-        timeline_entry.item.body_text = has_transcription ? transcript : "Audio only note.";
+        timeline_entry.item.body_text = has_transcription ? transcript : "Nur Audio, keine Notiz.";
         timeline_entry.item.accessory.kind = epaper_ui::ListItemAccessoryKind::kNone;
         timeline_groups_[static_cast<size_t>(group_index)].entries.push_back(
             std::move(timeline_entry));
     }
 
     if (timeline_groups_.empty()) {
-        timeline_groups_.push_back({"today", "Today", {}});
+        timeline_groups_.push_back({"today", "Heute", {}});
     }
 }
 
@@ -336,12 +336,12 @@ bool NotesPageCoordinator::IsRoleFocused(page_navigation::NavigationItemRole rol
 epaper_ui::NotesPageState NotesPageCoordinator::BuildState() const
 {
     epaper_ui::NotesPageState state = {};
-    state.title_text = "Notes";
+    state.title_text = "Notizen";
     state.navigation_focus_index = focus_.index();
 
     epaper_ui::TimelineListState timeline = {};
-    timeline.item_label_plural = "Notes";
-    timeline.empty_state_text = "No notes available";
+    timeline.item_label_plural = "Notizen";
+    timeline.empty_state_text = "Keine Notizen vorhanden";
     timeline.empty_state_icon_asset = project_assets::GetIcon(EmbeddedIconId::kIdea);
     timeline.visible_group_index = visible_group_index_;
     timeline.focused_group_index = FocusedTimelineGroupIndex();

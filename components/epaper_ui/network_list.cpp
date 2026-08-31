@@ -163,13 +163,13 @@ std::string StatusText(const NetworkListState& state)
             const int count = static_cast<int>(state.networks.size());
             std::snprintf(buffer,
                           sizeof(buffer),
-                          "%d %s found",
+                          "%d %s gefunden",
                           count,
-                          count == 1 ? "network" : "networks");
+                          count == 1 ? "Netzwerk" : "Netzwerke");
             return std::string(buffer);
         }
         case NetworkListStatus::kNoNetworks:
-            return "No networks found";
+            return "Keine Netzwerke gefunden";
         case NetworkListStatus::kIdle:
         default:
             return {};
@@ -180,11 +180,11 @@ const char* EmptyStateText(const NetworkListState& state)
 {
     switch (state.status) {
         case NetworkListStatus::kNoNetworks:
-            return "No WiFi networks found";
+            return "Keine WLAN-Netzwerke gefunden";
         case NetworkListStatus::kIdle:
         case NetworkListStatus::kNetworksFound:
         default:
-            return "Scanning for networks...";
+            return "Suche nach Netzwerken...";
     }
 }
 

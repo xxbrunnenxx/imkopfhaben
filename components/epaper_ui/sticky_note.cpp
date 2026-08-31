@@ -85,7 +85,7 @@ std::string CounterText(const StickyNoteState& state)
 {
     const int total = std::max(0, state.sticky_count);
     const int current = total > 0 ? std::clamp(state.active_index, 0, total - 1) + 1 : 0;
-    return std::to_string(current) + "/" + std::to_string(total) + " follow ups";
+    return std::to_string(current) + "/" + std::to_string(total) + " Wiedervorlagen";
 }
 
 // The transcript scroll-container region: below the top row (date + follow-up counter) and header,

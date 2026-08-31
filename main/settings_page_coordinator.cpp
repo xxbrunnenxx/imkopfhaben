@@ -15,22 +15,22 @@ std::string FormatStorageBytes(uint64_t bytes)
     if (bytes >= kGigabyte) {
         std::snprintf(buffer,
                       sizeof(buffer),
-                      "%.1f GB free",
+                      "%.1f GB frei",
                       static_cast<double>(bytes) / static_cast<double>(kGigabyte));
     } else if (bytes >= kMegabyte) {
         std::snprintf(buffer,
                       sizeof(buffer),
-                      "%.1f MB free",
+                      "%.1f MB frei",
                       static_cast<double>(bytes) / static_cast<double>(kMegabyte));
     } else if (bytes >= kKilobyte) {
         std::snprintf(buffer,
                       sizeof(buffer),
-                      "%.1f KB free",
+                      "%.1f KB frei",
                       static_cast<double>(bytes) / static_cast<double>(kKilobyte));
     } else {
         std::snprintf(buffer,
                       sizeof(buffer),
-                      "%llu B free",
+                      "%llu B frei",
                       static_cast<unsigned long long>(bytes));
     }
     return std::string(buffer);
@@ -73,15 +73,15 @@ epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
 
     epaper_ui::SettingsPageState state = {};
     state.navigation_focus_index = focus_.index();
-    state.title_text = "Settings";
+    state.title_text = "Einstellungen";
     state.wifi_toggle = {
-        .label_text = "WiFi",
+        .label_text = "WLAN",
         .toggle_state = BuildToggleState(
             wifi_state.wifi_enabled,
             IsRoleFocused(page_navigation::NavigationItemRole::kSettingsWifiToggle)),
     };
     state.access_point_toggle = {
-        .label_text = "Access Point",
+        .label_text = "Zugangspunkt",
         .toggle_state = BuildToggleState(
             wifi_state.access_point_mode,
             IsRoleFocused(page_navigation::NavigationItemRole::kSettingsEnableApToggle)),
@@ -94,11 +94,11 @@ epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
         state.storage_status.used_percent = storage_stats.used_percent;
     }
 
-    std::string_view format_label = "Format SD";
+    std::string_view format_label = "SD formatieren";
     if (storage_snapshot.mode == storage_service::Mode::kFormatting ||
         (storage_snapshot.operation == storage_service::Operation::kFormatSd &&
          storage_snapshot.phase == storage_service::OperationPhase::kStarted)) {
-        format_label = "Formatting SD";
+        format_label = "SD wird formatiert";
     }
     state.format_sd_button = {
         .label_text = format_label,
@@ -106,7 +106,7 @@ epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
             IsRoleFocused(page_navigation::NavigationItemRole::kSettingsFormatSdButton),
     };
     state.manual_onboarding_button = {
-        .label_text = "Manual",
+        .label_text = "Anleitung",
         .selected = IsRoleFocused(
             page_navigation::NavigationItemRole::kSettingsManualOnboardingButton),
     };

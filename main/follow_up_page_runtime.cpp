@@ -369,14 +369,14 @@ bool ShowItemActionsModal()
             .follow_up_completed = entry->follow_up_completed,
         };
         s_item_actions.clear();
-        modal.title_text = "Follow up";
-        modal.items.push_back({"View details"});
+        modal.title_text = "Wiedervorlage";
+        modal.items.push_back({"Details ansehen"});
         s_item_actions.push_back(ItemAction::kViewDetails);
-        modal.items.push_back({"Complete follow-up"});
+        modal.items.push_back({"Wiedervorlage erledigen"});
         s_item_actions.push_back(ItemAction::kCompleteFollowUp);
-        modal.items.push_back({"Delete"});
+        modal.items.push_back({"Löschen"});
         s_item_actions.push_back(ItemAction::kDelete);
-        modal.items.push_back({"Close"});
+        modal.items.push_back({"Schließen"});
         s_item_actions.push_back(ItemAction::kClose);
         modal.selected_index = 0;
         s_item_actions_pending = true;

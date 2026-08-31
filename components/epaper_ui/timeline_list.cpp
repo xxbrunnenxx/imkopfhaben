@@ -145,7 +145,7 @@ std::string BuildStickyFooterText(const TimelineListState& state, int group_inde
     if (item_count <= 0) {
         return {};
     }
-    const std::string label = state.item_label_plural.empty() ? "Notes" : state.item_label_plural;
+    const std::string label = state.item_label_plural.empty() ? "Notizen" : state.item_label_plural;
     const bool active_group =
         group_index == ClampIndex(state.active_group_index, static_cast<int>(state.groups.size()));
     const int selected_item_index = ClampIndex(state.selected_item_index, item_count);
