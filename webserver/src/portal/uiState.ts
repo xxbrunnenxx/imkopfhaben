@@ -1,9 +1,9 @@
 import type { PortalDom } from './dom';
 
 interface PortalUiStateControllers {
-  geminiController: {
-    getGeminiHasKey: () => boolean;
-    isGeminiBusy: () => boolean;
+  localAiController: {
+    getLocalAiBaseUrl: () => string;
+    isLocalAiBusy: () => boolean;
   };
   timeController: {
     isClockBusy: () => boolean;
@@ -75,14 +75,12 @@ export function updatePortalUiState(deps: UpdatePortalUiStateDeps) {
   dom.timezoneLocationClearBtn.disabled =
     timeConfigBusy || dom.timezoneSelect.value.trim().length === 0;
 
-  // --- Gemini API key (always available on Followup) ---
-  const geminiBusy = controllers.geminiController.isGeminiBusy();
-  const geminiHasKey = controllers.geminiController.getGeminiHasKey();
-  dom.geminiApiKeyInput.readOnly = geminiHasKey || geminiBusy;
-  dom.geminiApiKeyInput.disabled = geminiBusy;
-  dom.geminiSaveBtn.disabled =
-    geminiBusy || geminiHasKey || dom.geminiApiKeyInput.value.trim().length === 0;
-  dom.geminiSaveBtn.hidden = geminiHasKey;
-  dom.geminiClearBtn.disabled = geminiBusy || !geminiHasKey;
-  dom.geminiClearBtn.hidden = !geminiHasKey;
+  // --- Local AI server (always available on Followup) ---
+  // No secret to mask -- the field stays editable at all times, gated only by "busy" and
+  // "is there text to save", not by a has-key flag the way the old Gemini card was.
+  const localAiBusy = controllers.localAiController.isLocalAiBusy();
+  dom.localAiBaseUrlInput.readOnly = localAiBusy;
+  dom.localAiBaseUrlInput.disabled = localAiBusy;
+  dom.localAiSaveBtn.disabled = localAiBusy || dom.localAiBaseUrlInput.value.trim().length === 0;
+  dom.localAiResetBtn.disabled = localAiBusy;
 }

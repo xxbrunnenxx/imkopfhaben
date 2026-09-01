@@ -6,11 +6,14 @@ integration with a fully local backend running on the household server
 `folloup-waveshare` line of this fork -- the device has no reason to talk to
 Google once a local model does the same job on the same LAN.
 
-**Status: plan + verified facts only. No firmware code has been changed yet.**
-This fork has no ESP-IDF toolchain installed in the environment this document
-was written in, so no C++ change described below has been compiled, let alone
-run on hardware. Treat everything under "Firmware changes" as a spec to
-implement, not a diff that was applied.
+**Status: code written and committed, nothing built, nothing deployed.** The
+firmware and frontend changes described below have been made in full on the
+`local-ai-plan` branch. This fork has no ESP-IDF toolchain and no
+node/npm installed in the environment this was written in, so **none of it has
+compiled or type-checked, let alone run on hardware**, and nothing on Kraken
+was changed to serve any of this. See "Umsetzungsstand" at the end of this
+document for exactly what is done, what is written-but-unverified, and what is
+still missing.
 
 ## Why replace Gemini at all
 
@@ -88,7 +91,7 @@ No API key, no NVS-stored secret, no TLS/CRT bundle needed for the LLM or
 transcription calls (both are plain HTTP on the LAN). `esp_crt_bundle_attach`
 usage in `gemini_service.cpp` becomes dead code for these paths.
 
-## Firmware changes needed (spec, not yet implemented)
+## Firmware changes (written, unverified -- see Umsetzungsstand)
 
 All three call sites funnel through `components/gemini_service/`, so the
 blast radius is contained -- `transcription_service`, `summary_service`,
@@ -154,3 +157,101 @@ and check it here.
   choice -- the IP is simpler and was what was actually tested; mDNS is more
   robust to Kraken's IP changing but adds a resolution step on the ESP32
   side that hasn't been checked against this project's Wi-Fi/mDNS stack.
+
+## Umsetzungsstand (2026-09-01, second pass)
+
+Everything below is code that has been written and committed to the
+`local-ai-plan` branch. **Nothing has been built or run.** This environment
+has neither an ESP-IDF toolchain nor node/npm, so there has been no compile,
+no type-check, and no lint pass on any of it -- treat it as a careful draft,
+not a working implementation, until someone with the right toolchains
+verifies it. Nothing on Kraken beyond the earlier LAN-bind of LM Studio's
+server was touched or deployed.
+
+### Done (written, matches the plan above)
+
+- `components/gemini_service/` renamed to `components/local_ai_service/`
+  (directory, files, namespace, CMakeLists `REQUIRES`). Public API shape kept
+  close to the original so callers didn't need structural rework, just
+  renamed calls.
+- Readiness probe, `GenerateText`, and `Transcribe` re-implemented against
+  the local backend as specced (base URL + `/models`, `/chat/completions`
+  with `reasoning_effort: "none"`, single-POST WAV upload to a transcription
+  URL).
+- `CountTokens` / `TokenCountResult` removed entirely; `summary_service`'s
+  `CountPromptTokens` now calls the existing character estimate directly,
+  no remote call.
+- `summary_service` token budgets shrunk to fit an 8192-token local context
+  (3000/2500/3000, down from 120000/60000/120000) -- these are a starting
+  estimate, explicitly not tuned against real prompt sizes.
+- Transcription readiness (in both `transcription_service` and
+  `recording_session_service`) is now gated on "is a transcribe URL
+  configured", not on the chat model's readiness -- catches a bug in my own
+  first pass where I'd copied the old single-provider gate and conflated two
+  independent local services.
+- Every `gemini`/`Gemini` identifier, log message, and UI string in the
+  firmware C++ and the `webserver/src` TypeScript/HTML source was found
+  (`rg -il gemini`, swept twice) and renamed or reworded, except the ones
+  listed as deliberately untouched below.
+- No new image assets. The existing star icon (`EmbeddedIconId::kStar`) is
+  reused as-is for the status-bar/lock-screen "AI ready" indicator, same as
+  before.
+- Top-level `README.md` and `webserver/README.md` updated so they don't
+  describe Gemini as the current backend.
+- `docs/gemini-service.md` marked superseded at the top, left otherwise
+  intact as a historical record (upstream and other branches of this fork
+  may still be Gemini-based).
+
+### Deliberately left untouched
+
+- `components/wifi_service/portal/index.html` / `index.js` -- this is the
+  **prebuilt, embedded copy** of the portal frontend that the firmware
+  actually serves (`webserver/README.md` says so explicitly: "refresh them
+  with the command above rather than hand-editing"). It still says "Gemini
+  API Key" because it's a build artifact of the *old* `webserver/src`, and
+  regenerating it needs `cd webserver && npm run build && cp dist/index.html
+  dist/index.js dist/index.css ../components/wifi_service/portal/` -- npm
+  isn't installed in this environment, so this step could not be run. The
+  `webserver/src` TypeScript source is fully updated; the embedded bundle is
+  stale until someone runs that build.
+- `components/project_assets/` (`kGeminiApi` icon, from
+  `assets/icons/gemini_api.png`, and `assets/epaper_assets.json`'s entry for
+  it) -- this generated asset was already unreferenced by any page before
+  this change (confirmed: no hits for `EmbeddedIconId::kGeminiApi` outside
+  its own definition), so leaving it alone doesn't change behavior. Renaming
+  or removing it would mean touching generated asset-pipeline output, which
+  was out of scope ("keine neuen Assets").
+
+### Design decisions worth a second look in review
+
+- `providerKeys.ts`: rather than forcing the base URL into the old
+  masked-secret UI pattern (`******last4`, hidden save button once a key
+  exists), I wrote a small dedicated local-AI controller that shows the URL
+  in plain text and always allows editing -- a URL isn't a secret, and the
+  old pattern's whole point was to never show a stored secret back to the
+  page. Flagging this as a deliberate deviation from "reuse the exact
+  pattern," not an oversight.
+- Only `base_url` is exposed in the web settings UI; `transcribe_url` is
+  settable via the backend's `PATCH /api/settings/local_ai` (it accepts
+  both fields) but has no UI field yet. Kconfig/NVS-default-only for now.
+- Dropped several Gemini-specific `RuntimeSnapshot`/error-code fields that
+  had no local equivalent rather than faking them: `has_sdkconfig_api_key`
+  (there's no separate "is there a fallback" question when the base URL
+  always has a Kconfig default), `api_key_last4` (nothing to mask), and the
+  `missing_api_key`/`invalid_api_key` error codes (replaced with
+  `missing_fields`/`invalid_base_url`, since the validation question is now
+  about a URL, not a key). `supports_audio_understanding` /
+  `supports_structured_output` were kept as always-`false` fields, same
+  shape as before, but now with a comment pointing at the actual verified
+  reason (LM Studio's API rejects audio content parts) instead of "not yet
+  ported."
+
+### Not done / needs a decision before it can be
+
+- The `/api/transcribe-raw` endpoint on Kraken does not exist. This was
+  scoped out deliberately (see "Open follow-ups" above) pending a decision
+  on where it should live.
+- No systemd unit for LM Studio's server; still a manually-started process
+  bound to `0.0.0.0:1234`.
+- No compile, no type-check, no lint, no test run against any of this.
+- No review has happened yet -- this is what the review in PR #2 is for.

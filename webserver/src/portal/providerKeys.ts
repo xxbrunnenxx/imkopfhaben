@@ -1,6 +1,6 @@
 import type {
-  GeminiModuleResponse,
-  GeminiModuleSettings,
+  LocalAiModuleResponse,
+  LocalAiModuleSettings,
   ModuleStatusResponse,
   OpenAiModuleResponse,
   OpenAiModuleSettings,
@@ -23,19 +23,31 @@ interface ProviderState {
   settingsApi: string;
 }
 
+// The local AI server has no secret to mask -- the settings/reset routes echo the same
+// GET/PATCH/reset/runtime shape as the old Gemini API-key module, but the field is a plain,
+// always-visible base URL rather than a write-only masked key. Kept as its own small controller
+// instead of forcing it through applyProviderSettings/saveProviderKey/clearProviderKey below,
+// which assume a secret that gets masked as "******last4" -- that assumption doesn't hold here.
+interface LocalAiState {
+  isBusy: boolean;
+  baseUrl: string;
+  resetApi: string;
+  settingsApi: string;
+}
+
 interface ProviderKeysDeps {
-  fetchGeminiModuleJson: (
+  fetchLocalAiModuleJson: (
     path: string,
     init?: RequestInit
-  ) => Promise<GeminiModuleResponse>;
+  ) => Promise<LocalAiModuleResponse>;
   fetchOpenAiModuleJson: (
     path: string,
     init?: RequestInit
   ) => Promise<OpenAiModuleResponse>;
-  geminiApiKeyInput: ProviderInput;
-  isGeminiModuleActive: () => boolean;
+  localAiBaseUrlInput: ProviderInput;
+  isLocalAiModuleActive: () => boolean;
   isOpenAiModuleActive: () => boolean;
-  notifyGemini: (message: string, type?: StatusType) => void;
+  notifyLocalAi: (message: string, type?: StatusType) => void;
   notifyOpenAi: (message: string, type?: StatusType) => void;
   openAiApiKeyInput: ProviderInput;
   updateButtons: () => void;
@@ -53,17 +65,6 @@ function applyProviderSettings(
       ? `******${state.last4}`
       : '******'
     : '';
-}
-
-function clearProviderSettings(
-  state: ProviderState,
-  input: ProviderInput,
-  notify: (message: string, type?: StatusType) => void
-) {
-  state.hasKey = false;
-  state.last4 = '';
-  input.value = '';
-  notify('');
 }
 
 async function saveProviderKey(
@@ -136,12 +137,11 @@ async function clearProviderKey(
 }
 
 export function createProviderKeysController(deps: ProviderKeysDeps) {
-  const geminiState: ProviderState = {
-    hasKey: false,
+  const localAiState: LocalAiState = {
     isBusy: false,
-    last4: '',
-    resetApi: '/api/settings/gemini/reset',
-    settingsApi: '/api/settings/gemini',
+    baseUrl: '',
+    resetApi: '/api/settings/local_ai/reset',
+    settingsApi: '/api/settings/local_ai',
   };
 
   const openAiState: ProviderState = {
@@ -152,10 +152,10 @@ export function createProviderKeysController(deps: ProviderKeysDeps) {
     settingsApi: '/api/settings/openai',
   };
 
-  function updateGeminiRoutes(module?: ModuleStatusResponse) {
+  function updateLocalAiRoutes(module?: ModuleStatusResponse) {
     const routes = module?.routes;
-    geminiState.settingsApi = routes?.settings || '/api/settings/gemini';
-    geminiState.resetApi = routes?.reset || '/api/settings/gemini/reset';
+    localAiState.settingsApi = routes?.settings || '/api/settings/local_ai';
+    localAiState.resetApi = routes?.reset || '/api/settings/local_ai/reset';
   }
 
   function updateOpenAiRoutes(module?: ModuleStatusResponse) {
@@ -164,12 +164,9 @@ export function createProviderKeysController(deps: ProviderKeysDeps) {
     openAiState.resetApi = routes?.reset || '/api/settings/openai/reset';
   }
 
-  function applyGeminiSettings(settings?: GeminiModuleSettings) {
-    applyProviderSettings(geminiState, deps.geminiApiKeyInput, settings);
-  }
-
-  function clearGeminiSettings() {
-    clearProviderSettings(geminiState, deps.geminiApiKeyInput, deps.notifyGemini);
+  function applyLocalAiSettings(settings?: LocalAiModuleSettings) {
+    localAiState.baseUrl = typeof settings?.base_url === 'string' ? settings.base_url : '';
+    deps.localAiBaseUrlInput.value = localAiState.baseUrl;
   }
 
   function applyOpenAiSettings(settings?: OpenAiModuleSettings) {
@@ -177,45 +174,71 @@ export function createProviderKeysController(deps: ProviderKeysDeps) {
   }
 
   function clearOpenAiSettings() {
-    clearProviderSettings(openAiState, deps.openAiApiKeyInput, deps.notifyOpenAi);
+    openAiState.hasKey = false;
+    openAiState.last4 = '';
+    deps.openAiApiKeyInput.value = '';
+    deps.notifyOpenAi('');
   }
 
-  async function saveGeminiKey() {
-    if (!deps.isGeminiModuleActive() || geminiState.isBusy || geminiState.hasKey) {
+  async function saveLocalAiBaseUrl() {
+    if (!deps.isLocalAiModuleActive() || localAiState.isBusy) {
       return;
     }
 
-    const apiKey = deps.geminiApiKeyInput.value.trim();
-    if (!apiKey) {
-      deps.notifyGemini('Gemini API key is required.', 'warning');
+    const baseUrl = deps.localAiBaseUrlInput.value.trim();
+    if (!baseUrl) {
+      deps.notifyLocalAi('Local AI server URL is required.', 'warning');
       return;
     }
 
-    await saveProviderKey(
-      geminiState,
-      deps.geminiApiKeyInput,
-      deps.notifyGemini,
-      deps.updateButtons,
-      deps.fetchGeminiModuleJson,
-      'Saving Gemini API key...',
-      'Gemini API key'
-    );
+    localAiState.isBusy = true;
+    deps.notifyLocalAi('Saving local AI server URL...', 'info');
+    deps.updateButtons();
+
+    try {
+      const data = await deps.fetchLocalAiModuleJson(localAiState.settingsApi, {
+        method: 'PATCH',
+        body: JSON.stringify({ base_url: baseUrl }),
+      });
+      applyLocalAiSettings(data.settings);
+      deps.notifyLocalAi(data.message || 'Local AI server URL stored.', 'success');
+    } catch (error) {
+      console.error('Local AI server URL save failed:', error);
+      deps.notifyLocalAi(
+        error instanceof Error ? error.message : 'Failed to store local AI server URL.',
+        'error'
+      );
+    } finally {
+      localAiState.isBusy = false;
+      deps.updateButtons();
+    }
   }
 
-  async function clearGeminiKey() {
-    if (!deps.isGeminiModuleActive() || geminiState.isBusy) {
+  async function resetLocalAiBaseUrl() {
+    if (!deps.isLocalAiModuleActive() || localAiState.isBusy) {
       return;
     }
 
-    await clearProviderKey(
-      geminiState,
-      deps.geminiApiKeyInput,
-      deps.notifyGemini,
-      deps.updateButtons,
-      deps.fetchGeminiModuleJson,
-      'Clearing Gemini API key...',
-      'Gemini API key cleared.'
-    );
+    localAiState.isBusy = true;
+    deps.notifyLocalAi('Resetting local AI server URL...', 'info');
+    deps.updateButtons();
+
+    try {
+      const data = await deps.fetchLocalAiModuleJson(localAiState.resetApi, {
+        method: 'POST',
+      });
+      applyLocalAiSettings(data.settings);
+      deps.notifyLocalAi(data.message || 'Local AI server URL reset to built-in default.', 'success');
+    } catch (error) {
+      console.error('Local AI server URL reset failed:', error);
+      deps.notifyLocalAi(
+        error instanceof Error ? error.message : 'Failed to reset local AI server URL.',
+        'error'
+      );
+    } finally {
+      localAiState.isBusy = false;
+      deps.updateButtons();
+    }
   }
 
   async function saveOpenAiKey() {
@@ -257,19 +280,18 @@ export function createProviderKeysController(deps: ProviderKeysDeps) {
   }
 
   return {
-    applyGeminiSettings,
+    applyLocalAiSettings,
     applyOpenAiSettings,
-    clearGeminiKey,
-    clearGeminiSettings,
     clearOpenAiKey,
     clearOpenAiSettings,
-    getGeminiHasKey: () => geminiState.hasKey,
+    getLocalAiBaseUrl: () => localAiState.baseUrl,
     getOpenAiHasKey: () => openAiState.hasKey,
-    isGeminiBusy: () => geminiState.isBusy,
+    isLocalAiBusy: () => localAiState.isBusy,
     isOpenAiBusy: () => openAiState.isBusy,
-    saveGeminiKey,
+    resetLocalAiBaseUrl,
+    saveLocalAiBaseUrl,
     saveOpenAiKey,
-    updateGeminiRoutes,
+    updateLocalAiRoutes,
     updateOpenAiRoutes,
   };
 }

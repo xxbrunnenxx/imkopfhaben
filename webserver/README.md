@@ -9,7 +9,7 @@ It is adapted from the byte90 captive portal, stripped down to the three things
 Followup provisions:
 
 - **Wi-Fi** — scan, connect, disconnect, and live status
-- **Gemini API key** — save / clear
+- **Local AI server** — set / reset the base URL (no key, it's a LAN address)
 - **Time & timezone** — pick a timezone, or set date/time manually
 
 The frontend is organized around:
@@ -21,7 +21,7 @@ The frontend is organized around:
 ## API Endpoints Used By The Portal
 
 These are served by the Followup firmware (`wifi_service`, `timezone_service`,
-`gemini_service`) while the device is in access-point mode.
+`local_ai_service`) while the device is in access-point mode.
 
 WiFi (`wifi_service`)
 
@@ -37,11 +37,11 @@ Time / timezone (`timezone_service`)
 - `PATCH /api/settings/time`
 - `GET /api/runtime/time`
 
-Gemini (`gemini_service`)
+Local AI (`local_ai_service`)
 
-- `GET /api/settings/gemini`
-- `PATCH /api/settings/gemini`
-- `POST /api/settings/gemini/reset`
+- `GET /api/settings/local_ai`
+- `PATCH /api/settings/local_ai`
+- `POST /api/settings/local_ai/reset`
 
 ## Local Development
 
@@ -81,7 +81,7 @@ them with the command above rather than hand-editing.
 
 ```text
 webserver/
-  index.html              # portal markup (WiFi / Gemini / Time cards)
+  index.html              # portal markup (WiFi / Local AI / Time cards)
   src/assets/             # inline SVGs (?raw) incl. followup_logo.svg
   src/components/         # autonomous Web Components
   src/portal/             # feature controllers, API helpers, DOM wiring, types
@@ -103,7 +103,7 @@ components/wifi_service/portal/   # embedded build output served by the firmware
   - `api.ts` — typed API fetch helpers
   - `wifi.ts` — WiFi scan/connect/disconnect flow
   - `time.ts` — timezone + manual date/time
-  - `providerKeys.ts` — Gemini API key save/clear
+  - `providerKeys.ts` — Local AI server URL save/reset, OpenAI API key save/clear
   - `dom.ts` — element lookups
   - `events.ts` — DOM event bindings
   - `uiState.ts` — button/input enabled/disabled state
