@@ -215,7 +215,7 @@ const EmbeddedImageAsset* ResolveWifiIcon(WifiStatus status)
     }
 }
 
-const EmbeddedImageAsset* ResolveGeminiIcon(bool visible)
+const EmbeddedImageAsset* ResolveAiIcon(bool visible)
 {
     if (!visible) {
         return nullptr;
@@ -280,7 +280,7 @@ void DrawLockScreenStatusRow(uint8_t* framebuffer,
 
     const EmbeddedImageAsset* battery_icon = ResolveBatteryIcon(state.battery);
     const EmbeddedImageAsset* wifi_icon = ResolveWifiIcon(state.wifi);
-    const EmbeddedImageAsset* gemini_icon = ResolveGeminiIcon(state.show_gemini_icon);
+    const EmbeddedImageAsset* ai_icon = ResolveAiIcon(state.show_ai_icon);
     const EmbeddedImageAsset* sleep_icon =
         state.show_sleep_icon ? project_assets::GetIcon(EmbeddedIconId::kSleep) : nullptr;
     const EmbeddedImageAsset* power_icon =
@@ -325,7 +325,7 @@ void DrawLockScreenStatusRow(uint8_t* framebuffer,
                  wifi_icon,
                  stroke_thickness);
 
-    if (state.show_gemini_icon) {
+    if (state.show_ai_icon) {
         cursor_right -= design::status_bar::kItemGap + icon_box;
         DrawIconSlot(framebuffer,
                      raw_width,
@@ -335,7 +335,7 @@ void DrawLockScreenStatusRow(uint8_t* framebuffer,
                      cursor_right,
                      icon_top,
                      icon_box,
-                     gemini_icon,
+                     ai_icon,
                      stroke_thickness);
     }
 

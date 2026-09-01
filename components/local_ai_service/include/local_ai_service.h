@@ -1,5 +1,5 @@
-#ifndef GEMINI_SERVICE_H_
-#define GEMINI_SERVICE_H_
+#ifndef LOCAL_AI_SERVICE_H_
+#define LOCAL_AI_SERVICE_H_
 
 #include <cstdint>
 #include <string>
@@ -11,20 +11,23 @@ namespace recording_service {
 class RecordedClip;
 }
 
-namespace gemini_service {
+namespace local_ai_service {
 
-enum class ApiKeySource : uint8_t {
-    kNone = 0,
-    kSdkConfig,
+// Where the effective base URL / transcription URL came from. Neither is a secret (the local
+// server takes no credential), but we keep the NVS-override vs. built-in-default distinction so
+// the portal settings UI can show where a value is coming from, same as the old API-key source.
+enum class UrlSource : uint8_t {
+    kBuiltIn = 0,
     kNvs,
 };
 
 struct SettingsSnapshot {
     bool configured = false;
-    bool has_stored_api_key = false;
-    bool has_sdkconfig_api_key = false;
-    ApiKeySource api_key_source = ApiKeySource::kNone;
-    std::string api_key_last4;
+    bool has_stored_base_url = false;
+    bool has_stored_transcribe_url = false;
+    UrlSource base_url_source = UrlSource::kBuiltIn;
+    std::string base_url;
+    std::string transcribe_url;
     std::string model_name;
 };
 
@@ -34,8 +37,9 @@ struct RuntimeSnapshot {
     bool request_in_flight = false;
     bool auth_checked = false;
     bool authenticated = false;
-    bool supports_audio_understanding = false;
-    bool supports_structured_output = false;
+    bool supports_audio_understanding = false;  // always false: the local server rejects audio
+                                                 // input content parts, see docs/local-ai-service.md
+    bool supports_structured_output = false;    // not exercised by this firmware yet
     int last_http_status = 0;
     std::string last_status_message;
     std::string last_model_resource_name;
@@ -53,9 +57,12 @@ struct Event {
     Snapshot snapshot = {};
 };
 
+// A patch may update either URL independently; unset fields are left as-is.
 struct SettingsPatch {
-    bool has_api_key = false;
-    std::string api_key;
+    bool has_base_url = false;
+    std::string base_url;
+    bool has_transcribe_url = false;
+    std::string transcribe_url;
 };
 
 struct Result {
@@ -67,7 +74,7 @@ struct Result {
     std::string message;
 };
 
-// Result of a synchronous text-generation (generateContent) call.
+// Result of a synchronous text-generation (chat/completions) call.
 struct TextResult {
     bool success = false;
     int http_status = 0;
@@ -76,16 +83,7 @@ struct TextResult {
     std::string error_message = {};
 };
 
-// Result of a synchronous token-count (countTokens) call.
-struct TokenCountResult {
-    bool success = false;
-    int http_status = 0;
-    int total_tokens = 0;
-    std::string error_code = {};
-    std::string error_message = {};
-};
-
-// Result of a synchronous audio transcription (resumable upload + generateContent) call.
+// Result of a synchronous audio transcription call against the local Whisper endpoint.
 struct TranscriptionResult {
     bool success = false;
     int http_status = 0;
@@ -94,8 +92,6 @@ struct TranscriptionResult {
     std::string error_message = {};
     uint32_t clip_duration_ms = 0;
     size_t wav_bytes = 0;
-    uint32_t upload_chunk_count = 0;
-    uint64_t upload_elapsed_ms = 0;
     uint64_t total_elapsed_ms = 0;
 };
 
@@ -106,22 +102,21 @@ void SetEventHandler(EventHandler handler, void* context);
 Snapshot GetSnapshot();
 
 Result ApplySettingsPatch(const SettingsPatch& patch);
-Result ClearStoredApiKey();
+Result ResetStoredSettings();
 
-bool HasApiKey();
-std::string GetEffectiveApiKey();
+std::string GetEffectiveBaseUrl();
+std::string GetEffectiveTranscribeUrl();
 std::string GetEffectiveModelName();
-// Synchronous Gemini calls (block on HTTP; run them from a worker task, never a UI/input
-// task). They use the effective API key + model and return the parsed result or an error.
+// Synchronous calls against the local backend (block on HTTP; run them from a worker task,
+// never a UI/input task).
 TextResult GenerateText(const std::string& prompt);
-TokenCountResult CountTokens(const std::string& prompt);
 TranscriptionResult Transcribe(const recording_service::RecordedClip& clip);
 bool BeginAuthentication();
 void SetNetworkState(bool connected, bool access_point_mode);
 void RegisterPortalRoutes(httpd_handle_t server);
 
-const char* ApiKeySourceName(ApiKeySource source);
+const char* UrlSourceName(UrlSource source);
 
-}  // namespace gemini_service
+}  // namespace local_ai_service
 
-#endif  // GEMINI_SERVICE_H_
+#endif  // LOCAL_AI_SERVICE_H_

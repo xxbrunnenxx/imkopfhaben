@@ -7,7 +7,7 @@ using page_navigation::NavigationItemRole;
 
 }  // namespace
 
-ActivateResult HandlePrimaryActivate(SummarizePageCoordinator& coordinator, bool gemini_ready)
+ActivateResult HandlePrimaryActivate(SummarizePageCoordinator& coordinator, bool local_ai_ready)
 {
     ActivateResult result = {};
     result.handled = true;
@@ -29,8 +29,8 @@ ActivateResult HandlePrimaryActivate(SummarizePageCoordinator& coordinator, bool
     }
 
     if (coordinator.IsRoleFocused(NavigationItemRole::kSummarizePageGetSummaryButton)) {
-        if (!gemini_ready) {
-            // Inline hint already tells the user to connect Gemini; the tap is a no-op.
+        if (!local_ai_ready) {
+            // Inline hint already tells the user to connect local AI; the tap is a no-op.
             result.play_activate_cue = false;
             return result;
         }

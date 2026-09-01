@@ -5,7 +5,7 @@
 
 #include "epaper_ui/summarize_page.h"
 #include "esp_log.h"
-#include "gemini_service.h"
+#include "local_ai_service.h"
 #include "page_navigation/page_focus_projection.h"
 #include "summarize_page_coordinator.h"
 #include "ui_refresh_runtime.h"
@@ -70,8 +70,8 @@ page_navigation::NavigationItemRole FooterRoleForFooterItem(footer_runtime::Foot
 
 epaper_ui::SummarizePageState BuildStateLocked()
 {
-    const bool gemini_ready = gemini_service::GetSnapshot().runtime.ready;
-    return s_coordinator.BuildState(gemini_ready, s_summary_snapshot);
+    const bool local_ai_ready = local_ai_service::GetSnapshot().runtime.ready;
+    return s_coordinator.BuildState(local_ai_ready, s_summary_snapshot);
 }
 
 footer_runtime::ProjectionState BuildFooterProjectionStateLocked()
@@ -141,8 +141,8 @@ page_actions::FocusMoveOutcome MoveFocus(int delta)
 summarize_page_interactions::ActivateResult ActivateFocusedItem()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
-    const bool gemini_ready = gemini_service::GetSnapshot().runtime.ready;
-    return summarize_page_interactions::HandlePrimaryActivate(s_coordinator, gemini_ready);
+    const bool local_ai_ready = local_ai_service::GetSnapshot().runtime.ready;
+    return summarize_page_interactions::HandlePrimaryActivate(s_coordinator, local_ai_ready);
 }
 
 footer_runtime::ProjectionState BuildFooterProjectionState()

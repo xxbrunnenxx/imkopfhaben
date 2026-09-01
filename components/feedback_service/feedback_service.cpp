@@ -16,7 +16,7 @@ SoundCue CueForEvent(FeedbackEvent event)
     switch (event) {
         case FeedbackEvent::kStartup:
             return SoundCue::kStartup;
-        case FeedbackEvent::kGeminiConnected:
+        case FeedbackEvent::kLocalAiConnected:
             return SoundCue::kOnline;
         case FeedbackEvent::kLock:
             return SoundCue::kLock;

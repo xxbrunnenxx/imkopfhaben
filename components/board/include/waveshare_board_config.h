@@ -62,7 +62,7 @@
 #define WAVESHARE_IMU_INT_PIN           GPIO_NUM_40
 
 // ES8311 audio codec: I2C control shares the sensor bus above; audio streams over
-// I2S0. Run full-duplex at 16 kHz to match the recording/Gemini pipeline (no
+// I2S0. Run full-duplex at 16 kHz to match the recording/transcription pipeline (no
 // resampling). NS4150B power-amp enable on GPIO39.
 #define WAVESHARE_AUDIO_SAMPLE_RATE_HZ  16000
 #define WAVESHARE_AUDIO_I2S_MCLK        GPIO_NUM_13
