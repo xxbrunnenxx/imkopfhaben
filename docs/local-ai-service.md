@@ -321,3 +321,13 @@ proves the code is structurally sound, not that it works on the device.
     every removed entry, now running far more often under the ~40x-smaller
     local token budget; `GenerateSummary()` re-fetches `base_url`/
     `model_name` from a snapshot it already holds.
+- **Idea, not decided (2026-09-02): offline-queue for failed transcription
+  uploads, so the device can be carried around and the notes get delivered
+  once back in range of Kraken/LM Studio.** Same intent as `imkopfhaben`'s
+  `notiz_warteschlange/` (retry loop for a temporarily unreachable server),
+  but not directly portable -- that one lives on a Linux filesystem in
+  Python; this board would need its own component built around the TF
+  card slot (store the WAV + metadata on failure, retry on next successful
+  connection, clean up after a confirmed delivery). Explicitly not scoped
+  as a quick patch -- owner wants it filed here only, decided and built
+  later, once the board itself has proven out the current baseline.
