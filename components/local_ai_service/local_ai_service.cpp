@@ -37,7 +37,13 @@ constexpr const char* kSettingsTag = "LocalAiSettings";
 constexpr const char* kStorageNamespace = "local_ai";
 constexpr const char* kStorageBaseUrl = "base_url";
 constexpr const char* kStorageTranscribeUrl = "transcribe_url";
+// Kconfig-backed like the URLs below, not NVS/portal-overridable -- switching model or
+// reasoning_effort for a different local model is a firmware-config change, not a runtime one.
+#if defined(CONFIG_FOLLOWUP_LOCAL_AI_MODEL_NAME)
+constexpr const char* kDefaultModelName = CONFIG_FOLLOWUP_LOCAL_AI_MODEL_NAME;
+#else
 constexpr const char* kDefaultModelName = "google/gemma-4-e2b";
+#endif
 constexpr const char* kPortalApiSettingsUri = "/api/settings/local_ai";
 constexpr const char* kPortalApiSettingsResetUri = "/api/settings/local_ai/reset";
 constexpr const char* kPortalApiRuntimeUri = "/api/runtime/local_ai";
@@ -48,11 +54,16 @@ constexpr int kGenerateTimeoutMs = 60000;  // reasoning_effort=none keeps this w
 constexpr int kTranscribeTimeoutMs = 30000;
 constexpr uint32_t kAuthTaskStackWords = 8192;
 
-// Mandatory: without this, gemma-4-e2b spends most of its output budget on hidden
-// reasoning_content before it ever emits a real answer. Measured: a trivial one-sentence prompt
-// used 122 completion tokens, 114 of them reasoning, until this flag was added. See
-// docs/local-ai-service.md.
+// Mandatory for the default model: without this, gemma-4-e2b spends most of its output budget
+// on hidden reasoning_content before it ever emits a real answer. Measured: a trivial
+// one-sentence prompt used 122 completion tokens, 114 of them reasoning, until this flag was
+// added. See docs/local-ai-service.md. Kconfig-backed (see kDefaultModelName above) so pointing
+// this firmware at a different local model doesn't require a source change here.
+#if defined(CONFIG_FOLLOWUP_LOCAL_AI_REASONING_EFFORT)
+constexpr const char* kReasoningEffortNone = CONFIG_FOLLOWUP_LOCAL_AI_REASONING_EFFORT;
+#else
 constexpr const char* kReasoningEffortNone = "none";
+#endif
 
 struct AuthResult {
     bool success = false;
@@ -296,8 +307,6 @@ Snapshot BuildSnapshotLocked()
     snapshot.runtime.request_in_flight = s_request_in_flight;
     snapshot.runtime.auth_checked = s_auth_checked;
     snapshot.runtime.authenticated = s_authenticated;
-    snapshot.runtime.supports_audio_understanding = false;
-    snapshot.runtime.supports_structured_output = false;
     snapshot.runtime.last_http_status = s_last_http_status;
     snapshot.runtime.last_status_message = s_last_status_message;
     snapshot.runtime.last_model_resource_name = s_last_model_resource_name;
@@ -690,10 +699,6 @@ void AppendSnapshot(cJSON* root, const Snapshot& snapshot, const char* message)
     cJSON_AddBoolToObject(runtime, "request_in_flight", snapshot.runtime.request_in_flight);
     cJSON_AddBoolToObject(runtime, "auth_checked", snapshot.runtime.auth_checked);
     cJSON_AddBoolToObject(runtime, "authenticated", snapshot.runtime.authenticated);
-    cJSON_AddBoolToObject(runtime, "supports_audio_understanding",
-                          snapshot.runtime.supports_audio_understanding);
-    cJSON_AddBoolToObject(runtime, "supports_structured_output",
-                          snapshot.runtime.supports_structured_output);
     cJSON_AddNumberToObject(runtime, "last_http_status", snapshot.runtime.last_http_status);
     cJSON_AddStringToObject(runtime, "last_status_message",
                             snapshot.runtime.last_status_message.c_str());
@@ -849,11 +854,7 @@ std::string BuildChatCompletionRequestBody(const std::string& model_name, const 
     // Mandatory -- see kReasoningEffortNone above.
     cJSON_AddStringToObject(root, "reasoning_effort", kReasoningEffortNone);
 
-    char* raw = cJSON_PrintUnformatted(root);
-    std::string body = raw != nullptr ? raw : "";
-    if (raw != nullptr) {
-        cJSON_free(raw);
-    }
+    const std::string body = JsonString(root);
     cJSON_Delete(root);
     return body;
 }

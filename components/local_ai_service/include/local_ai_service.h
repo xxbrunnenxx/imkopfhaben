@@ -37,9 +37,6 @@ struct RuntimeSnapshot {
     bool request_in_flight = false;
     bool auth_checked = false;
     bool authenticated = false;
-    bool supports_audio_understanding = false;  // always false: the local server rejects audio
-                                                 // input content parts, see docs/local-ai-service.md
-    bool supports_structured_output = false;    // not exercised by this firmware yet
     int last_http_status = 0;
     std::string last_status_message;
     std::string last_model_resource_name;

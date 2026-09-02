@@ -72,6 +72,26 @@ menu "Folloup Settings"
             runtime-saved URL stored through the backend portal takes
             precedence when present.
 
+    config FOLLOWUP_LOCAL_AI_MODEL_NAME
+        string "Local AI model name"
+        default "google/gemma-4-e2b"
+        help
+            Model identifier sent as the "model" field in chat/completions
+            and matched against /v1/models during readiness checks. Must
+            match a model already loaded in LM Studio (or whatever
+            OpenAI-compatible server FOLLOWUP_LOCAL_AI_BASE_URL points at).
+
+    config FOLLOWUP_LOCAL_AI_REASONING_EFFORT
+        string "Local AI reasoning_effort value"
+        default "none"
+        help
+            Sent as reasoning_effort on every chat/completions request.
+            The default model (gemma-4-e2b) burns its token budget on
+            hidden reasoning without this. Pointing the firmware at a
+            different local model that handles reasoning differently can
+            be adjusted here without touching source -- leave as "none"
+            unless you know your model needs something else.
+
     config FOLLOWUP_AUTO_SLEEP_DISPLAY_SLEEP_TIMEOUT_SECONDS
         int "Display sleep timeout"
         range 0 86400
