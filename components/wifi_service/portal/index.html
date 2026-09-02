@@ -67,25 +67,25 @@
           </ui-button>
         </ui-bottom-sheet>
 
-        <ui-card id="geminiCard" title="Gemini API Key">
+        <ui-card id="localAiCard" title="Local AI Server">
             <ui-input
-              id="geminiApiKeyInput"
-              label="Gemini API Key"
-              placeholder="Enter Gemini API key"
+              id="localAiBaseUrlInput"
+              label="Local AI server URL"
+              placeholder="http://192.168.178.215:1234/v1/"
               autocomplete="off"
-              inputmode="text"
+              inputmode="url"
             ></ui-input>
 
             <ui-button
               slot="footer"
-              id="geminiClearBtn"
+              id="localAiResetBtn"
               variant="secondary"
             >
-              Clear
+              Reset to default
             </ui-button>
             <ui-button
               slot="footer"
-              id="geminiSaveBtn"
+              id="localAiSaveBtn"
               variant="primary"
             >
               Save

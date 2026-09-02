@@ -177,8 +177,6 @@ void Es8311Codec::CreateDuplexChannels(gpio_num_t mclk, gpio_num_t bclk, gpio_nu
             .ext_clk_freq_hz = 0,
 #endif
             .mclk_multiple = I2S_MCLK_MULTIPLE_256,
-            // IDF's default. Only takes effect in slave role; this channel is master.
-            .bclk_div = 8,
         },
         .slot_cfg = {
             .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,

@@ -498,9 +498,13 @@ AuthResult Authenticate(const std::string& base_url, const std::string& model_na
     if (http.status_code >= 200 && http.status_code < 300) {
         std::string found_id;
         const bool model_listed = FindModelInModelsResponse(root, model_name, &found_id);
-        result.success = true;
+        result.success = model_listed;
         result.model_resource_name = model_listed ? found_id : model_name;
         result.model_display_name = model_listed ? found_id : (model_name + " (not listed)");
+        if (!model_listed) {
+            result.error_code = "model_not_listed";
+            result.error_message = "Configured model \"" + model_name + "\" not found in /v1/models response";
+        }
         if (root != nullptr) {
             cJSON_Delete(root);
         }
@@ -529,7 +533,9 @@ void CompleteAuthentication(uint32_t generation, const AuthResult& result)
 
             if (!result.success) {
                 s_authenticated = false;
-                s_last_status_message = "Local AI server unreachable";
+                s_last_status_message = result.error_code == "model_not_listed"
+                                             ? "Local AI server reachable, but configured model not loaded"
+                                             : "Local AI server unreachable";
                 s_last_model_resource_name.clear();
                 s_last_model_display_name.clear();
                 SetLastErrorLocked(result.error_code.c_str(), result.error_message.c_str());
@@ -1112,6 +1118,17 @@ Result ApplySettingsPatch(const SettingsPatch& patch)
                 .field = "base_url",
                 .error_code = "invalid_base_url",
                 .message = "base_url must not be empty",
+            };
+        }
+
+        if (patch.has_transcribe_url && next.transcribe_url.empty()) {
+            return {
+                .success = false,
+                .validation_error = true,
+                .status_code = 400,
+                .field = "transcribe_url",
+                .error_code = "invalid_transcribe_url",
+                .message = "transcribe_url must not be empty",
             };
         }
 
