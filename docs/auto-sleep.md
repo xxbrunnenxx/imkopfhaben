@@ -1,192 +1,220 @@
 # Auto Sleep
 
-Auto sleep uses the QMI8658 IMU to detect inactivity, enters e-paper display
-sleep first, and later enters ESP32-S3 light sleep. The current implementation is
-proven on this hardware and intentionally uses direct IMU polling
-instead of FIFO or IMU interrupts.
+Auto Sleep nutzt die QMI8658-IMU zur Erkennung von Inaktivität, geht zuerst
+in den E-Paper-Display-Sleep und später in den ESP32-S3-Light-Sleep. Die
+aktuelle Implementierung ist auf dieser Hardware bewährt und nutzt bewusst
+direktes IMU-Polling statt FIFO oder IMU-Interrupts.
 
-## Runtime Ownership
+## Runtime-Zuständigkeit
 
-Auto sleep is split between policy and hardware runtime code:
+Auto Sleep ist zwischen Policy und Hardware-Runtime-Code aufgeteilt:
 
-- `device_sleep_service` owns the sleep state machine, inactivity timers,
-  timeout validation, blocker state, and transition events.
-- `main/device_sleep_runtime.cpp` owns product-specific hardware behavior:
-  IMU polling, display sleep commands, ESP light-sleep entry, `ACTION` wake
-  setup and blocker aggregation.
-- `app_shell` remains an orchestrator. It provides settings, forwards user
-  activity, supplies app-owned blocker state, and starts the runtime.
+- `device_sleep_service` besitzt den Sleep-Zustandsautomaten, die
+  Inaktivitäts-Timer, die Timeout-Validierung, den Blocker-Zustand und die
+  Übergangs-Events.
+- `main/device_sleep_runtime.cpp` besitzt produktspezifisches
+  Hardware-Verhalten: IMU-Polling, Display-Sleep-Kommandos, Eintritt in den
+  ESP-Light-Sleep, `ACTION`-Wake-Einrichtung und Blocker-Aggregation.
+- `app_shell` bleibt Orchestrator. Es stellt Einstellungen bereit, leitet
+  Nutzer-Aktivität weiter, liefert app-eigenen Blocker-Zustand und startet
+  die Runtime.
 
-## Stages
+## Stufen
 
-The device moves through three stages:
+Das Gerät durchläuft drei Stufen:
 
-- `awake`: normal app behavior.
-- `display_sleeping`: the e-paper panel has refreshed to a blank screen and
-  then entered panel sleep.
-- `light_sleeping`: the e-paper panel has refreshed to a blank screen, entered
-  panel sleep, and the ESP32-S3 has entered `esp_light_sleep_start()`.
+- `awake`: normales App-Verhalten.
+- `display_sleeping`: das E-Paper-Panel hat auf einen leeren Bildschirm
+  aufgefrischt und ist dann in den Panel-Sleep gegangen.
+- `light_sleeping`: das E-Paper-Panel hat auf einen leeren Bildschirm
+  aufgefrischt, ist in den Panel-Sleep gegangen, und der ESP32-S3 ist in
+  `esp_light_sleep_start()` gegangen.
 
-Motion or user interaction wakes the display from `display_sleeping`.
-`ACTION` / `GPIO0` or the PMIC interrupt wakes the ESP32-S3 from `light_sleeping`.
+Bewegung oder Nutzer-Interaktion weckt das Display aus `display_sleeping`.
+`ACTION` / `GPIO0` oder der PMIC-Interrupt weckt den ESP32-S3 aus
+`light_sleeping`.
 
-## IMU Inactivity Detection
+## IMU-Inaktivitätserkennung
 
-The runtime samples `imu_service::ReadSample(...)` every `200 ms` and compares
-the latest accelerometer sample against the previous sample. Accelerometer
-values are converted from `g` to `mg` before applying thresholds.
+Die Runtime samplet `imu_service::ReadSample(...)` alle `200 ms` und
+vergleicht die neueste Beschleunigungssensor-Probe mit der vorherigen.
+Beschleunigungssensor-Werte werden vor der Schwellenwert-Anwendung von `g`
+in `mg` umgerechnet.
 
-Current validated thresholds:
+Aktuell validierte Schwellenwerte:
 
-- Motion starts when the axis-delta sum is at least `60 mg`.
-- Motion also starts when the largest single-axis delta is at least `25 mg`.
-- Stillness requires the axis-delta sum to stay at or below `20 mg`.
-- Stillness also requires the largest single-axis delta to stay at or below
-  `8 mg`.
-- No-motion is armed only after a continuous `2 s` stillness window.
+- Bewegung beginnt, wenn die Achsen-Delta-Summe mindestens `60 mg` beträgt.
+- Bewegung beginnt auch, wenn das größte Einzelachsen-Delta mindestens
+  `25 mg` beträgt.
+- Stillstand erfordert, dass die Achsen-Delta-Summe bei oder unter `20 mg`
+  bleibt.
+- Stillstand erfordert außerdem, dass das größte Einzelachsen-Delta bei
+  oder unter `8 mg` bleibt.
+- Keine-Bewegung wird erst nach einem durchgehenden `2 s`-Stillstandsfenster
+  scharf geschaltet.
 
-These values were validated on-device. Normal table vibration did not require
-threshold changes, and picking up the device wakes the display promptly.
+Diese Werte wurden am Gerät validiert. Normale Tischvibration erforderte
+keine Schwellenwert-Änderungen, und das Aufnehmen des Geräts weckt das
+Display umgehend.
 
-## Display Sleep
+## Display-Sleep
 
-After the configured display-sleep timeout has elapsed during a no-motion
-period, the runtime asks `display_service` to enter display sleep.
+Nachdem das konfigurierte Display-Sleep-Timeout während einer
+Keine-Bewegung-Phase abgelaufen ist, bittet die Runtime `display_service`,
+in den Display-Sleep zu gehen.
 
-The display sequence is:
+Die Display-Sequenz ist:
 
-1. Refresh the e-paper panel to a blank screen.
-2. Wait for the e-paper refresh to finish.
-3. Put the e-paper panel into sleep.
-4. Leave the panel asleep until motion or user interaction wakes it.
+1. Das E-Paper-Panel auf einen leeren Bildschirm auffrischen.
+2. Warten, bis das E-Paper-Auffrischen fertig ist.
+3. Das E-Paper-Panel in den Sleep versetzen.
+4. Das Panel im Schlaf lassen, bis Bewegung oder Nutzer-Interaktion es weckt.
 
-Motion or user interaction wakes the display and restores the blank app surface
-with a full refresh.
+Bewegung oder Nutzer-Interaktion weckt das Display und stellt die leere
+App-Oberfläche mit einem vollständigen Auffrischen wieder her.
 
-## Light Sleep
+## Light-Sleep
 
-After the configured light-sleep timeout has elapsed during the same no-motion
-period, the runtime enters ESP32-S3 light sleep.
+Nachdem das konfigurierte Light-Sleep-Timeout während derselben
+Keine-Bewegung-Phase abgelaufen ist, geht die Runtime in den
+ESP32-S3-Light-Sleep.
 
-There is no power latch to protect on this board -- the AXP2101 holds the rails
-across light sleep on its own, which removes the Sticky's whole `PWR_HOLD` /
-`PWR_LOCK` sleep-GPIO problem.
+Es gibt auf diesem Board keinen Power-Latch zu schützen -- der AXP2101 hält
+die Spannungsschienen während des Light-Sleep von sich aus, was das ganze
+`PWR_HOLD`/`PWR_LOCK`-Sleep-GPIO-Problem des Sticky entfällt.
 
-One protection does carry over: `ACTION` / `GPIO0` is both a light-sleep wake
-source and the app's record button. The runtime arms wake-only suppression before
-calling `esp_light_sleep_start()` so the wake-causing press cannot leak into
-`app_shell` and arm a recording. The suppression is cleared by the matching
-release/click event after wake, or by a timeout if that event never arrives.
+Ein Schutz bleibt trotzdem bestehen: `ACTION` / `GPIO0` ist sowohl eine
+Light-Sleep-Wake-Quelle als auch die Aufnahme-Taste der App. Die Runtime
+scharft eine Wake-Only-Unterdrückung, bevor sie `esp_light_sleep_start()`
+aufruft, damit der weckende Tastendruck nicht in `app_shell` durchsickern
+und eine Aufnahme scharf schalten kann. Die Unterdrückung wird durch das
+passende Release-/Klick-Event nach dem Wecken aufgehoben, oder durch ein
+Timeout, falls dieses Event nie eintrifft.
 
-The AXP2101 interrupt line (`GPIO38`) is the second wake source, which is how a
-`PWR` press wakes the board.
+Die AXP2101-Interrupt-Leitung (`GPIO38`) ist die zweite Wake-Quelle, worüber
+ein `PWR`-Druck das Board weckt.
 
-The light-sleep sequence is:
+Die Light-Sleep-Sequenz ist:
 
-1. Configure `ACTION` / `GPIO0` as an input with pull-up.
-2. Wait for `ACTION` / `GPIO0` to be released/high.
-3. Arm `ACTION` / `GPIO0` and the PMIC IRQ / `GPIO38` as active-low
-   `gpio_wakeup_enable` light-sleep wake sources (not EXT1: this board uses the
-   light-sleep GPIO-wake path, which leaves the pads on the digital peripheral).
-4. Suspend the button-service polling timer, so light sleep's clock jump cannot
-   replay a burst of missed ticks and destroy click classification on wake.
-5. Arm wake-only `ACTION` event suppression.
-6. Refresh the e-paper panel to a blank screen.
-7. Wait for the e-paper refresh to finish and put the panel into sleep.
-8. Call `esp_light_sleep_start()`.
-9. On wake, disarm the GPIO wake sources, restore the `ACTION` pad, and resume
-   button polling before anything slow runs.
-10. Commit the wake transition immediately, without queueing a second wake event.
-11. Consume the wake-causing power-button event as wake-only.
-12. Restore the display with a forced full refresh, even if software state has
-    already moved back to awake.
+1. `ACTION` / `GPIO0` als Eingang mit Pull-Up konfigurieren.
+2. Warten, bis `ACTION` / `GPIO0` losgelassen/high ist.
+3. `ACTION` / `GPIO0` und den PMIC-IRQ / `GPIO38` als Active-Low
+   `gpio_wakeup_enable`-Light-Sleep-Wake-Quellen scharf schalten (nicht EXT1:
+   dieses Board nutzt den Light-Sleep-GPIO-Wake-Pfad, der die Pads auf dem
+   digitalen Peripheriegerät belässt).
+4. Den Button-Service-Polling-Timer aussetzen, damit der Uhr-Sprung des
+   Light-Sleep keinen Schwall verpasster Ticks nachspielen und die
+   Klick-Klassifikation beim Aufwachen zerstören kann.
+5. Wake-Only-`ACTION`-Event-Unterdrückung scharf schalten.
+6. Das E-Paper-Panel auf einen leeren Bildschirm auffrischen.
+7. Warten, bis das E-Paper-Auffrischen fertig ist, und das Panel in den
+   Sleep versetzen.
+8. `esp_light_sleep_start()` aufrufen.
+9. Beim Aufwachen die GPIO-Wake-Quellen entschärfen, das `ACTION`-Pad
+   wiederherstellen und das Button-Polling fortsetzen, bevor irgendetwas
+   Langsames läuft.
+10. Den Wake-Übergang sofort festschreiben, ohne ein zweites Wake-Event
+    einzureihen.
+11. Das weckende Power-Button-Event als Wake-Only konsumieren.
+12. Das Display mit einem erzwungenen vollständigen Auffrischen
+    wiederherstellen, selbst wenn der Software-Zustand bereits zurück zu
+    Wach gewechselt ist.
 
-Normal awake-state power-button interactions remain available outside the
-light-sleep wake path. Today that means a short press of the
-`PWR` key toggles the lock screen, while a ~1s `PWR` hold opens the shutdown
-confirmation. Both arrive as AXP2101 interrupts rather than GPIO button events
-chord and then requires explicit confirmation through the global shutdown
-modal.
+Normale Power-Button-Interaktionen im Wach-Zustand bleiben außerhalb des
+Light-Sleep-Wake-Pfads verfügbar. Aktuell bedeutet das: ein kurzer Druck
+der `PWR`-Taste schaltet den Sperrbildschirm um, während ein ~1s-Halten von
+`PWR` den Herunterfahren-Bestätigungsdialog öffnet. Beide kommen als
+AXP2101-Interrupts statt als GPIO-Button-Events an und erfordern dann eine
+explizite Bestätigung über das globale Herunterfahren-Modal.
 
-## Sleep Blockers
+## Sleep-Blocker
 
-Auto sleep is blocked during workflows where sleeping would interrupt active
-work or make hardware state harder to reason about.
+Auto Sleep wird während Abläufen blockiert, bei denen Schlafen aktive
+Arbeit unterbrechen oder den Hardware-Zustand schwerer nachvollziehbar
+machen würde.
 
-Current blockers:
+Aktuelle Blocker:
 
-- recording active
-- recording armed
-- recording saving or exporting
-- shutdown pending, including the shutdown confirmation modal
-- display refresh active
-- app-declared storage write activity
-- Wi-Fi access-point setup mode
-- SNTP time sync in progress
+- Aufnahme aktiv
+- Aufnahme scharf geschaltet
+- Aufnahme wird gespeichert oder exportiert
+- Herunterfahren steht bevor, inklusive Herunterfahren-Bestätigungsdialog
+- Display-Auffrischen aktiv
+- app-deklarierte Speicher-Schreibaktivität
+- WLAN-Access-Point-Einrichtungsmodus
+- SNTP-Zeit-Synchronisierung läuft
 
-Plain USB power does not block auto sleep.
+Reine USB-Stromversorgung blockiert Auto Sleep nicht.
 
-During SD format, `storage_service::IsWriteBusy()` raises the `storage_write`
-blocker. That keeps the sleep state machine from entering display sleep or
-light sleep in the middle of the format operation. IMU motion polling still
-continues during that time, but it reads the QMI8658 over the shared sensor
-I2C bus and does not directly contend with the shared SPI bus used by MicroSD
-and the e-paper panel. Motion logs during formatting are therefore expected and
-are not, by themselves, evidence that the SD format path is being interrupted.
+Während der SD-Formatierung hebt `storage_service::IsWriteBusy()` den
+`storage_write`-Blocker. Das hält den Sleep-Zustandsautomaten davon ab,
+während der Formatierung in den Display-Sleep oder Light-Sleep zu gehen.
+IMU-Bewegungs-Polling läuft währenddessen weiter, liest aber den QMI8658
+über den geteilten Sensor-I2C-Bus und konkurriert nicht direkt mit dem
+geteilten SPI-Bus, den MicroSD und das E-Paper-Panel nutzen.
+Bewegungs-Logs während der Formatierung sind daher zu erwarten und sind
+für sich genommen kein Beleg dafür, dass der SD-Formatierungspfad
+unterbrochen wird.
 
-## Configuration
+## Konfiguration
 
-The build-time settings live under `Folloup Settings`:
+Die Build-Time-Einstellungen liegen unter `Folloup Settings`:
 
 - `CONFIG_FOLLOWUP_AUTO_SLEEP_DISPLAY_SLEEP_TIMEOUT_SECONDS`
 - `CONFIG_FOLLOWUP_AUTO_SLEEP_LIGHT_SLEEP_TIMEOUT_SECONDS`
 
-Current defaults:
+Aktuelle Standardwerte:
 
-- display sleep: `180 s` (3 minutes)
-- light sleep: `1800 s` (30 minutes)
+- Display-Sleep: `180 s` (3 Minuten)
+- Light-Sleep: `1800 s` (30 Minuten)
 
-Set either timeout to `0` to disable that stage. When both stages are enabled,
-the light-sleep timeout must be greater than or equal to the display-sleep
-timeout.
+Einen der beiden Timeouts auf `0` setzen, um diese Stufe zu deaktivieren.
+Wenn beide Stufen aktiviert sind, muss das Light-Sleep-Timeout größer oder
+gleich dem Display-Sleep-Timeout sein.
 
 ## Logging
 
-The runtime logs the resolved auto-sleep settings at startup, motion and
-no-motion detection, blocker changes, stage transitions, display sleep/wake
-actions, light-sleep entry, and light-sleep wake cause after
-light sleep. These logs were used for on-device validation and should stay
-stable enough for future hardware testing.
+Die Runtime loggt beim Start die aufgelösten Auto-Sleep-Einstellungen,
+Bewegungs- und Keine-Bewegung-Erkennung, Blocker-Änderungen,
+Stufen-Übergänge, Display-Sleep-/Wake-Aktionen, Light-Sleep-Eintritt und
+die Light-Sleep-Wake-Ursache nach dem Light-Sleep. Diese Logs wurden für
+die Validierung am Gerät genutzt und sollten stabil genug für künftige
+Hardware-Tests bleiben.
 
-## Deferred FIFO And Shared ISR Plan
+## Zurückgestellter FIFO- und Shared-ISR-Plan
 
-FIFO-backed sampling and IMU interrupt handling are intentionally deferred.
-The current `200 ms` polling approach is simple, debuggable, responsive enough,
-and does not require sharing `GPIO7` between two interrupt sources.
+FIFO-gestütztes Sampling und IMU-Interrupt-Behandlung sind bewusst
+zurückgestellt. Der aktuelle `200 ms`-Polling-Ansatz ist einfach,
+debugbar, reaktionsschnell genug und erfordert kein Teilen von `GPIO7`
+zwischen zwei Interrupt-Quellen.
 
-FIFO should be revisited only if one of these becomes true:
+FIFO sollte nur überdacht werden, wenn eines davon eintritt:
 
-- polling consumes too much power
-- short motion bursts are missed
-- I2C traffic becomes a problem
-- smoother motion history is needed for a future feature
+- Polling verbraucht zu viel Strom
+- kurze Bewegungsschübe werden verpasst
+- I2C-Verkehr wird zum Problem
+- eine glattere Bewegungshistorie wird für ein künftiges Feature gebraucht
 
-IMU interrupt handling should be revisited only if one of these becomes true:
+IMU-Interrupt-Behandlung sollte nur überdacht werden, wenn eines davon
+eintritt:
 
-- motion wake needs to work from ESP light sleep
-- pickup wake latency needs to be lower than the polling interval
-- hardware measurements show polling should be replaced
-- another feature needs IMU activity, inactivity, FIFO watermark, orientation,
-  tap, or data-ready interrupts
+- Bewegungs-Wake muss aus dem ESP-Light-Sleep heraus funktionieren
+- die Aufnehmen-Wake-Latenz muss niedriger sein als das Polling-Intervall
+- Hardware-Messungen zeigen, dass Polling ersetzt werden sollte
+- ein anderes Feature braucht IMU-Aktivität-, Inaktivität-,
+  FIFO-Watermark-, Orientierungs-, Tap- oder Data-Ready-Interrupts
 
-The QMI8658 IMU shares the sensor I2C bus with the PMIC and RTC. If the IMU
-interrupt path is added later, neither `power_service` nor `imu_service` should
-claim `GPIO7` independently. Add one shared-line owner that:
+Die QMI8658-IMU teilt sich den Sensor-I2C-Bus mit dem PMIC und der RTC.
+Falls der IMU-Interrupt-Pfad später hinzugefügt wird, sollte weder
+`power_service` noch `imu_service` `GPIO7` unabhängig beanspruchen. Einen
+gemeinsamen Leitungs-Besitzer hinzufügen, der:
 
-- owns the `GPIO7` ISR
-- keeps the ISR minimal
-- defers all I2C work to a task
-- checks and logs PMIC interrupt state without losing existing diagnostics
-- checks and logs IMU interrupt source or FIFO state
-- identifies which source asserted the shared line
-- preserves current auto-sleep behavior until the new interrupt path is proven
+- den `GPIO7`-ISR besitzt
+- den ISR minimal hält
+- alle I2C-Arbeit an einen Task delegiert
+- den PMIC-Interrupt-Zustand prüft und loggt, ohne bestehende Diagnostik
+  zu verlieren
+- die IMU-Interrupt-Quelle oder den FIFO-Zustand prüft und loggt
+- identifiziert, welche Quelle die geteilte Leitung ausgelöst hat
+- das aktuelle Auto-Sleep-Verhalten bewahrt, bis der neue Interrupt-Pfad
+  sich bewährt hat
