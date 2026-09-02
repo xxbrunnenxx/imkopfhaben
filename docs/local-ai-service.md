@@ -283,7 +283,41 @@ proves the code is structurally sound, not that it works on the device.
 - No real hardware to flash and run this on yet (board on order). A clean
   compile is not a runtime guarantee -- network behavior, audio, e-paper
   refresh, and power management are all unverified beyond reading the code.
-- No automated multi-agent code review completed (hit the session's rate
-  limit mid-run); the two bugs it flagged before failing were independently
-  confirmed by direct code inspection and are fixed above, but no broader
-  systematic pass has run.
+- **Automated review re-run 2026-09-02, completed this time** (partially --
+  4 of 8 finder-agent angles didn't return in time; the coordinator finished
+  from its own manual read plus the 4 angles that did return, rather than
+  fabricate the missing ones). Findings:
+  - **Fixed, verified against pre-diff `PerformGet`/`PerformJsonPost` for
+    comparison:** `PostWavClip()` set both an `event_handler` (which
+    appends every `HTTP_EVENT_ON_DATA` chunk to `response.body`) *and*
+    manually drained the body again via `esp_http_client_read()` after
+    fetch_headers -- ESP-IDF fires that event during manual `read()` calls
+    too, not just `_perform()`, so every real transcription response came
+    back double-appended (`{"transcript":"x"}{"transcript":"x"}`), which
+    would have broken JSON parsing on every real recording. Fixed by
+    dropping the event handler from that one function (it's the only one
+    of the three HTTP call sites that reads manually instead of using
+    `_perform()`).
+  - **Confirmed real, not fixed -- needs a decision:** transcription
+    readiness (`recording_session_service.cpp`) now gates only on "is a
+    transcribe URL configured" (a static config string), not on any live
+    reachability check -- unlike `base_url`/the chat model, which has an
+    `Authenticate()` round-trip. An offline device or a down transcription
+    server now blocks for the full `kTranscribeTimeoutMs` (30s) per attempt
+    instead of failing fast. Fixing this properly means adding a health-
+    check subsystem for the transcribe endpoint symmetric to
+    `Authenticate()` -- scoped as a real design decision, not a one-line
+    patch.
+  - Re-confirmed, not new: `transcribe_url` still has no UI field (already
+    listed under "Design decisions" above).
+  - Lower-severity duplication/efficiency findings (not independently
+    re-verified by me, taken from the completed finder angles as-is):
+    repeated HTTP-client boilerplate across `PerformGet`/`PerformJsonPost`/
+    `PostWavClip`; `providerKeys.ts` reimplements the busy-flag/error
+    wrapper already generalized elsewhere in the same file;
+    `BuildChatCompletionRequestBody` reimplements the existing
+    `JsonString()` helper instead of calling it; `summary_service`'s
+    input-trimming loop rebuilds/rescans the whole remaining prompt on
+    every removed entry, now running far more often under the ~40x-smaller
+    local token budget; `GenerateSummary()` re-fetches `base_url`/
+    `model_name` from a snapshot it already holds.
