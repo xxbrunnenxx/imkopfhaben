@@ -62,7 +62,7 @@ esp_err_t Init() {
         "summary_service",
         kWorkerTaskStackWords,  // 8192 words
         nullptr,
-        followup_task_config::kPriorityGemini,
+        followup_task_config::kPriorityLocalAi,
         nullptr,
         followup_task_config::kSystemCore) != pdPASS) {
         ESP_LOGE(kTag, "Failed to start summary worker");
@@ -185,8 +185,8 @@ void WorkerTask(void*) {
 | Fehler | Error Code | Bedeutung |
 |--------|-----------|-----------|
 | `queue_full` | `queue_full` | Max. 4 Requests bereits queued |
-| `gemini_not_ready` | `gemini_not_ready` | Lokaler AI Server nicht erreichbar |
-| `gemini_not_configured` | `gemini_not_configured` | Keine LM Studio URL konfiguriert |
+| `local_ai_not_ready` | `local_ai_not_ready` | Lokaler AI Server nicht erreichbar |
+| `local_ai_not_configured` | `local_ai_not_configured` | Keine LM Studio URL konfiguriert |
 | `storage_read_failed` | `storage_read_failed` | SD Zugriff fehlgeschlagen |
 | `no_summary_source` | `no_summary_source` | Keine transkribierten Aufnahmen vorhanden |
 | `summary_failed` | `summary_failed` | LM Studio HTTP Request fehlgeschlagen |
@@ -227,7 +227,7 @@ bool BeginTranscription(recording_service::RecordedClipPtr clip) {
         "transcription",
         kWorkerTaskStackWords,  // 8192 words
         task_context,
-        followup_task_config::kPriorityGemini,
+        followup_task_config::kPriorityLocalAi,
         &task,
         followup_task_config::kSystemCore);
     

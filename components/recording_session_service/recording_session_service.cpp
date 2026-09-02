@@ -82,10 +82,14 @@ esp_timer_handle_t s_retry_timer = nullptr;
 // the periodic timer and the post-success hook below call in again for the next entry.
 void TryRetryOldestUnsentRecording()
 {
-    if (local_ai_service::GetEffectiveTranscribeUrl().empty()) {
+    // Single snapshot instead of two separate readiness checks: transcription_service already
+    // exports the "is a transcribe URL configured" result via provider_ready (see its own
+    // TranscriptionEndpointConfigured()), no need for a third copy of that check here.
+    const transcription_service::Snapshot ts = transcription_service::GetSnapshot();
+    if (!ts.provider_ready) {
         return;  // nothing configured to retry against
     }
-    if (transcription_service::GetSnapshot().request_in_flight) {
+    if (ts.request_in_flight) {
         return;  // a recording or another retry is already running
     }
     for (const auto& entry : recording_archive_service::ListRecordings()) {
@@ -97,9 +101,31 @@ void TryRetryOldestUnsentRecording()
     }
 }
 
-void OnRetryTimer(void* /*arg*/)
+constexpr uint32_t kRetryKickTaskStackWords = 4096;
+
+void RetryKickTask(void* /*arg*/)
 {
     TryRetryOldestUnsentRecording();
+    vTaskDelete(nullptr);
+}
+
+// Runs a retry pass on its own short-lived task instead of the caller's stack. Both callers
+// below can run inside transcription_service's own NotifyLocked() (WorkerTask holds its
+// s_mutex while calling the event handler chain that ends up here) -- calling
+// TryRetryOldestUnsentRecording() directly would re-enter transcription_service::GetSnapshot(),
+// which locks that same non-recursive mutex, and deadlock on the very first successful
+// transcription. Spawning a task sidesteps the caller's lock entirely, the same pattern already
+// used for playback/re-transcription workers elsewhere in this file.
+void RequestRetryPass()
+{
+    xTaskCreatePinnedToCore(&RetryKickTask, "retry_kick", kRetryKickTaskStackWords, nullptr,
+                            followup_task_config::kPriorityLocalAi, nullptr,
+                            followup_task_config::kSystemCore);
+}
+
+void OnRetryTimer(void* /*arg*/)
+{
+    RequestRetryPass();
 }
 
 uint32_t ResolveClipDurationMs(const recording_service::RecordedClip& clip, uint32_t duration_ms)
@@ -478,14 +504,37 @@ bool BeginArchivedTranscription(const std::string& recording_id)
         return false;  // a recording or another re-transcribe is already running
     }
 
+    {
+        // Also called from the background retry (timer / post-save follow-up), which has no
+        // idea what the user is doing right now. Only proceed when the session is genuinely at
+        // rest -- clobbering phase/s_pending_recording_id mid-recording, mid-tag-selection, or
+        // mid-save would silently drop whatever the user is actively doing (HandlePowerPressUp
+        // and SubmitTagSelection both gate on the exact phase this would overwrite). The manual
+        // retry buttons (details/vibe-check pages) only ever call this while the session is
+        // already idle/complete/failed, so this doesn't change their behavior.
+        std::lock_guard<std::mutex> lock(s_mutex);
+        if (s_snapshot.phase != Phase::kIdle && s_snapshot.phase != Phase::kComplete &&
+            s_snapshot.phase != Phase::kFailed) {
+            return false;
+        }
+    }
+
     recording_service::RecordedClipPtr clip = recording_archive_service::LoadClip(recording_id);
     if (!clip || clip->empty()) {
         std::lock_guard<std::mutex> lock(s_mutex);
-        s_snapshot.phase = Phase::kFailed;
-        s_snapshot.request_in_flight = false;
-        s_snapshot.last_status_message = "Couldn't load recording audio";
-        s_snapshot.last_error_code = "clip_load_failed";
-        s_snapshot.last_error_message = "Failed to read WAV from SD";
+        // Only clobber if nothing else is genuinely transcribing right now: the request_in_flight
+        // pre-check above and this call are two separate lock acquisitions (can't hold both this
+        // mutex and transcription_service's at once without risking a lock-order deadlock with
+        // WorkerTask, see RequestRetryPass), so a second, concurrent BeginArchivedTranscription
+        // call can slip in between them. Without this guard a slow loser here could stomp a
+        // faster winner's just-started kTranscribing state.
+        if (s_snapshot.phase != Phase::kTranscribing) {
+            s_snapshot.phase = Phase::kFailed;
+            s_snapshot.request_in_flight = false;
+            s_snapshot.last_status_message = "Couldn't load recording audio";
+            s_snapshot.last_error_code = "clip_load_failed";
+            s_snapshot.last_error_message = "Failed to read WAV from SD";
+        }
         NotifyLocked();
         return false;
     }
@@ -494,13 +543,18 @@ bool BeginArchivedTranscription(const std::string& recording_id)
         std::lock_guard<std::mutex> lock(s_mutex);
         s_snapshot.clip_saved = true;  // the recording already lives on SD
         s_snapshot.transcript_saved = false;
-        s_pending_recording_id = recording_id;
     }
 
     if (transcription_service::BeginTranscription(clip)) {
         std::lock_guard<std::mutex> lock(s_mutex);
         s_snapshot.phase = Phase::kTranscribing;
         s_snapshot.request_in_flight = true;
+        // Set only on the winning path (transcription_service::BeginTranscription's own
+        // atomic check-and-set is what decides winner/loser between two racing callers) -- a
+        // losing concurrent call below would otherwise have already written its own id here
+        // first and this write could get clobbered by its failure branch afterward, or vice
+        // versa, depending on which call happens to finish first.
+        s_pending_recording_id = recording_id;
         s_snapshot.last_status_message = kTranscribingStatus;
         s_snapshot.last_error_code.clear();
         s_snapshot.last_error_message.clear();
@@ -508,17 +562,23 @@ bool BeginArchivedTranscription(const std::string& recording_id)
         return true;
     }
 
-    // Couldn't start (e.g. no local transcription endpoint configured): surface the
-    // transcription error as a failure.
+    // Couldn't start (e.g. no local transcription endpoint configured, or a concurrent call won
+    // the race for transcription_service's single in-flight slot). Only clear the session's
+    // transcribing state if it's still ours -- i.e. nothing else has since claimed
+    // s_pending_recording_id -- so a loser here can never erase a winner's in-progress
+    // transcription and strand its eventual transcript unattached (see HandleTranscriptionEvent,
+    // which requires phase == kTranscribing and a matching s_pending_recording_id to save it).
     const transcription_service::Snapshot ts = transcription_service::GetSnapshot();
     std::lock_guard<std::mutex> lock(s_mutex);
-    s_snapshot.phase = Phase::kFailed;
-    s_snapshot.request_in_flight = false;
-    s_snapshot.last_status_message =
-        ts.last_status_message.empty() ? "Transcription unavailable" : ts.last_status_message;
-    s_snapshot.last_error_code = ts.last_error_code;
-    s_snapshot.last_error_message = ts.last_error_message;
-    s_pending_recording_id.clear();
+    if (s_pending_recording_id.empty() || s_pending_recording_id == recording_id) {
+        s_snapshot.phase = Phase::kFailed;
+        s_snapshot.request_in_flight = false;
+        s_snapshot.last_status_message =
+            ts.last_status_message.empty() ? "Transcription unavailable" : ts.last_status_message;
+        s_snapshot.last_error_code = ts.last_error_code;
+        s_snapshot.last_error_message = ts.last_error_message;
+        s_pending_recording_id.clear();
+    }
     NotifyLocked();
     return false;
 }
@@ -736,7 +796,7 @@ bool SubmitTagSelection(int selected_index)
              save_result.metadata_path.empty() ? "<none>" : save_result.metadata_path.c_str(),
              save_result.error_code.empty() ? "<none>" : save_result.error_code.c_str());
 
-    const bool transcribe_endpoint_configured = !local_ai_service::GetEffectiveTranscribeUrl().empty();
+    const bool transcribe_endpoint_configured = transcription_service::GetSnapshot().provider_ready;
     const bool should_transcribe = save_result.clip_saved && transcribe_endpoint_configured;
     ESP_LOGI(kTag,
              "Transcription decision: clip_saved=%d transcribe_endpoint_configured=%d should_transcribe=%d",
@@ -921,12 +981,14 @@ void HandleTranscriptionEvent(const transcription_service::Event& event)
             s_pending_recording_id.clear();
             NotifyLocked();
         }
-        // Outside the lock -- BeginArchivedTranscription (called from here) takes s_mutex
-        // itself. A successful save is our signal that the endpoint is reachable right now, so
-        // immediately try the next queued recording instead of waiting out the full timer
-        // interval; a failed save leaves it for the periodic retry (see kTranscriptionRetryIntervalUs).
+        // This whole function can run while transcription_service::WorkerTask still holds its
+        // own s_mutex (it calls the event handler chain from inside NotifyLocked()) -- calling
+        // TryRetryOldestUnsentRecording() directly here would deadlock (see RequestRetryPass's
+        // comment above). A successful save is our signal that the endpoint is reachable right
+        // now, so kick an immediate retry pass instead of waiting out the full timer interval;
+        // a failed save leaves it for the periodic timer (see kTranscriptionRetryIntervalUs).
         if (save_result.transcript_saved) {
-            TryRetryOldestUnsentRecording();
+            RequestRetryPass();
         }
         return;
     }
