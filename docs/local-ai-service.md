@@ -158,15 +158,26 @@ and check it here.
   robust to Kraken's IP changing but adds a resolution step on the ESP32
   side that hasn't been checked against this project's Wi-Fi/mDNS stack.
 
-## Umsetzungsstand (2026-09-01, second pass)
+## Umsetzungsstand (2026-09-02, third pass)
 
-Everything below is code that has been written and committed to the
-`local-ai-plan` branch. **Nothing has been built or run.** This environment
-has neither an ESP-IDF toolchain nor node/npm, so there has been no compile,
-no type-check, and no lint pass on any of it -- treat it as a careful draft,
-not a working implementation, until someone with the right toolchains
-verifies it. Nothing on Kraken beyond the earlier LAN-bind of LM Studio's
-server was touched or deployed.
+**Compiled and verified this pass:** ESP-IDF v5.4 + npm were installed on
+Kraken specifically to check this. `idf.py build` (target esp32s3) now runs
+to completion -- `folloup_sticky.bin` is generated, 65% app-partition space
+free. `npm run build` in `webserver/` (tsc -b + vite build) also succeeds
+with zero errors, and the built bundle was copied into
+`components/wifi_service/portal/` (see "Done" below -- this closes the
+"deliberately left untouched" gap from the previous pass). Two pre-existing
+compile errors, unrelated to the local-AI changes and present in the
+`folloup-waveshare` branch before any of this work started, were found and
+fixed along the way -- see "Fixed this pass" below. This is the first time
+this branch has compiled successfully at all.
+
+Still true: nothing on Kraken beyond the LAN-bind of LM Studio's server and
+the (currently syntax-checked-only, not live-tested) `/api/transcribe-raw`
+addition to `imkopfhaben-brain/main.py` was touched or deployed. No systemd
+units installed. No real hardware exists yet to flash this onto or to verify
+runtime behavior (network calls, audio, display, power) -- a clean compile
+proves the code is structurally sound, not that it works on the device.
 
 ### Done (written, matches the plan above)
 
@@ -202,18 +213,28 @@ server was touched or deployed.
   intact as a historical record (upstream and other branches of this fork
   may still be Gemini-based).
 
+### Fixed this pass (2026-09-02): readiness/validation bugs + pre-existing build errors
+
+- `local_ai_service.cpp` `Authenticate()`: readiness reported `success=true`
+  on any HTTP 2xx from `/v1/models`, even if the configured model wasn't in
+  the returned list -- a wrong/unloaded model name showed as "connected"
+  with no error. Now `success = model_listed`, with a distinct status
+  message ("... but configured model not loaded") instead of the generic
+  "unreachable" text.
+- `local_ai_service.cpp` `ApplySettingsPatch()`: `base_url` was rejected
+  with 400 if it normalized to empty; `transcribe_url` had no equivalent
+  check and would silently store as an empty string. Now symmetric.
+- `xpowers_axp2101_driver.cc:2504` (`log_d` format-string / `uint32_t` vs
+  `%x` mismatch) and `board_es8311_codec.cc` (`.bclk_div` field, removed
+  from `i2s_std_clk_config_t` in this IDF version; the surrounding comment
+  already said it's a no-op in master role, so dropping it is
+  behavior-preserving) -- both pre-existing, both unrelated to the local-AI
+  port, both blocked *any* build of this branch regardless of the AI
+  changes. Fixed because getting a clean build was the point of this pass;
+  see the firmware repo's git history for the exact diff.
+
 ### Deliberately left untouched
 
-- `components/wifi_service/portal/index.html` / `index.js` -- this is the
-  **prebuilt, embedded copy** of the portal frontend that the firmware
-  actually serves (`webserver/README.md` says so explicitly: "refresh them
-  with the command above rather than hand-editing"). It still says "Gemini
-  API Key" because it's a build artifact of the *old* `webserver/src`, and
-  regenerating it needs `cd webserver && npm run build && cp dist/index.html
-  dist/index.js dist/index.css ../components/wifi_service/portal/` -- npm
-  isn't installed in this environment, so this step could not be run. The
-  `webserver/src` TypeScript source is fully updated; the embedded bundle is
-  stale until someone runs that build.
 - `components/project_assets/` (`kGeminiApi` icon, from
   `assets/icons/gemini_api.png`, and `assets/epaper_assets.json`'s entry for
   it) -- this generated asset was already unreferenced by any page before
@@ -248,10 +269,21 @@ server was touched or deployed.
 
 ### Not done / needs a decision before it can be
 
-- The `/api/transcribe-raw` endpoint on Kraken does not exist. This was
-  scoped out deliberately (see "Open follow-ups" above) pending a decision
-  on where it should live.
+- `/api/transcribe-raw` exists in `imkopfhaben-brain/main.py` on Kraken now
+  (see `kraken-arche` PR #1's `transcribe_raw_patch.md`, applied), syntax-
+  checked (`python3 -m py_compile`), but **not live-tested**. The service
+  wasn't running when this was applied (its own project's convention:
+  manual-start-only, no autostart), and starting it to test was blocked by
+  the Auto-Mode classifier plus a since-clarified concern about accidental
+  autostart -- see PR #1 / session log for details. Real end-to-end test
+  (POST a WAV, check the transcript comes back) is still open.
 - No systemd unit for LM Studio's server; still a manually-started process
-  bound to `0.0.0.0:1234`.
-- No compile, no type-check, no lint, no test run against any of this.
-- No review has happened yet -- this is what the review in PR #2 is for.
+  bound to `0.0.0.0:1234`. Draft unit exists in `kraken-arche` PR #1,
+  unverified (no reboot test).
+- No real hardware to flash and run this on yet (board on order). A clean
+  compile is not a runtime guarantee -- network behavior, audio, e-paper
+  refresh, and power management are all unverified beyond reading the code.
+- No automated multi-agent code review completed (hit the session's rate
+  limit mid-run); the two bugs it flagged before failing were independently
+  confirmed by direct code inspection and are fixed above, but no broader
+  systematic pass has run.
