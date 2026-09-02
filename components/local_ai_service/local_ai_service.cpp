@@ -1,4 +1,4 @@
-#include "gemini_service.h"
+#include "local_ai_service.h"
 
 #include <algorithm>
 #include <array>
@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "cJSON.h"
-#include "esp_crt_bundle.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -25,32 +24,35 @@
 #include "recording_service.h"
 #include "sdkconfig.h"
 
-namespace gemini_service {
+// Local AI backend: a household server ("Kraken") running LM Studio's OpenAI-compatible REST
+// API for text generation (google/gemma-4-e2b) and a small local endpoint wrapping
+// faster-whisper for transcription. Both are plain HTTP on the LAN -- no TLS, no API key. See
+// docs/local-ai-service.md for the facts this was built against (verified 2026-09-01) and what
+// is still open.
+namespace local_ai_service {
 namespace {
 
-constexpr const char* kTag = "GeminiService";
-constexpr const char* kSettingsTag = "GeminiSettings";
-constexpr const char* kStorageNamespace = "gemini";
-constexpr const char* kStorageApiKey = "api_key";
-constexpr const char* kDefaultModelName = "models/gemini-2.5-flash-lite";
-constexpr const char* kGeminiApiBaseUrl = "https://generativelanguage.googleapis.com/v1beta/";
-constexpr const char* kPortalApiSettingsGeminiUri = "/api/settings/gemini";
-constexpr const char* kPortalApiSettingsGeminiResetUri = "/api/settings/gemini/reset";
-constexpr const char* kPortalApiRuntimeGeminiUri = "/api/runtime/gemini";
+constexpr const char* kTag = "LocalAiService";
+constexpr const char* kSettingsTag = "LocalAiSettings";
+constexpr const char* kStorageNamespace = "local_ai";
+constexpr const char* kStorageBaseUrl = "base_url";
+constexpr const char* kStorageTranscribeUrl = "transcribe_url";
+constexpr const char* kDefaultModelName = "google/gemma-4-e2b";
+constexpr const char* kPortalApiSettingsUri = "/api/settings/local_ai";
+constexpr const char* kPortalApiSettingsResetUri = "/api/settings/local_ai/reset";
+constexpr const char* kPortalApiRuntimeUri = "/api/runtime/local_ai";
 constexpr size_t kMaxPortalPayloadLen = 512;
-constexpr int kAuthTimeoutMs = 15000;
-constexpr int kGenerateTimeoutMs = 60000;  // text generation can be slow for large prompts
+constexpr int kAuthTimeoutMs = 5000;      // LAN round-trip, not a WAN one -- keep this tight
+constexpr int kGenerateTimeoutMs = 60000;  // reasoning_effort=none keeps this well under budget
+                                            // in practice, but leave headroom for a cold model
+constexpr int kTranscribeTimeoutMs = 30000;
 constexpr uint32_t kAuthTaskStackWords = 8192;
 
-// Audio transcription (resumable file upload + generateContent-with-fileData).
-constexpr const char* kUploadUrl =
-    "https://generativelanguage.googleapis.com/upload/v1beta/files";
-constexpr const char* kAudioMimeType = "audio/wav";
-constexpr const char* kTranscriptPrompt =
-    "Generate a verbatim transcript of the speech in this audio. Respond with transcript text "
-    "only. Do not add commentary or formatting.";
-constexpr int kTranscribeTimeoutMs = 30000;
-constexpr size_t kHttpUploadChunkSamples = 2048;
+// Mandatory: without this, gemma-4-e2b spends most of its output budget on hidden
+// reasoning_content before it ever emits a real answer. Measured: a trivial one-sentence prompt
+// used 122 completion tokens, 114 of them reasoning, until this flag was added. See
+// docs/local-ai-service.md.
+constexpr const char* kReasoningEffortNone = "none";
 
 struct AuthResult {
     bool success = false;
@@ -66,11 +68,10 @@ struct HttpResponse {
     std::string body;
     std::string error_code;
     std::string error_message;
-    std::string upload_url;  // captured from the x-goog-upload-url header (resumable upload)
 };
 
 struct AuthTaskContext {
-    std::string api_key;
+    std::string base_url;
     std::string model_name;
     uint32_t generation = 0;
 };
@@ -86,7 +87,8 @@ bool s_auth_checked = false;
 bool s_authenticated = false;
 uint32_t s_auth_generation = 0;
 int s_last_http_status = 0;
-std::string s_stored_api_key;
+std::string s_stored_base_url;
+std::string s_stored_transcribe_url;
 std::string s_last_status_message;
 std::string s_last_model_resource_name;
 std::string s_last_model_display_name;
@@ -113,6 +115,16 @@ std::string TrimForLog(std::string value, size_t max_len = 96)
     return value.substr(0, max_len - 3) + "...";
 }
 
+// Ensure a base URL ends with a single trailing slash, so callers can just append e.g. "models".
+std::string NormalizeBaseUrl(std::string url)
+{
+    url = TrimCopy(std::move(url));
+    if (!url.empty() && url.back() != '/') {
+        url += '/';
+    }
+    return url;
+}
+
 std::string ReadNvsString(nvs_handle_t handle, const char* key)
 {
     size_t size = 0;
@@ -130,47 +142,63 @@ std::string ReadNvsString(nvs_handle_t handle, const char* key)
     return value;
 }
 
-std::string LoadStoredApiKey()
+bool WriteNvsString(nvs_handle_t handle, const char* key, const std::string& value)
 {
+    esp_err_t err = value.empty() ? nvs_erase_key(handle, key) : nvs_set_str(handle, key, value.c_str());
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        err = ESP_OK;  // erasing a key that was never set is not a failure
+    }
+    return err == ESP_OK;
+}
+
+struct StoredUrls {
+    std::string base_url;
+    std::string transcribe_url;
+};
+
+StoredUrls LoadStoredUrls()
+{
+    StoredUrls stored = {};
     nvs_handle_t handle = 0;
     esp_err_t err = nvs_open(kStorageNamespace, NVS_READONLY, &handle);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
-        return {};
+        return stored;
     }
     if (err != ESP_OK) {
-        ESP_LOGW(kSettingsTag, "Failed to open Gemini NVS namespace: %s", esp_err_to_name(err));
-        return {};
+        ESP_LOGW(kSettingsTag, "Failed to open local_ai NVS namespace: %s", esp_err_to_name(err));
+        return stored;
     }
 
-    const std::string api_key = TrimCopy(ReadNvsString(handle, kStorageApiKey));
+    stored.base_url = NormalizeBaseUrl(ReadNvsString(handle, kStorageBaseUrl));
+    stored.transcribe_url = TrimCopy(ReadNvsString(handle, kStorageTranscribeUrl));
     nvs_close(handle);
-    return api_key;
+    return stored;
 }
 
-bool SaveStoredApiKey(const std::string& api_key)
+bool SaveStoredUrls(const StoredUrls& stored)
 {
     nvs_handle_t handle = 0;
     esp_err_t err = nvs_open(kStorageNamespace, NVS_READWRITE, &handle);
     if (err != ESP_OK) {
-        ESP_LOGE(kSettingsTag, "Failed to open Gemini NVS namespace for write: %s",
+        ESP_LOGE(kSettingsTag, "Failed to open local_ai NVS namespace for write: %s",
                  esp_err_to_name(err));
         return false;
     }
 
-    err = nvs_set_str(handle, kStorageApiKey, api_key.c_str());
-    if (err == ESP_OK) {
-        err = nvs_commit(handle);
+    bool ok = WriteNvsString(handle, kStorageBaseUrl, stored.base_url) &&
+              WriteNvsString(handle, kStorageTranscribeUrl, stored.transcribe_url);
+    if (ok) {
+        ok = nvs_commit(handle) == ESP_OK;
     }
     nvs_close(handle);
 
-    if (err != ESP_OK) {
-        ESP_LOGE(kSettingsTag, "Failed to save Gemini API key: %s", esp_err_to_name(err));
-        return false;
+    if (!ok) {
+        ESP_LOGE(kSettingsTag, "Failed to save local AI settings");
     }
-    return true;
+    return ok;
 }
 
-bool ClearStoredApiKeyFromNvs()
+bool ClearStoredUrlsFromNvs()
 {
     nvs_handle_t handle = 0;
     esp_err_t err = nvs_open(kStorageNamespace, NVS_READWRITE, &handle);
@@ -178,62 +206,63 @@ bool ClearStoredApiKeyFromNvs()
         return true;
     }
     if (err != ESP_OK) {
-        ESP_LOGE(kSettingsTag, "Failed to open Gemini NVS namespace for clear: %s",
+        ESP_LOGE(kSettingsTag, "Failed to open local_ai NVS namespace for clear: %s",
                  esp_err_to_name(err));
         return false;
     }
 
-    err = nvs_erase_key(handle, kStorageApiKey);
-    if (err == ESP_ERR_NVS_NOT_FOUND) {
-        err = ESP_OK;
-    }
-    if (err == ESP_OK) {
-        err = nvs_commit(handle);
+    esp_err_t erase_base = nvs_erase_key(handle, kStorageBaseUrl);
+    esp_err_t erase_transcribe = nvs_erase_key(handle, kStorageTranscribeUrl);
+    bool ok = (erase_base == ESP_OK || erase_base == ESP_ERR_NVS_NOT_FOUND) &&
+              (erase_transcribe == ESP_OK || erase_transcribe == ESP_ERR_NVS_NOT_FOUND);
+    if (ok) {
+        ok = nvs_commit(handle) == ESP_OK;
     }
     nvs_close(handle);
 
-    if (err != ESP_OK) {
-        ESP_LOGE(kSettingsTag, "Failed to clear Gemini API key: %s", esp_err_to_name(err));
-        return false;
+    if (!ok) {
+        ESP_LOGE(kSettingsTag, "Failed to clear local AI settings");
     }
-    return true;
+    return ok;
 }
 
-std::string GetSdkConfigApiKey()
+std::string GetSdkConfigBaseUrl()
 {
-#if defined(CONFIG_FOLLOWUP_GEMINI_API_KEY)
-    return TrimCopy(CONFIG_FOLLOWUP_GEMINI_API_KEY);
+#if defined(CONFIG_FOLLOWUP_LOCAL_AI_BASE_URL)
+    return NormalizeBaseUrl(CONFIG_FOLLOWUP_LOCAL_AI_BASE_URL);
 #else
     return {};
 #endif
 }
 
-std::string GetEffectiveApiKeyLocked()
+std::string GetSdkConfigTranscribeUrl()
 {
-    if (!s_stored_api_key.empty()) {
-        return s_stored_api_key;
-    }
-    return GetSdkConfigApiKey();
+#if defined(CONFIG_FOLLOWUP_LOCAL_AI_TRANSCRIBE_URL)
+    return TrimCopy(CONFIG_FOLLOWUP_LOCAL_AI_TRANSCRIBE_URL);
+#else
+    return {};
+#endif
 }
 
-ApiKeySource GetApiKeySourceLocked()
+std::string GetEffectiveBaseUrlLocked()
 {
-    if (!s_stored_api_key.empty()) {
-        return ApiKeySource::kNvs;
+    if (!s_stored_base_url.empty()) {
+        return s_stored_base_url;
     }
-    if (!GetSdkConfigApiKey().empty()) {
-        return ApiKeySource::kSdkConfig;
-    }
-    return ApiKeySource::kNone;
+    return GetSdkConfigBaseUrl();
 }
 
-std::string GetApiKeyLast4Locked()
+std::string GetEffectiveTranscribeUrlLocked()
 {
-    const std::string key = GetEffectiveApiKeyLocked();
-    if (key.size() < 4) {
-        return {};
+    if (!s_stored_transcribe_url.empty()) {
+        return s_stored_transcribe_url;
     }
-    return key.substr(key.size() - 4);
+    return GetSdkConfigTranscribeUrl();
+}
+
+UrlSource GetUrlSourceLocked()
+{
+    return s_stored_base_url.empty() ? UrlSource::kBuiltIn : UrlSource::kNvs;
 }
 
 void SetLastErrorLocked(const char* error_code, const char* message)
@@ -250,15 +279,16 @@ void ClearLastErrorLocked()
 
 Snapshot BuildSnapshotLocked()
 {
-    const std::string sdkconfig_api_key = GetSdkConfigApiKey();
-    const bool configured = !GetEffectiveApiKeyLocked().empty();
+    const std::string base_url = GetEffectiveBaseUrlLocked();
+    const bool configured = !base_url.empty();
 
     Snapshot snapshot = {};
     snapshot.settings.configured = configured;
-    snapshot.settings.has_stored_api_key = !s_stored_api_key.empty();
-    snapshot.settings.has_sdkconfig_api_key = !sdkconfig_api_key.empty();
-    snapshot.settings.api_key_source = GetApiKeySourceLocked();
-    snapshot.settings.api_key_last4 = GetApiKeyLast4Locked();
+    snapshot.settings.has_stored_base_url = !s_stored_base_url.empty();
+    snapshot.settings.has_stored_transcribe_url = !s_stored_transcribe_url.empty();
+    snapshot.settings.base_url_source = GetUrlSourceLocked();
+    snapshot.settings.base_url = base_url;
+    snapshot.settings.transcribe_url = GetEffectiveTranscribeUrlLocked();
     snapshot.settings.model_name = kDefaultModelName;
 
     snapshot.runtime.initialized = s_initialized;
@@ -300,7 +330,7 @@ bool ShouldStartAuthenticationLocked()
            s_network_connected &&
            !s_request_in_flight &&
            !s_authenticated &&
-           !GetEffectiveApiKeyLocked().empty();
+           !GetEffectiveBaseUrlLocked().empty();
 }
 
 esp_err_t HttpEventHandler(esp_http_client_event_t* event)
@@ -315,10 +345,6 @@ esp_err_t HttpEventHandler(esp_http_client_event_t* event)
         event->data_len > 0) {
         response->body.append(static_cast<const char*>(event->data),
                               static_cast<size_t>(event->data_len));
-    } else if (event->event_id == HTTP_EVENT_ON_HEADER && response != nullptr &&
-               event->header_key != nullptr && event->header_value != nullptr &&
-               strcasecmp(event->header_key, "x-goog-upload-url") == 0) {
-        response->upload_url = event->header_value;
     }
     return ESP_OK;
 }
@@ -348,46 +374,39 @@ void PopulateHttpError(cJSON* root, const HttpResponse& response,
     if (root != nullptr) {
         cJSON* error = cJSON_GetObjectItemCaseSensitive(root, "error");
         if (cJSON_IsObject(error)) {
-            const std::string status = JsonStringField(error, "status");
             const std::string message = JsonStringField(error, "message");
-            if (!status.empty()) {
-                *error_code = status;
-            }
             if (!message.empty()) {
                 *error_message = message;
             }
+        } else if (cJSON_IsString(error) && error->valuestring != nullptr) {
+            *error_message = error->valuestring;
         }
     }
     if (error_message->empty()) {
         *error_message =
-            response.body.empty() ? "Gemini request failed" : response.body;
+            response.body.empty() ? "Local AI request failed" : response.body;
     }
     *error_message = TrimForLog(std::move(*error_message));
 }
 
-HttpResponse PerformGeminiModelGet(const std::string& api_key,
-                                   const std::string& model_name)
+HttpResponse PerformGet(const std::string& url, int timeout_ms)
 {
     HttpResponse response = {};
-    std::string url = kGeminiApiBaseUrl;
-    url += model_name;
 
     esp_http_client_config_t config = {};
     config.url = url.c_str();
     config.method = HTTP_METHOD_GET;
-    config.crt_bundle_attach = esp_crt_bundle_attach;
-    config.timeout_ms = kAuthTimeoutMs;
+    config.timeout_ms = timeout_ms;
     config.event_handler = &HttpEventHandler;
     config.user_data = &response;
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (client == nullptr) {
         response.error_code = "http_client_init_failed";
-        response.error_message = "Failed to initialize Gemini HTTP client";
+        response.error_message = "Failed to initialize local AI HTTP client";
         return response;
     }
 
-    esp_http_client_set_header(client, "x-goog-api-key", api_key.c_str());
     esp_http_client_set_header(client, "Accept", "application/json");
     esp_http_client_set_header(client, "User-Agent", "folloup-sticky");
 
@@ -402,10 +421,71 @@ HttpResponse PerformGeminiModelGet(const std::string& api_key,
     return response;
 }
 
-AuthResult Authenticate(const std::string& api_key, const std::string& model_name)
+// Synchronous JSON POST (chat/completions).
+HttpResponse PerformJsonPost(const std::string& url, const std::string& body, int timeout_ms)
+{
+    HttpResponse response = {};
+
+    esp_http_client_config_t config = {};
+    config.url = url.c_str();
+    config.method = HTTP_METHOD_POST;
+    config.timeout_ms = timeout_ms;
+    config.event_handler = &HttpEventHandler;
+    config.user_data = &response;
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == nullptr) {
+        response.error_code = "http_client_init_failed";
+        response.error_message = "Failed to initialize local AI HTTP client";
+        return response;
+    }
+
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "Accept", "application/json");
+    esp_http_client_set_header(client, "User-Agent", "folloup-sticky");
+    esp_http_client_set_post_field(client, body.c_str(), static_cast<int>(body.size()));
+
+    const esp_err_t err = esp_http_client_perform(client);
+    response.status_code = esp_http_client_get_status_code(client);
+    esp_http_client_cleanup(client);
+
+    if (err != ESP_OK) {
+        response.error_code = "transport_error";
+        response.error_message = esp_err_to_name(err);
+    }
+    return response;
+}
+
+// Matches whether the /v1/models "data" array contains an entry whose "id" equals model_name;
+// returns that id as both resource + display name (LM Studio's model list has no separate
+// display name field).
+bool FindModelInModelsResponse(cJSON* root, const std::string& model_name, std::string* found_id)
+{
+    if (root == nullptr) {
+        return false;
+    }
+    cJSON* data = cJSON_GetObjectItemCaseSensitive(root, "data");
+    if (!cJSON_IsArray(data)) {
+        return false;
+    }
+    cJSON* entry = nullptr;
+    cJSON_ArrayForEach(entry, data)
+    {
+        const std::string id = JsonStringField(entry, "id");
+        if (id == model_name) {
+            if (found_id != nullptr) {
+                *found_id = id;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+AuthResult Authenticate(const std::string& base_url, const std::string& model_name)
 {
     AuthResult result = {};
-    const HttpResponse http = PerformGeminiModelGet(api_key, model_name);
+    const HttpResponse http = PerformGet(base_url + "models", kAuthTimeoutMs);
     result.http_status = http.status_code;
 
     if (!http.error_code.empty()) {
@@ -416,9 +496,15 @@ AuthResult Authenticate(const std::string& api_key, const std::string& model_nam
 
     cJSON* root = cJSON_ParseWithLength(http.body.c_str(), http.body.size());
     if (http.status_code >= 200 && http.status_code < 300) {
-        result.success = true;
-        result.model_resource_name = JsonStringField(root, "name");
-        result.model_display_name = JsonStringField(root, "displayName");
+        std::string found_id;
+        const bool model_listed = FindModelInModelsResponse(root, model_name, &found_id);
+        result.success = model_listed;
+        result.model_resource_name = model_listed ? found_id : model_name;
+        result.model_display_name = model_listed ? found_id : (model_name + " (not listed)");
+        if (!model_listed) {
+            result.error_code = "model_not_listed";
+            result.error_message = "Configured model \"" + model_name + "\" not found in /v1/models response";
+        }
         if (root != nullptr) {
             cJSON_Delete(root);
         }
@@ -447,7 +533,9 @@ void CompleteAuthentication(uint32_t generation, const AuthResult& result)
 
             if (!result.success) {
                 s_authenticated = false;
-                s_last_status_message = "Authentication failed";
+                s_last_status_message = result.error_code == "model_not_listed"
+                                             ? "Local AI server reachable, but configured model not loaded"
+                                             : "Local AI server unreachable";
                 s_last_model_resource_name.clear();
                 s_last_model_display_name.clear();
                 SetLastErrorLocked(result.error_code.c_str(), result.error_message.c_str());
@@ -456,30 +544,28 @@ void CompleteAuthentication(uint32_t generation, const AuthResult& result)
                 s_last_model_resource_name = result.model_resource_name;
                 s_last_model_display_name = result.model_display_name;
                 s_last_status_message = !s_last_model_display_name.empty()
-                                            ? "Authenticated with " + s_last_model_display_name
-                                            : "Authenticated with Gemini";
+                                            ? "Connected to " + s_last_model_display_name
+                                            : "Connected to local AI server";
                 ClearLastErrorLocked();
             }
         }
     }
 
     if (stale_result) {
-        ESP_LOGI(kTag, "Ignoring stale Gemini authentication result for generation %lu",
+        ESP_LOGI(kTag, "Ignoring stale local AI readiness result for generation %lu",
                  static_cast<unsigned long>(generation));
         return;
     }
 
     if (!result.success) {
-        ESP_LOGW(kTag, "Gemini authentication failed: http=%d code=%s message=%s",
+        ESP_LOGW(kTag, "Local AI readiness check failed: http=%d code=%s message=%s",
                  result.http_status,
                  result.error_code.empty() ? "http_error" : result.error_code.c_str(),
                  result.error_message.empty() ? "unknown" : result.error_message.c_str());
     } else {
-        ESP_LOGI(kTag, "Gemini authentication succeeded: model=%s display=%s http=%d",
+        ESP_LOGI(kTag, "Local AI readiness check succeeded: model=%s http=%d",
                  result.model_resource_name.empty() ? "unknown"
                                                     : result.model_resource_name.c_str(),
-                 result.model_display_name.empty() ? "unknown"
-                                                   : result.model_display_name.c_str(),
                  result.http_status);
     }
 
@@ -496,13 +582,13 @@ void AuthenticationTask(void* arg)
             .model_resource_name = {},
             .model_display_name = {},
             .error_code = "task_context_missing",
-            .error_message = "Gemini authentication task context missing",
+            .error_message = "Local AI readiness task context missing",
         });
         vTaskDelete(nullptr);
         return;
     }
 
-    const AuthResult result = Authenticate(context->api_key, context->model_name);
+    const AuthResult result = Authenticate(context->base_url, context->model_name);
     CompleteAuthentication(context->generation, result);
     vTaskDelete(nullptr);
 }
@@ -589,13 +675,13 @@ void AppendSnapshot(cJSON* root, const Snapshot& snapshot, const char* message)
 
     cJSON* settings = cJSON_AddObjectToObject(root, "settings");
     cJSON_AddBoolToObject(settings, "configured", snapshot.settings.configured);
-    cJSON_AddBoolToObject(settings, "has_stored_api_key", snapshot.settings.has_stored_api_key);
-    cJSON_AddBoolToObject(settings, "has_sdkconfig_api_key",
-                          snapshot.settings.has_sdkconfig_api_key);
-    cJSON_AddStringToObject(settings, "api_key_source",
-                            ApiKeySourceName(snapshot.settings.api_key_source));
-    cJSON_AddStringToObject(settings, "api_key_last4",
-                            snapshot.settings.api_key_last4.c_str());
+    cJSON_AddBoolToObject(settings, "has_stored_base_url", snapshot.settings.has_stored_base_url);
+    cJSON_AddBoolToObject(settings, "has_stored_transcribe_url",
+                          snapshot.settings.has_stored_transcribe_url);
+    cJSON_AddStringToObject(settings, "base_url_source",
+                            UrlSourceName(snapshot.settings.base_url_source));
+    cJSON_AddStringToObject(settings, "base_url", snapshot.settings.base_url.c_str());
+    cJSON_AddStringToObject(settings, "transcribe_url", snapshot.settings.transcribe_url.c_str());
     cJSON_AddStringToObject(settings, "model_name", snapshot.settings.model_name.c_str());
 
     cJSON* runtime = cJSON_AddObjectToObject(root, "runtime");
@@ -635,13 +721,25 @@ bool ParsePatchBody(const std::string& body, SettingsPatch* patch, std::string* 
         return false;
     }
 
-    cJSON* api_key = cJSON_GetObjectItemCaseSensitive(root, "api_key");
-    if (cJSON_IsString(api_key) && api_key->valuestring != nullptr) {
-        patch->has_api_key = true;
-        patch->api_key = api_key->valuestring;
-    } else if (api_key != nullptr && !cJSON_IsNull(api_key)) {
+    cJSON* base_url = cJSON_GetObjectItemCaseSensitive(root, "base_url");
+    if (cJSON_IsString(base_url) && base_url->valuestring != nullptr) {
+        patch->has_base_url = true;
+        patch->base_url = base_url->valuestring;
+    } else if (base_url != nullptr && !cJSON_IsNull(base_url)) {
         if (error != nullptr) {
-            *error = "Invalid api_key";
+            *error = "Invalid base_url";
+        }
+        cJSON_Delete(root);
+        return false;
+    }
+
+    cJSON* transcribe_url = cJSON_GetObjectItemCaseSensitive(root, "transcribe_url");
+    if (cJSON_IsString(transcribe_url) && transcribe_url->valuestring != nullptr) {
+        patch->has_transcribe_url = true;
+        patch->transcribe_url = transcribe_url->valuestring;
+    } else if (transcribe_url != nullptr && !cJSON_IsNull(transcribe_url)) {
+        if (error != nullptr) {
+            *error = "Invalid transcribe_url";
         }
         cJSON_Delete(root);
         return false;
@@ -659,7 +757,7 @@ esp_err_t RegisterPortalRoute(httpd_handle_t server, const httpd_uri_t* handler)
 
     const esp_err_t err = httpd_register_uri_handler(server, handler);
     if (err != ESP_OK) {
-        ESP_LOGE(kTag, "Failed to register Gemini portal route %s [%d]: %s",
+        ESP_LOGE(kTag, "Failed to register local AI portal route %s [%d]: %s",
                  handler->uri != nullptr ? handler->uri : "<null>",
                  static_cast<int>(handler->method),
                  esp_err_to_name(err));
@@ -670,7 +768,7 @@ esp_err_t RegisterPortalRoute(httpd_handle_t server, const httpd_uri_t* handler)
 esp_err_t HandlePortalSettingsGet(httpd_req_t* request)
 {
     cJSON* root = cJSON_CreateObject();
-    AppendSnapshot(root, GetSnapshot(), "Gemini settings loaded");
+    AppendSnapshot(root, GetSnapshot(), "Local AI settings loaded");
     return SendJsonResponse(request, 200, root);
 }
 
@@ -681,7 +779,7 @@ esp_err_t HandlePortalSettingsPatch(httpd_req_t* request)
         request->content_len > static_cast<int>(kMaxPortalPayloadLen)) {
         cJSON* root = cJSON_CreateObject();
         cJSON_AddBoolToObject(root, "success", false);
-        cJSON_AddStringToObject(root, "message", "Invalid Gemini settings payload");
+        cJSON_AddStringToObject(root, "message", "Invalid local AI settings payload");
         return SendJsonResponse(request, 400, root);
     }
 
@@ -692,7 +790,7 @@ esp_err_t HandlePortalSettingsPatch(httpd_req_t* request)
         cJSON* root = cJSON_CreateObject();
         cJSON_AddBoolToObject(root, "success", false);
         cJSON_AddStringToObject(root, "message",
-                                parse_error.empty() ? "Invalid Gemini settings payload"
+                                parse_error.empty() ? "Invalid local AI settings payload"
                                                     : parse_error.c_str());
         return SendJsonResponse(request, 400, root);
     }
@@ -708,13 +806,13 @@ esp_err_t HandlePortalSettingsPatch(httpd_req_t* request)
     }
 
     cJSON* root = cJSON_CreateObject();
-    AppendSnapshot(root, GetSnapshot(), "Gemini API key stored");
+    AppendSnapshot(root, GetSnapshot(), "Local AI settings stored");
     return SendJsonResponse(request, 200, root);
 }
 
 esp_err_t HandlePortalSettingsReset(httpd_req_t* request)
 {
-    const Result result = ClearStoredApiKey();
+    const Result result = ResetStoredSettings();
     if (!result.success) {
         cJSON* root = cJSON_CreateObject();
         cJSON_AddBoolToObject(root, "success", false);
@@ -725,71 +823,31 @@ esp_err_t HandlePortalSettingsReset(httpd_req_t* request)
     }
 
     cJSON* root = cJSON_CreateObject();
-    AppendSnapshot(root, GetSnapshot(), "Gemini API key cleared");
+    AppendSnapshot(root, GetSnapshot(), "Local AI settings reset to built-in defaults");
     return SendJsonResponse(request, 200, root);
 }
 
 esp_err_t HandlePortalRuntimeGet(httpd_req_t* request)
 {
     cJSON* root = cJSON_CreateObject();
-    AppendSnapshot(root, GetSnapshot(), "Gemini runtime loaded");
+    AppendSnapshot(root, GetSnapshot(), "Local AI runtime loaded");
     return SendJsonResponse(request, 200, root);
 }
 
-// Synchronous JSON POST to a Gemini endpoint (generateContent / countTokens).
-HttpResponse PerformGeminiPost(const std::string& url, const std::string& api_key,
-                               const std::string& body)
-{
-    HttpResponse response = {};
-
-    esp_http_client_config_t config = {};
-    config.url = url.c_str();
-    config.method = HTTP_METHOD_POST;
-    config.crt_bundle_attach = esp_crt_bundle_attach;
-    config.timeout_ms = kGenerateTimeoutMs;
-    config.event_handler = &HttpEventHandler;
-    config.user_data = &response;
-
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    if (client == nullptr) {
-        response.error_code = "http_client_init_failed";
-        response.error_message = "Failed to initialize Gemini HTTP client";
-        return response;
-    }
-
-    esp_http_client_set_header(client, "x-goog-api-key", api_key.c_str());
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_header(client, "Accept", "application/json");
-    esp_http_client_set_header(client, "User-Agent", "folloup-sticky");
-    esp_http_client_set_post_field(client, body.c_str(), static_cast<int>(body.size()));
-
-    const esp_err_t err = esp_http_client_perform(client);
-    response.status_code = esp_http_client_get_status_code(client);
-    esp_http_client_cleanup(client);
-
-    if (err != ESP_OK) {
-        response.error_code = "transport_error";
-        response.error_message = esp_err_to_name(err);
-    }
-    return response;
-}
-
-// A single text-part prompt: {"contents":[{"parts":[{"text": prompt}]}]}. temperature=0 keeps
-// summaries deterministic; countTokens ignores generationConfig, so it is harmless there.
-std::string BuildTextRequestBody(const std::string& prompt, bool include_generation_config)
+// A single text-part chat message: {"model":..,"messages":[{"role":"user","content":prompt}],
+// "temperature":0,"reasoning_effort":"none"}.
+std::string BuildChatCompletionRequestBody(const std::string& model_name, const std::string& prompt)
 {
     cJSON* root = cJSON_CreateObject();
-    cJSON* contents = cJSON_AddArrayToObject(root, "contents");
-    cJSON* content = cJSON_CreateObject();
-    cJSON_AddItemToArray(contents, content);
-    cJSON* parts = cJSON_AddArrayToObject(content, "parts");
-    cJSON* prompt_part = cJSON_CreateObject();
-    cJSON_AddStringToObject(prompt_part, "text", prompt.c_str());
-    cJSON_AddItemToArray(parts, prompt_part);
-    if (include_generation_config) {
-        cJSON* generation_config = cJSON_AddObjectToObject(root, "generationConfig");
-        cJSON_AddNumberToObject(generation_config, "temperature", 0);
-    }
+    cJSON_AddStringToObject(root, "model", model_name.c_str());
+    cJSON* messages = cJSON_AddArrayToObject(root, "messages");
+    cJSON* message = cJSON_CreateObject();
+    cJSON_AddStringToObject(message, "role", "user");
+    cJSON_AddStringToObject(message, "content", prompt.c_str());
+    cJSON_AddItemToArray(messages, message);
+    cJSON_AddNumberToObject(root, "temperature", 0);
+    // Mandatory -- see kReasoningEffortNone above.
+    cJSON_AddStringToObject(root, "reasoning_effort", kReasoningEffortNone);
 
     char* raw = cJSON_PrintUnformatted(root);
     std::string body = raw != nullptr ? raw : "";
@@ -800,48 +858,26 @@ std::string BuildTextRequestBody(const std::string& prompt, bool include_generat
     return body;
 }
 
-// Concatenate the text of every part in candidates[0].content.parts[].
-std::string ExtractCandidateText(cJSON* root)
+// choices[0].message.content -- NOT reasoning_content, which carries the (suppressed, but the
+// field may still be present and empty) chain-of-thought.
+std::string ExtractChatCompletionText(cJSON* root)
 {
     if (root == nullptr) {
         return {};
     }
-    cJSON* candidates = cJSON_GetObjectItemCaseSensitive(root, "candidates");
-    if (!cJSON_IsArray(candidates)) {
+    cJSON* choices = cJSON_GetObjectItemCaseSensitive(root, "choices");
+    if (!cJSON_IsArray(choices)) {
         return {};
     }
-    cJSON* candidate = cJSON_GetArrayItem(candidates, 0);
-    if (!cJSON_IsObject(candidate)) {
+    cJSON* choice = cJSON_GetArrayItem(choices, 0);
+    if (!cJSON_IsObject(choice)) {
         return {};
     }
-    cJSON* content = cJSON_GetObjectItemCaseSensitive(candidate, "content");
-    if (!cJSON_IsObject(content)) {
+    cJSON* message = cJSON_GetObjectItemCaseSensitive(choice, "message");
+    if (!cJSON_IsObject(message)) {
         return {};
     }
-    cJSON* parts = cJSON_GetObjectItemCaseSensitive(content, "parts");
-    if (!cJSON_IsArray(parts)) {
-        return {};
-    }
-    std::string text;
-    cJSON* part = nullptr;
-    cJSON_ArrayForEach(part, parts)
-    {
-        const std::string part_text = JsonStringField(part, "text");
-        text += part_text;
-    }
-    return text;
-}
-
-std::string JsonNestedStringField(cJSON* root, const char* first, const char* second)
-{
-    if (root == nullptr) {
-        return {};
-    }
-    cJSON* item = cJSON_GetObjectItemCaseSensitive(root, first);
-    if (!cJSON_IsObject(item)) {
-        return {};
-    }
-    return JsonStringField(item, second);
+    return JsonStringField(message, "content");
 }
 
 void AppendLe16(uint16_t value, std::array<uint8_t, 44>* out, size_t* offset)
@@ -902,94 +938,40 @@ std::array<uint8_t, 44> BuildWavHeaderPcm16Mono(size_t sample_count, uint32_t sa
     return header;
 }
 
-bool ReadHttpResponseBody(esp_http_client_handle_t client, HttpResponse* response)
-{
-    if (client == nullptr || response == nullptr) {
-        return false;
-    }
-    std::array<char, 512> buffer = {};
-    while (true) {
-        const int read = esp_http_client_read(client, buffer.data(), buffer.size());
-        if (read < 0) {
-            response->error_code = "transport_error";
-            response->error_message = "Failed reading HTTP response body";
-            return false;
-        }
-        if (read == 0) {
-            break;
-        }
-        response->body.append(buffer.data(), static_cast<size_t>(read));
-    }
-    return true;
-}
-
-HttpResponse PerformUploadStart(const std::string& api_key, size_t num_bytes)
+// Streams a single WAV body (header + PCM chunks) to the local transcription endpoint. Unlike
+// the old Gemini path this is one plain POST -- no resumable-upload session negotiation, no
+// separate generateContent call.
+HttpResponse PostWavClip(const std::string& transcribe_url,
+                         const recording_service::RecordedClip& clip)
 {
     HttpResponse response = {};
 
     esp_http_client_config_t config = {};
-    config.url = kUploadUrl;
+    config.url = transcribe_url.c_str();
     config.method = HTTP_METHOD_POST;
-    config.crt_bundle_attach = esp_crt_bundle_attach;
     config.timeout_ms = kTranscribeTimeoutMs;
-    config.event_handler = &HttpEventHandler;
-    config.user_data = &response;
+    // No event_handler here, unlike PerformGet/PerformJsonPost: this function reads the
+    // response body manually below (it also has to write the request body manually, in
+    // chunks, since it streams a WAV clip rather than sending one string). Wiring an
+    // HTTP_EVENT_ON_DATA handler on top of that manual read loop would double-append every
+    // response byte -- the event fires during esp_http_client_read() too, not just _perform().
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (client == nullptr) {
         response.error_code = "http_client_init_failed";
-        response.error_message = "Failed to initialize Gemini upload client";
-        return response;
-    }
-
-    char content_length[32] = {};
-    std::snprintf(content_length, sizeof(content_length), "%u", static_cast<unsigned>(num_bytes));
-    static constexpr const char* metadata = "{\"file\":{\"display_name\":\"STICKY_NOTE\"}}";
-    esp_http_client_set_header(client, "x-goog-api-key", api_key.c_str());
-    esp_http_client_set_header(client, "X-Goog-Upload-Protocol", "resumable");
-    esp_http_client_set_header(client, "X-Goog-Upload-Command", "start");
-    esp_http_client_set_header(client, "X-Goog-Upload-Header-Content-Length", content_length);
-    esp_http_client_set_header(client, "X-Goog-Upload-Header-Content-Type", kAudioMimeType);
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_post_field(client, metadata, std::strlen(metadata));
-
-    const esp_err_t err = esp_http_client_perform(client);
-    response.status_code = esp_http_client_get_status_code(client);
-    esp_http_client_cleanup(client);
-    if (err != ESP_OK) {
-        response.error_code = "transport_error";
-        response.error_message = esp_err_to_name(err);
-    }
-    return response;
-}
-
-HttpResponse PerformUploadFinalizePcmWav(const std::string& upload_url,
-                                         const recording_service::RecordedClip& clip)
-{
-    HttpResponse response = {};
-
-    esp_http_client_config_t config = {};
-    config.url = upload_url.c_str();
-    config.method = HTTP_METHOD_POST;
-    config.crt_bundle_attach = esp_crt_bundle_attach;
-    config.timeout_ms = kTranscribeTimeoutMs;
-
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    if (client == nullptr) {
-        response.error_code = "http_client_init_failed";
-        response.error_message = "Failed to initialize Gemini upload finalize client";
+        response.error_message = "Failed to initialize local AI transcription client";
         return response;
     }
 
     const size_t total_bytes = clip.wav_byte_count();
     char content_length[32] = {};
     std::snprintf(content_length, sizeof(content_length), "%u", static_cast<unsigned>(total_bytes));
+    esp_http_client_set_header(client, "Content-Type", "audio/wav");
     esp_http_client_set_header(client, "Content-Length", content_length);
     esp_http_client_set_header(client, "Accept", "application/json");
-    esp_http_client_set_header(client, "X-Goog-Upload-Offset", "0");
-    esp_http_client_set_header(client, "X-Goog-Upload-Command", "upload, finalize");
+    esp_http_client_set_header(client, "User-Agent", "folloup-sticky");
 
-    esp_err_t err = esp_http_client_open(client, total_bytes);
+    esp_err_t err = esp_http_client_open(client, static_cast<int>(total_bytes));
     if (err != ESP_OK) {
         response.error_code = "transport_error";
         response.error_message = esp_err_to_name(err);
@@ -1023,7 +1005,7 @@ HttpResponse PerformUploadFinalizePcmWav(const std::string& upload_url,
     });
     if (write_failed) {
         response.error_code = "transport_error";
-        response.error_message = "Failed streaming Gemini audio upload";
+        response.error_message = "Failed streaming audio to the local transcription endpoint";
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return response;
@@ -1033,59 +1015,28 @@ HttpResponse PerformUploadFinalizePcmWav(const std::string& upload_url,
     response.status_code = esp_http_client_get_status_code(client);
     if (response.status_code <= 0 && response_length < 0) {
         response.error_code = "transport_error";
-        response.error_message = "Failed fetching Gemini upload response headers";
+        response.error_message = "Failed fetching local transcription response headers";
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
         return response;
     }
-    ReadHttpResponseBody(client, &response);
+
+    std::array<char, 512> buffer = {};
+    while (true) {
+        const int read = esp_http_client_read(client, buffer.data(), buffer.size());
+        if (read < 0) {
+            response.error_code = "transport_error";
+            response.error_message = "Failed reading local transcription response body";
+            break;
+        }
+        if (read == 0) {
+            break;
+        }
+        response.body.append(buffer.data(), static_cast<size_t>(read));
+    }
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
     return response;
-}
-
-std::string BuildTranscriptRequestJson(const std::string& file_uri)
-{
-    cJSON* root = cJSON_CreateObject();
-    cJSON* contents = cJSON_AddArrayToObject(root, "contents");
-    cJSON* content = cJSON_CreateObject();
-    cJSON_AddItemToArray(contents, content);
-    cJSON* parts = cJSON_AddArrayToObject(content, "parts");
-
-    cJSON* prompt_part = cJSON_CreateObject();
-    cJSON_AddStringToObject(prompt_part, "text", kTranscriptPrompt);
-    cJSON_AddItemToArray(parts, prompt_part);
-
-    cJSON* audio_part = cJSON_CreateObject();
-    cJSON* file_data = cJSON_AddObjectToObject(audio_part, "fileData");
-    cJSON_AddStringToObject(file_data, "mimeType", kAudioMimeType);
-    cJSON_AddStringToObject(file_data, "fileUri", file_uri.c_str());
-    cJSON_AddItemToArray(parts, audio_part);
-
-    cJSON* generation_config = cJSON_AddObjectToObject(root, "generationConfig");
-    cJSON_AddNumberToObject(generation_config, "temperature", 0);
-
-    char* raw = cJSON_PrintUnformatted(root);
-    std::string json = raw != nullptr ? raw : "";
-    if (raw != nullptr) {
-        cJSON_free(raw);
-    }
-    cJSON_Delete(root);
-    return json;
-}
-
-HttpResponse PerformGenerateContentWithBody(const std::string& api_key,
-                                            const std::string& model_name,
-                                            const std::string& request_json)
-{
-    const std::string url = std::string(kGeminiApiBaseUrl) + model_name + ":generateContent";
-    return PerformGeminiPost(url, api_key, request_json);
-}
-
-uint32_t ResolveUploadChunkCount(const recording_service::RecordedClip& clip)
-{
-    return static_cast<uint32_t>((clip.sample_count() + kHttpUploadChunkSamples - 1U) /
-                                 kHttpUploadChunkSamples);
 }
 
 }  // namespace
@@ -1099,22 +1050,22 @@ esp_err_t Init()
             return ESP_OK;
         }
 
-        s_stored_api_key = LoadStoredApiKey();
+        const StoredUrls stored = LoadStoredUrls();
+        s_stored_base_url = stored.base_url;
+        s_stored_transcribe_url = stored.transcribe_url;
         s_last_status_message =
-            GetEffectiveApiKeyLocked().empty()
-                ? "No Gemini API key configured"
-                : "Gemini API key available";
+            GetEffectiveBaseUrlLocked().empty()
+                ? "No local AI server configured"
+                : "Local AI server configured";
         ClearLastErrorLocked();
         s_initialized = true;
         snapshot = BuildSnapshotLocked();
     }
 
-    ESP_LOGI(kTag, "Gemini service initialized: configured=%d source=%s key_last4=%s",
+    ESP_LOGI(kTag, "Local AI service initialized: configured=%d source=%s base_url=%s",
              snapshot.settings.configured ? 1 : 0,
-             ApiKeySourceName(snapshot.settings.api_key_source),
-             snapshot.settings.api_key_last4.empty()
-                 ? "none"
-                 : snapshot.settings.api_key_last4.c_str());
+             UrlSourceName(snapshot.settings.base_url_source),
+             snapshot.settings.base_url.empty() ? "<none>" : snapshot.settings.base_url.c_str());
     Notify();
     MaybeBeginAuthentication();
     return ESP_OK;
@@ -1137,47 +1088,65 @@ Result ApplySettingsPatch(const SettingsPatch& patch)
 {
     bool should_start_auth = false;
     bool save_failed = false;
+    StoredUrls next = {};
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         if (!s_initialized) {
-            s_stored_api_key = LoadStoredApiKey();
+            const StoredUrls stored = LoadStoredUrls();
+            s_stored_base_url = stored.base_url;
+            s_stored_transcribe_url = stored.transcribe_url;
             s_initialized = true;
         }
 
-        if (!patch.has_api_key) {
+        if (!patch.has_base_url && !patch.has_transcribe_url) {
             return {
                 .success = false,
                 .validation_error = true,
                 .status_code = 400,
-                .field = "api_key",
-                .error_code = "missing_api_key",
-                .message = "Gemini API key is required",
+                .field = "base_url",
+                .error_code = "missing_fields",
+                .message = "At least one of base_url or transcribe_url is required",
             };
         }
 
-        const std::string trimmed = TrimCopy(patch.api_key);
-        if (trimmed.empty()) {
+        next.base_url = patch.has_base_url ? NormalizeBaseUrl(patch.base_url) : s_stored_base_url;
+        next.transcribe_url =
+            patch.has_transcribe_url ? TrimCopy(patch.transcribe_url) : s_stored_transcribe_url;
+
+        if (patch.has_base_url && next.base_url.empty()) {
             return {
                 .success = false,
                 .validation_error = true,
                 .status_code = 400,
-                .field = "api_key",
-                .error_code = "invalid_api_key",
-                .message = "Gemini API key is required",
+                .field = "base_url",
+                .error_code = "invalid_base_url",
+                .message = "base_url must not be empty",
             };
         }
 
-        if (!SaveStoredApiKey(trimmed)) {
-            SetLastErrorLocked("nvs_write_failed", "Failed to store Gemini API key");
+        if (patch.has_transcribe_url && next.transcribe_url.empty()) {
+            return {
+                .success = false,
+                .validation_error = true,
+                .status_code = 400,
+                .field = "transcribe_url",
+                .error_code = "invalid_transcribe_url",
+                .message = "transcribe_url must not be empty",
+            };
+        }
+
+        if (!SaveStoredUrls(next)) {
+            SetLastErrorLocked("nvs_write_failed", "Failed to store local AI settings");
             save_failed = true;
         } else {
-            s_stored_api_key = trimmed;
+            s_stored_base_url = next.base_url;
+            s_stored_transcribe_url = next.transcribe_url;
             ++s_auth_generation;
             s_request_in_flight = false;
             s_auth_checked = false;
             s_authenticated = false;
             s_last_http_status = 0;
-            s_last_status_message = "Gemini API key stored";
+            s_last_status_message = "Local AI settings stored";
             s_last_model_resource_name.clear();
             s_last_model_display_name.clear();
             ClearLastErrorLocked();
@@ -1191,9 +1160,9 @@ Result ApplySettingsPatch(const SettingsPatch& patch)
             .success = false,
             .validation_error = false,
             .status_code = 500,
-            .field = "api_key",
+            .field = "base_url",
             .error_code = "nvs_write_failed",
-            .message = "Failed to store Gemini API key",
+            .message = "Failed to store local AI settings",
         };
     }
 
@@ -1207,32 +1176,35 @@ Result ApplySettingsPatch(const SettingsPatch& patch)
         .status_code = 200,
         .field = {},
         .error_code = {},
-        .message = "Gemini API key stored",
+        .message = "Local AI settings stored",
     };
 }
 
-Result ClearStoredApiKey()
+Result ResetStoredSettings()
 {
     bool should_start_auth = false;
     bool clear_failed = false;
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         if (!s_initialized) {
-            s_stored_api_key = LoadStoredApiKey();
+            const StoredUrls stored = LoadStoredUrls();
+            s_stored_base_url = stored.base_url;
+            s_stored_transcribe_url = stored.transcribe_url;
             s_initialized = true;
         }
 
-        if (!ClearStoredApiKeyFromNvs()) {
-            SetLastErrorLocked("nvs_clear_failed", "Failed to clear Gemini API key");
+        if (!ClearStoredUrlsFromNvs()) {
+            SetLastErrorLocked("nvs_clear_failed", "Failed to clear local AI settings");
             clear_failed = true;
         } else {
-            s_stored_api_key.clear();
+            s_stored_base_url.clear();
+            s_stored_transcribe_url.clear();
             ++s_auth_generation;
             s_request_in_flight = false;
             s_auth_checked = false;
             s_authenticated = false;
             s_last_http_status = 0;
-            s_last_status_message = "Gemini API key cleared";
+            s_last_status_message = "Local AI settings reset to built-in defaults";
             s_last_model_resource_name.clear();
             s_last_model_display_name.clear();
             ClearLastErrorLocked();
@@ -1246,9 +1218,9 @@ Result ClearStoredApiKey()
             .success = false,
             .validation_error = false,
             .status_code = 500,
-            .field = "api_key",
+            .field = "base_url",
             .error_code = "nvs_clear_failed",
-            .message = "Failed to clear Gemini API key",
+            .message = "Failed to clear local AI settings",
         };
     }
 
@@ -1261,20 +1233,20 @@ Result ClearStoredApiKey()
         .status_code = 200,
         .field = {},
         .error_code = {},
-        .message = "Gemini API key cleared",
+        .message = "Local AI settings reset to built-in defaults",
     };
 }
 
-bool HasApiKey()
+std::string GetEffectiveBaseUrl()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
-    return !GetEffectiveApiKeyLocked().empty();
+    return GetEffectiveBaseUrlLocked();
 }
 
-std::string GetEffectiveApiKey()
+std::string GetEffectiveTranscribeUrl()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
-    return GetEffectiveApiKeyLocked();
+    return GetEffectiveTranscribeUrlLocked();
 }
 
 std::string GetEffectiveModelName()
@@ -1285,11 +1257,11 @@ std::string GetEffectiveModelName()
 TextResult GenerateText(const std::string& prompt)
 {
     TextResult result = {};
-    const std::string api_key = GetEffectiveApiKey();
+    const std::string base_url = GetEffectiveBaseUrl();
     const std::string model_name = GetEffectiveModelName();
-    if (api_key.empty() || model_name.empty()) {
+    if (base_url.empty() || model_name.empty()) {
         result.error_code = "not_configured";
-        result.error_message = "No Gemini API key configured";
+        result.error_message = "No local AI server configured";
         return result;
     }
     if (prompt.empty()) {
@@ -1298,8 +1270,9 @@ TextResult GenerateText(const std::string& prompt)
         return result;
     }
 
-    const std::string url = std::string(kGeminiApiBaseUrl) + model_name + ":generateContent";
-    const HttpResponse http = PerformGeminiPost(url, api_key, BuildTextRequestBody(prompt, true));
+    const std::string url = base_url + "chat/completions";
+    const HttpResponse http =
+        PerformJsonPost(url, BuildChatCompletionRequestBody(model_name, prompt), kGenerateTimeoutMs);
     result.http_status = http.status_code;
     if (!http.error_code.empty()) {
         result.error_code = http.error_code;
@@ -1307,11 +1280,11 @@ TextResult GenerateText(const std::string& prompt)
     } else {
         cJSON* root = cJSON_ParseWithLength(http.body.c_str(), http.body.size());
         if (http.status_code >= 200 && http.status_code < 300) {
-            result.text = ExtractCandidateText(root);
+            result.text = ExtractChatCompletionText(root);
             result.success = !result.text.empty();
             if (!result.success) {
                 result.error_code = "empty_response";
-                result.error_message = "Gemini returned no text";
+                result.error_message = "Local AI server returned no text";
             }
         } else {
             PopulateHttpError(root, http, &result.error_code, &result.error_message);
@@ -1322,63 +1295,13 @@ TextResult GenerateText(const std::string& prompt)
     }
 
     if (result.success) {
-        ESP_LOGI(kTag, "Gemini generateContent succeeded: http=%d chars=%u", result.http_status,
+        ESP_LOGI(kTag, "Local AI chat/completions succeeded: http=%d chars=%u", result.http_status,
                  static_cast<unsigned>(result.text.size()));
     } else {
-        ESP_LOGW(kTag, "Gemini generateContent failed: http=%d code=%s message=%s",
+        ESP_LOGW(kTag, "Local AI chat/completions failed: http=%d code=%s message=%s",
                  result.http_status,
                  result.error_code.empty() ? "<none>" : result.error_code.c_str(),
                  result.error_message.empty() ? "<none>" : result.error_message.c_str());
-    }
-    return result;
-}
-
-TokenCountResult CountTokens(const std::string& prompt)
-{
-    TokenCountResult result = {};
-    const std::string api_key = GetEffectiveApiKey();
-    const std::string model_name = GetEffectiveModelName();
-    if (api_key.empty() || model_name.empty()) {
-        result.error_code = "not_configured";
-        result.error_message = "No Gemini API key configured";
-        return result;
-    }
-    if (prompt.empty()) {
-        result.success = true;  // an empty prompt is trivially zero tokens
-        return result;
-    }
-
-    const std::string url = std::string(kGeminiApiBaseUrl) + model_name + ":countTokens";
-    const HttpResponse http = PerformGeminiPost(url, api_key, BuildTextRequestBody(prompt, false));
-    result.http_status = http.status_code;
-    if (!http.error_code.empty()) {
-        result.error_code = http.error_code;
-        result.error_message = TrimForLog(http.error_message);
-        return result;
-    }
-
-    cJSON* root = cJSON_ParseWithLength(http.body.c_str(), http.body.size());
-    if (http.status_code >= 200 && http.status_code < 300) {
-        cJSON* total = root != nullptr
-                           ? cJSON_GetObjectItemCaseSensitive(root, "totalTokens")
-                           : nullptr;
-        if (cJSON_IsNumber(total)) {
-            result.total_tokens = total->valueint;
-            result.success = true;
-        } else {
-            result.error_code = "empty_response";
-            result.error_message = "Gemini returned no token count";
-        }
-    } else {
-        PopulateHttpError(root, http, &result.error_code, &result.error_message);
-    }
-    if (root != nullptr) {
-        cJSON_Delete(root);
-    }
-    if (!result.success) {
-        // Callers fall back to a size estimate, so this is debug-level to avoid chunking noise.
-        ESP_LOGD(kTag, "Gemini countTokens failed: http=%d code=%s", result.http_status,
-                 result.error_code.empty() ? "<none>" : result.error_code.c_str());
     }
     return result;
 }
@@ -1388,13 +1311,11 @@ TranscriptionResult Transcribe(const recording_service::RecordedClip& clip)
     TranscriptionResult result = {};
     result.clip_duration_ms = clip.duration_ms();
     result.wav_bytes = clip.wav_byte_count();
-    result.upload_chunk_count = ResolveUploadChunkCount(clip);
 
-    const std::string api_key = GetEffectiveApiKey();
-    const std::string model_name = GetEffectiveModelName();
-    if (api_key.empty() || model_name.empty()) {
+    const std::string transcribe_url = GetEffectiveTranscribeUrl();
+    if (transcribe_url.empty()) {
         result.error_code = "not_configured";
-        result.error_message = "No Gemini API key configured";
+        result.error_message = "No local transcription endpoint configured";
         return result;
     }
     if (clip.empty()) {
@@ -1404,58 +1325,11 @@ TranscriptionResult Transcribe(const recording_service::RecordedClip& clip)
     }
 
     const int64_t task_started_us = esp_timer_get_time();
-
-    // 1. Start a resumable upload to obtain an upload URL.
-    HttpResponse upload_start = PerformUploadStart(api_key, clip.wav_byte_count());
-    if (!upload_start.error_code.empty() || upload_start.upload_url.empty() ||
-        upload_start.status_code < 200 || upload_start.status_code >= 300) {
-        result.http_status = upload_start.status_code;
-        result.error_code =
-            upload_start.error_code.empty() ? "upload_start_failed" : upload_start.error_code;
-        result.error_message = TrimForLog(
-            !upload_start.error_message.empty()
-                ? upload_start.error_message
-                : (!upload_start.body.empty() ? upload_start.body
-                                              : "Failed to start Gemini file upload"));
-        return result;
-    }
-
-    // 2. Stream the WAV (header + PCM chunks) and finalize the upload.
-    const int64_t upload_started_us = esp_timer_get_time();
-    HttpResponse upload_finalize = PerformUploadFinalizePcmWav(upload_start.upload_url, clip);
-    result.http_status = upload_finalize.status_code;
-    result.upload_elapsed_ms =
-        static_cast<uint64_t>((esp_timer_get_time() - upload_started_us) / 1000ULL);
-    if (!upload_finalize.error_code.empty() || upload_finalize.status_code < 200 ||
-        upload_finalize.status_code >= 300) {
-        result.error_code = upload_finalize.error_code.empty() ? "upload_finalize_failed"
-                                                               : upload_finalize.error_code;
-        result.error_message = TrimForLog(
-            !upload_finalize.error_message.empty()
-                ? upload_finalize.error_message
-                : (!upload_finalize.body.empty() ? upload_finalize.body
-                                                 : "Failed to upload Gemini audio file"));
-        return result;
-    }
-
-    cJSON* file_root =
-        cJSON_ParseWithLength(upload_finalize.body.c_str(), upload_finalize.body.size());
-    const std::string file_uri = JsonNestedStringField(file_root, "file", "uri");
-    if (file_root != nullptr) {
-        cJSON_Delete(file_root);
-    }
-    if (file_uri.empty()) {
-        result.error_code = "file_uri_missing";
-        result.error_message = "Gemini upload did not return a file URI";
-        return result;
-    }
-
-    // 3. generateContent referencing the uploaded file.
-    HttpResponse http =
-        PerformGenerateContentWithBody(api_key, model_name, BuildTranscriptRequestJson(file_uri));
+    const HttpResponse http = PostWavClip(transcribe_url, clip);
     result.http_status = http.status_code;
     result.total_elapsed_ms =
         static_cast<uint64_t>((esp_timer_get_time() - task_started_us) / 1000ULL);
+
     if (!http.error_code.empty()) {
         result.error_code = http.error_code;
         result.error_message = TrimForLog(http.error_message);
@@ -1464,11 +1338,11 @@ TranscriptionResult Transcribe(const recording_service::RecordedClip& clip)
 
     cJSON* root = cJSON_ParseWithLength(http.body.c_str(), http.body.size());
     if (http.status_code >= 200 && http.status_code < 300) {
-        result.transcript = TrimForLog(ExtractCandidateText(root), 1U << 20);
+        result.transcript = TrimForLog(JsonStringField(root, "transcript"), 1U << 20);
         result.success = !result.transcript.empty();
         if (!result.success) {
             result.error_code = "empty_transcript";
-            result.error_message = "Gemini returned no transcript text";
+            result.error_message = "Local transcription endpoint returned no transcript text";
         }
     } else {
         PopulateHttpError(root, http, &result.error_code, &result.error_message);
@@ -1481,56 +1355,56 @@ TranscriptionResult Transcribe(const recording_service::RecordedClip& clip)
 
 bool BeginAuthentication()
 {
-    std::string api_key;
+    std::string base_url;
     std::string model_name;
-    ApiKeySource api_key_source = ApiKeySource::kNone;
-    std::string api_key_last4;
+    UrlSource url_source = UrlSource::kBuiltIn;
     uint32_t auth_generation = 0;
-    bool missing_api_key = false;
+    bool missing_base_url = false;
     bool task_alloc_failed = false;
     bool task_start_failed = false;
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         if (!s_initialized) {
-            s_stored_api_key = LoadStoredApiKey();
+            const StoredUrls stored = LoadStoredUrls();
+            s_stored_base_url = stored.base_url;
+            s_stored_transcribe_url = stored.transcribe_url;
             s_initialized = true;
         }
         if (s_request_in_flight) {
             return false;
         }
 
-        api_key = GetEffectiveApiKeyLocked();
-        if (api_key.empty()) {
+        base_url = GetEffectiveBaseUrlLocked();
+        if (base_url.empty()) {
             s_request_in_flight = false;
             s_auth_checked = false;
             s_authenticated = false;
             s_last_http_status = 0;
-            s_last_status_message = "Authentication skipped";
+            s_last_status_message = "Readiness check skipped";
             s_last_model_resource_name.clear();
             s_last_model_display_name.clear();
-            SetLastErrorLocked("not_configured", "No Gemini API key configured");
-            missing_api_key = true;
+            SetLastErrorLocked("not_configured", "No local AI server configured");
+            missing_base_url = true;
         } else if (!s_network_connected) {
             return false;
         }
 
-        if (!missing_api_key) {
+        if (!missing_base_url) {
             s_request_in_flight = true;
             s_auth_checked = false;
             s_authenticated = false;
             s_last_http_status = 0;
-            s_last_status_message = "Authenticating with Gemini";
+            s_last_status_message = "Checking local AI server";
             s_last_model_resource_name.clear();
             s_last_model_display_name.clear();
             ClearLastErrorLocked();
             model_name = GetEffectiveModelName();
-            api_key_source = GetApiKeySourceLocked();
-            api_key_last4 = GetApiKeyLast4Locked();
+            url_source = GetUrlSourceLocked();
             auth_generation = ++s_auth_generation;
         }
     }
 
-    if (missing_api_key) {
+    if (missing_base_url) {
         Notify();
         return false;
     }
@@ -1538,7 +1412,7 @@ bool BeginAuthentication()
     Notify();
 
     std::unique_ptr<AuthTaskContext> context(new (std::nothrow) AuthTaskContext{
-        .api_key = std::move(api_key),
+        .base_url = std::move(base_url),
         .model_name = std::move(model_name),
         .generation = auth_generation,
     });
@@ -1548,10 +1422,10 @@ bool BeginAuthentication()
         TaskHandle_t task_handle = nullptr;
         const BaseType_t created = xTaskCreatePinnedToCore(
             AuthenticationTask,
-            "gemini_auth",
+            "local_ai_auth",
             kAuthTaskStackWords,
             context.get(),
-            followup_task_config::kPriorityGemini,
+            followup_task_config::kPriorityLocalAi,
             &task_handle,
             followup_task_config::kSystemCore);
         if (created != pdPASS || task_handle == nullptr) {
@@ -1565,20 +1439,19 @@ bool BeginAuthentication()
         {
             std::lock_guard<std::mutex> lock(s_mutex);
             s_request_in_flight = false;
-            s_last_status_message = "Failed to start Gemini authentication";
+            s_last_status_message = "Failed to start local AI readiness check";
             SetLastErrorLocked(task_alloc_failed ? "task_alloc_failed" : "task_start_failed",
                                task_alloc_failed
-                                   ? "Failed to allocate Gemini task context"
-                                   : "Failed to start Gemini authentication task");
+                                   ? "Failed to allocate local AI task context"
+                                   : "Failed to start local AI readiness task");
         }
         Notify();
         return false;
     }
 
-    ESP_LOGI(kTag, "Starting Gemini authentication (model=%s, source=%s, key_last4=%s)",
+    ESP_LOGI(kTag, "Starting local AI readiness check (model=%s, source=%s)",
              GetEffectiveModelName().c_str(),
-             ApiKeySourceName(api_key_source),
-             api_key_last4.empty() ? "none" : api_key_last4.c_str());
+             UrlSourceName(url_source));
     return true;
 }
 
@@ -1599,25 +1472,25 @@ void RegisterPortalRoutes(httpd_handle_t server)
     }
 
     httpd_uri_t settings_get = {
-        .uri = kPortalApiSettingsGeminiUri,
+        .uri = kPortalApiSettingsUri,
         .method = HTTP_GET,
         .handler = HandlePortalSettingsGet,
         .user_ctx = nullptr,
     };
     httpd_uri_t settings_patch = {
-        .uri = kPortalApiSettingsGeminiUri,
+        .uri = kPortalApiSettingsUri,
         .method = HTTP_PATCH,
         .handler = HandlePortalSettingsPatch,
         .user_ctx = nullptr,
     };
     httpd_uri_t settings_reset = {
-        .uri = kPortalApiSettingsGeminiResetUri,
+        .uri = kPortalApiSettingsResetUri,
         .method = HTTP_POST,
         .handler = HandlePortalSettingsReset,
         .user_ctx = nullptr,
     };
     httpd_uri_t runtime_get = {
-        .uri = kPortalApiRuntimeGeminiUri,
+        .uri = kPortalApiRuntimeUri,
         .method = HTTP_GET,
         .handler = HandlePortalRuntimeGet,
         .user_ctx = nullptr,
@@ -1627,21 +1500,19 @@ void RegisterPortalRoutes(httpd_handle_t server)
         RegisterPortalRoute(server, &settings_patch) != ESP_OK ||
         RegisterPortalRoute(server, &settings_reset) != ESP_OK ||
         RegisterPortalRoute(server, &runtime_get) != ESP_OK) {
-        ESP_LOGW(kTag, "Gemini portal routes are incomplete");
+        ESP_LOGW(kTag, "Local AI portal routes are incomplete");
     }
 }
 
-const char* ApiKeySourceName(ApiKeySource source)
+const char* UrlSourceName(UrlSource source)
 {
     switch (source) {
-        case ApiKeySource::kSdkConfig:
-            return "sdkconfig";
-        case ApiKeySource::kNvs:
+        case UrlSource::kNvs:
             return "nvs";
-        case ApiKeySource::kNone:
+        case UrlSource::kBuiltIn:
         default:
-            return "none";
+            return "built_in";
     }
 }
 
-}  // namespace gemini_service
+}  // namespace local_ai_service

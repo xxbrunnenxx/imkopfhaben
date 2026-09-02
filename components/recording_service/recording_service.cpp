@@ -27,7 +27,7 @@ constexpr size_t kCaptureChunkSamples = 480;
 constexpr size_t kClipChunkSamples = 4096;
 constexpr uint32_t kCaptureTaskStackWords = 4096;
 
-// The ES8311 codec captures at a single duplex rate; recordings and the Gemini
+// The ES8311 codec captures at a single duplex rate; recordings and the transcription
 // uplink are 16 kHz, so no resampling is needed.
 constexpr uint32_t kSampleRateHz = 16000;
 

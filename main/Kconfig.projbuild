@@ -52,13 +52,25 @@ menu "Folloup Settings"
             one step every interval, so it changes over time without being
             tied to the calendar.
 
-    config FOLLOWUP_GEMINI_API_KEY
-        string "Built-in Gemini API key"
-        default ""
+    config FOLLOWUP_LOCAL_AI_BASE_URL
+        string "Local AI server base URL"
+        default "http://192.168.178.215:1234/v1/"
         help
-            Optional built-in Gemini API key used for testing. A runtime-saved
-            Gemini API key stored through the backend portal takes precedence
-            when present.
+            Base URL of the local OpenAI-compatible chat/completions server
+            (LM Studio, running google/gemma-4-e2b) used for summaries. A
+            runtime-saved base URL stored through the backend portal takes
+            precedence when present. No credential is sent -- this is a LAN
+            address, not a secret.
+
+    config FOLLOWUP_LOCAL_AI_TRANSCRIBE_URL
+        string "Local AI transcription endpoint URL"
+        default "http://192.168.178.215:8000/api/transcribe-raw"
+        help
+            URL of the local transcription endpoint (a thin wrapper around
+            faster-whisper), served by imkopfhaben-brain on Kraken (port
+            8000, same process as the existing voice-notebook pipeline). A
+            runtime-saved URL stored through the backend portal takes
+            precedence when present.
 
     config FOLLOWUP_AUTO_SLEEP_DISPLAY_SLEEP_TIMEOUT_SECONDS
         int "Display sleep timeout"

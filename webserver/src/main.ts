@@ -24,7 +24,7 @@ import apiKeyIcon from './assets/api_key.svg?raw';
 import checkIcon from './assets/check.svg?raw';
 import clockIcon from './assets/clock.svg?raw';
 import {
-  fetchGeminiModuleJson,
+  fetchLocalAiModuleJson,
   fetchPortalJson,
   fetchTimeRuntimeJson,
   fetchTimeSettingsJson,
@@ -82,7 +82,7 @@ let pageFade: ReturnType<typeof createGradualBlur> | null = null;
 const dom = createPortalDom();
 
 const setNotification = createLiveRegionNotifier(dom.wifiSettingsNotification);
-const setGeminiNotification = createCardNotifier(dom.geminiCard);
+const setLocalAiNotification = createCardNotifier(dom.localAiCard);
 const setTimezoneLocationNotification = createCardNotifier(dom.timezoneLocationCard);
 
 // Detached stand-ins for the byte90-only "talking clock" time controls, which Followup does not
@@ -99,7 +99,7 @@ const stubOpenAiApiKeyInput = document.createElement('input') as unknown as Vali
 function updateUi() {
   updatePortalUiState({
     controllers: {
-      geminiController,
+      localAiController,
       timeController,
       wifiController,
     },
@@ -107,13 +107,13 @@ function updateUi() {
   });
 }
 
-const geminiController = createProviderKeysController({
-  fetchGeminiModuleJson,
+const localAiController = createProviderKeysController({
+  fetchLocalAiModuleJson,
   fetchOpenAiModuleJson: () => Promise.resolve({} as OpenAiModuleResponse),
-  geminiApiKeyInput: dom.geminiApiKeyInput,
-  isGeminiModuleActive: () => true,
+  localAiBaseUrlInput: dom.localAiBaseUrlInput,
+  isLocalAiModuleActive: () => true,
   isOpenAiModuleActive: () => false,
-  notifyGemini: setGeminiNotification,
+  notifyLocalAi: setLocalAiNotification,
   notifyOpenAi: () => {},
   openAiApiKeyInput: stubOpenAiApiKeyInput,
   updateButtons: updateUi,
@@ -198,7 +198,7 @@ function updatePageFade() {
 function initialize() {
   setIcon(dom.followupLogoEl, followupLogo, 'followup-logo');
   dom.wifiStatusCard.iconSvg = wifiIcon;
-  dom.geminiCard.iconSvg = apiKeyIcon;
+  dom.localAiCard.iconSvg = apiKeyIcon;
   dom.timezoneLocationCard.iconSvg = clockIcon;
 
   wifiController.renderNetworkList();
@@ -236,7 +236,7 @@ function initialize() {
 
   bindPortalEvents({
     controllers: {
-      geminiController,
+      localAiController,
       timeController,
       wifiController,
     },
@@ -261,16 +261,16 @@ async function loadInitialStatus() {
     timeController.populateTimezoneOptions(),
     timeController.fetchTimeSettingsStatus(),
     wifiController.checkStatus(),
-    loadGeminiSettings(),
+    loadLocalAiSettings(),
   ]);
 }
 
-async function loadGeminiSettings() {
+async function loadLocalAiSettings() {
   try {
-    const data = await fetchGeminiModuleJson('/api/settings/gemini');
-    geminiController.applyGeminiSettings(data.settings);
+    const data = await fetchLocalAiModuleJson('/api/settings/local_ai');
+    localAiController.applyLocalAiSettings(data.settings);
   } catch (error) {
-    console.error('Gemini settings status failed:', error);
+    console.error('Local AI settings status failed:', error);
   } finally {
     updateUi();
   }

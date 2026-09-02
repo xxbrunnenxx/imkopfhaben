@@ -10,7 +10,7 @@ import { defineConfig } from 'vite';
 //
 // `base: ''` keeps asset references relative so the page works regardless of the mount path the
 // device serves it from. The API calls in src/portal are absolute ("/api/...") and match the
-// Followup firmware routes (wifi_service / timezone_service / gemini_service).
+// Followup firmware routes (wifi_service / timezone_service / local_ai_service).
 export default defineConfig({
   base: '',
   build: {

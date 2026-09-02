@@ -1,7 +1,17 @@
-# Gemini Service
+# Gemini Service (superseded on this branch)
 
-This document describes the current Gemini integration used by the Followup
-firmware.
+**On `folloup-waveshare`, this document is historical.** `components/gemini_service/`
+was renamed to `components/local_ai_service/` and re-implemented against a local
+LM Studio server instead of the Gemini cloud API -- see
+[`docs/local-ai-service.md`](local-ai-service.md) for the current state. This file
+is kept as-is because it still accurately describes what the code looked like
+before that change, and because upstream (`alxv2016/folloup-sticky`, other
+branches of this fork) may still use it.
+
+---
+
+This document describes the Gemini integration used by earlier revisions of the
+Followup firmware on this branch, and by other branches of this fork.
 
 `components/gemini_service/` currently owns:
 
