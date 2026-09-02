@@ -261,11 +261,15 @@ proves the code is structurally sound, not that it works on the device.
   always has a Kconfig default), `api_key_last4` (nothing to mask), and the
   `missing_api_key`/`invalid_api_key` error codes (replaced with
   `missing_fields`/`invalid_base_url`, since the validation question is now
-  about a URL, not a key). `supports_audio_understanding` /
-  `supports_structured_output` were kept as always-`false` fields, same
-  shape as before, but now with a comment pointing at the actual verified
-  reason (LM Studio's API rejects audio content parts) instead of "not yet
-  ported."
+  about a URL, not a key). **Update (review pass, 2026-09-02):**
+  `supports_audio_understanding`/`supports_structured_output` were
+  initially kept as always-`false` fields with a comment explaining why --
+  but a review flagged them as pure dead weight (permanently `false`,
+  never read by any portal frontend code), so they've since been dropped
+  from `RuntimeSnapshot` and the runtime JSON entirely rather than kept as
+  inert placeholders. If real audio-understanding/structured-output
+  support is ever added for a different local model, add the field back
+  then, wired to something that can actually be `true`.
 
 ### Not done / needs a decision before it can be
 

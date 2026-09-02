@@ -307,8 +307,6 @@ Snapshot BuildSnapshotLocked()
     snapshot.runtime.request_in_flight = s_request_in_flight;
     snapshot.runtime.auth_checked = s_auth_checked;
     snapshot.runtime.authenticated = s_authenticated;
-    snapshot.runtime.supports_audio_understanding = false;
-    snapshot.runtime.supports_structured_output = false;
     snapshot.runtime.last_http_status = s_last_http_status;
     snapshot.runtime.last_status_message = s_last_status_message;
     snapshot.runtime.last_model_resource_name = s_last_model_resource_name;
@@ -701,10 +699,6 @@ void AppendSnapshot(cJSON* root, const Snapshot& snapshot, const char* message)
     cJSON_AddBoolToObject(runtime, "request_in_flight", snapshot.runtime.request_in_flight);
     cJSON_AddBoolToObject(runtime, "auth_checked", snapshot.runtime.auth_checked);
     cJSON_AddBoolToObject(runtime, "authenticated", snapshot.runtime.authenticated);
-    cJSON_AddBoolToObject(runtime, "supports_audio_understanding",
-                          snapshot.runtime.supports_audio_understanding);
-    cJSON_AddBoolToObject(runtime, "supports_structured_output",
-                          snapshot.runtime.supports_structured_output);
     cJSON_AddNumberToObject(runtime, "last_http_status", snapshot.runtime.last_http_status);
     cJSON_AddStringToObject(runtime, "last_status_message",
                             snapshot.runtime.last_status_message.c_str());
