@@ -1,167 +1,171 @@
-# Gemini Service (superseded on this branch)
+# Gemini Service (auf diesem Branch abgelöst)
 
-**On `folloup-waveshare`, this document is historical.** `components/gemini_service/`
-was renamed to `components/local_ai_service/` and re-implemented against a local
-LM Studio server instead of the Gemini cloud API -- see
-[`docs/local-ai-service.md`](local-ai-service.md) for the current state. This file
-is kept as-is because it still accurately describes what the code looked like
-before that change, and because upstream (`alxv2016/folloup-sticky`, other
-branches of this fork) may still use it.
+**Auf `folloup-waveshare` ist dieses Dokument historisch.** `components/gemini_service/`
+wurde in `components/local_ai_service/` umbenannt und gegen einen lokalen
+LM-Studio-Server statt die Gemini-Cloud-API neu implementiert -- siehe
+[`docs/local-ai-service.md`](local-ai-service.md) für den aktuellen Stand. Diese Datei
+bleibt unverändert erhalten, weil sie noch genau beschreibt, wie der Code vor
+dieser Änderung aussah, und weil Upstream (`alxv2016/folloup-sticky`, andere
+Branches dieses Forks) sie eventuell noch verwendet.
 
 ---
 
-This document describes the Gemini integration used by earlier revisions of the
-Followup firmware on this branch, and by other branches of this fork.
+Dieses Dokument beschreibt die Gemini-Integration, die von früheren Revisionen
+der Followup-Firmware auf diesem Branch und von anderen Branches dieses Forks
+verwendet wurde.
 
-`components/gemini_service/` currently owns:
+`components/gemini_service/` verantwortet aktuell:
 
-- Gemini API key storage precedence
-- Gemini authentication state
-- backend HTTP routes for Gemini settings and runtime state
-- Wi-Fi-driven Gemini readiness
-- Gemini-ready status consumed by the status bar
+- Vorrangregelung der Gemini-API-Key-Speicherung
+- Gemini-Authentifizierungsstatus
+- Backend-HTTP-Routen für Gemini-Einstellungen und Laufzeitstatus
+- WLAN-gesteuerte Gemini-Bereitschaft
+- Gemini-Ready-Status, der von der Statusleiste konsumiert wird
 
-It does not own:
+Es verantwortet nicht:
 
-- transcription requests — owned by the `transcription_service` component
-- summary generation — owned by the `summary_service` component
-- archived recording enrichment / indexing — owned by
+- Transkriptions-Anfragen -- gehören der `transcription_service`-Komponente
+- Zusammenfassungs-Erzeugung -- gehört der `summary_service`-Komponente
+- Anreicherung/Indizierung archivierter Aufnahmen -- gehört
   `recording_archive_service`
-- a frontend portal UI
+- eine Frontend-Portal-UI
 
-`transcription_service` and `summary_service` call the Gemini API directly; they
-were split into their own components rather than living inside `gemini_service`,
-which remains focused on key/settings precedence, auth readiness, and status.
+`transcription_service` und `summary_service` rufen die Gemini-API direkt auf;
+sie wurden in eigene Komponenten ausgelagert statt innerhalb von
+`gemini_service` zu leben, das sich weiterhin auf Key-/Einstellungs-Vorrang,
+Auth-Bereitschaft und Status konzentriert.
 
-## Ownership
+## Zuständigkeiten
 
-Current runtime split:
+Aktuelle Laufzeit-Aufteilung:
 
 - `gemini_service`
-  - Gemini configuration, API key precedence, auth requests, auth state, and
-    backend route handlers
+  - Gemini-Konfiguration, API-Key-Vorrang, Auth-Anfragen, Auth-Status und
+    Backend-Route-Handler
 - `wifi_service`
-  - owns the backend HTTP server and hosts Gemini routes through the existing
-    portal route registrar
+  - verantwortet den Backend-HTTP-Server und hostet Gemini-Routen über die
+    bestehende Portal-Routen-Registrierung
 - `main/app_shell.cpp`
-  - initializes the service, forwards Wi-Fi network state into Gemini, logs
-    Gemini events, and triggers the Gemini-connected sound cue
+  - initialisiert den Service, leitet WLAN-Netzwerkstatus an Gemini weiter,
+    protokolliert Gemini-Ereignisse und löst den Gemini-verbunden-Sound-Cue aus
 - `main/status_bar_runtime.cpp`
-  - reflects Gemini-ready state into `epaper_ui::StatusBarState`
+  - spiegelt den Gemini-Ready-Status in `epaper_ui::StatusBarState`
 - `components/epaper_ui/`
-  - renders the Gemini-ready star icon in the status bar
+  - rendert das Gemini-Ready-Stern-Symbol in der Statusleiste
 - `feedback_service` / `system_sound_service`
-  - play a dedicated Gemini-connected cue when readiness transitions from false
-    to true
+  - spielen einen eigenen Gemini-verbunden-Cue ab, wenn die Bereitschaft von
+    false auf true wechselt
 
-`app_shell` remains an orchestrator here. The Gemini service owns the provider
-state and route behavior; `app_shell` only wires events, startup order, and
-product-facing reactions.
+`app_shell` bleibt hier ein Orchestrator. Der Gemini-Service verantwortet den
+Provider-Status und das Routen-Verhalten; `app_shell` verdrahtet nur
+Ereignisse, Startreihenfolge und produktseitige Reaktionen.
 
-## Internal Layout
+## Interner Aufbau
 
-Followup currently uses a single-file Gemini service implementation:
+Followup nutzt aktuell eine Gemini-Service-Implementierung in einer einzigen
+Datei:
 
 - [`components/gemini_service/include/gemini_service.h`](/Users/tieuvong/Development/folloup-sticky/components/gemini_service/include/gemini_service.h)
 - [`components/gemini_service/gemini_service.cpp`](/Users/tieuvong/Development/folloup-sticky/components/gemini_service/gemini_service.cpp)
 
-Current internal responsibilities inside that component:
+Aktuelle interne Zuständigkeiten innerhalb dieser Komponente:
 
-- NVS read/write of the stored Gemini API key
-- sdkconfig fallback key lookup
-- effective-key precedence resolution
-- HTTP `GET` model authentication against Gemini
-- auth task lifecycle and stale-result protection
-- backend JSON request/response handling
+- NVS-Lesen/Schreiben des gespeicherten Gemini-API-Keys
+- sdkconfig-Fallback-Key-Lookup
+- Auflösung der effektiven Key-Vorrangregelung
+- HTTP-`GET`-Modell-Authentifizierung gegen Gemini
+- Auth-Task-Lebenszyklus und Schutz vor veralteten Ergebnissen
+- Backend-JSON-Anfrage-/Antwort-Verarbeitung
 
-Followup does not yet split this into separate `client`, `worker`, and
-`settings_storage` files the way Followup does.
+Followup teilt das noch nicht in separate `client`-, `worker`- und
+`settings_storage`-Dateien auf, wie es Followup sonst tut.
 
-## API Key Sources
+## API-Key-Quellen
 
-Current API key precedence:
+Aktuelle API-Key-Vorrangregelung:
 
-1. NVS-stored key saved through the backend API
-2. built-in `CONFIG_FOLLOWUP_GEMINI_API_KEY`
-3. no key configured
+1. per Backend-API gespeicherter NVS-Key
+2. eingebauter `CONFIG_FOLLOWUP_GEMINI_API_KEY`
+3. kein Key konfiguriert
 
-Resetting Gemini settings clears only the stored NVS key. It does not clear the
-built-in sdkconfig fallback key.
+Ein Zurücksetzen der Gemini-Einstellungen löscht nur den gespeicherten
+NVS-Key. Der eingebaute sdkconfig-Fallback-Key wird dabei nicht gelöscht.
 
-## Build-Time Configuration
+## Build-Zeit-Konfiguration
 
-The build-time Gemini setting lives under `Folloup Settings`:
+Die Build-Zeit-Gemini-Einstellung liegt unter `Folloup Settings`:
 
 - `CONFIG_FOLLOWUP_GEMINI_API_KEY`
 
-This is intended for development and bench testing. A key saved through the
-backend API takes precedence over the built-in key.
+Das ist für Entwicklung und Testaufbauten gedacht. Ein per Backend-API
+gespeicherter Key hat Vorrang vor dem eingebauten Key.
 
-The reproducible default is set in:
+Der reproduzierbare Standardwert steht in:
 
 - [`sdkconfig.defaults`](/Users/tieuvong/Development/folloup-sticky/sdkconfig.defaults)
 
-Current default:
+Aktueller Standardwert:
 
 - `CONFIG_FOLLOWUP_GEMINI_API_KEY=""`
 
-## Startup And Readiness Flow
+## Start- und Bereitschafts-Ablauf
 
-Current auth flow:
+Aktueller Auth-Ablauf:
 
-1. `app_shell` initializes `gemini_service`
-2. the service loads the stored NVS key, if present
-3. `wifi_service` reaches a connected STA state
-4. `app_shell` forwards network state into `gemini_service::SetNetworkState(...)`
-5. if a Gemini API key is available and no auth is already in flight, Gemini
-   starts authentication automatically
-6. Gemini performs a model `GET` against
-   `https://generativelanguage.googleapis.com/v1beta/`
-7. successful auth marks the runtime snapshot ready
-8. the status bar shows the Gemini-ready star icon
-9. the feedback layer plays the Gemini-connected cue the first time readiness
-   transitions to true
+1. `app_shell` initialisiert `gemini_service`
+2. der Service lädt den gespeicherten NVS-Key, falls vorhanden
+3. `wifi_service` erreicht einen verbundenen STA-Zustand
+4. `app_shell` leitet den Netzwerkstatus an
+   `gemini_service::SetNetworkState(...)` weiter
+5. wenn ein Gemini-API-Key verfügbar ist und noch keine Auth-Anfrage läuft,
+   startet Gemini die Authentifizierung automatisch
+6. Gemini führt ein Modell-`GET` gegen
+   `https://generativelanguage.googleapis.com/v1beta/` aus
+7. erfolgreiche Auth markiert den Runtime-Snapshot als bereit
+8. die Statusleiste zeigt das Gemini-Ready-Stern-Symbol
+9. die Feedback-Ebene spielt beim ersten Wechsel der Bereitschaft auf true
+   den Gemini-verbunden-Cue
 
-Authentication is skipped when:
+Die Authentifizierung wird übersprungen, wenn:
 
-- no API key is configured
-- a request is already in flight
-- Wi-Fi is not connected
-- Wi-Fi is in access-point mode
+- kein API-Key konfiguriert ist
+- bereits eine Anfrage läuft
+- kein WLAN verbunden ist
+- WLAN im Access-Point-Modus ist
 
-Followup currently treats `ready` as:
+Followup behandelt `ready` aktuell als:
 
 - `configured == true`
 - `authenticated == true`
 
-## Transport Details
+## Transport-Details
 
-The current auth path is intentionally minimal:
+Der aktuelle Auth-Pfad ist bewusst minimal:
 
-- request type: HTTP `GET`
-- endpoint: `v1beta/<model>`
-- default model: `models/gemini-2.5-flash-lite`
-- auth header: `x-goog-api-key: <api_key>`
+- Anfrage-Typ: HTTP `GET`
+- Endpunkt: `v1beta/<model>`
+- Standard-Modell: `models/gemini-2.5-flash-lite`
+- Auth-Header: `x-goog-api-key: <api_key>`
 
-The current implementation uses ESP-IDF's `esp_http_client` with the CRT bundle
-for TLS validation.
+Die aktuelle Implementierung nutzt ESP-IDFs `esp_http_client` mit dem
+CRT-Bundle zur TLS-Validierung.
 
-Followup does not yet implement:
+Followup implementiert noch nicht:
 
-- Gemini file upload
-- transcription prompts
-- text generation
-- token counting
+- Gemini-Datei-Upload
+- Transkriptions-Prompts
+- Text-Erzeugung
+- Token-Zählung
 
-## Public C++ Snapshot Shapes
+## Öffentliche C++-Snapshot-Formen
 
-Source of truth:
+Quelle der Wahrheit:
 
 - [`components/gemini_service/include/gemini_service.h`](/Users/tieuvong/Development/folloup-sticky/components/gemini_service/include/gemini_service.h)
 
 ### `gemini_service::SettingsSnapshot`
 
-Current fields:
+Aktuelle Felder:
 
 - `configured`
 - `has_stored_api_key`
@@ -172,7 +176,7 @@ Current fields:
 
 ### `gemini_service::RuntimeSnapshot`
 
-Current fields:
+Aktuelle Felder:
 
 - `initialized`
 - `ready`
@@ -188,26 +192,27 @@ Current fields:
 - `last_error_code`
 - `last_error_message`
 
-`supports_audio_understanding` and `supports_structured_output` currently remain
-`false` because This firmware has not yet ported those provider capabilities.
+`supports_audio_understanding` und `supports_structured_output` bleiben
+aktuell `false`, weil diese Firmware diese Provider-Fähigkeiten noch nicht
+portiert hat.
 
 ### `gemini_service::Snapshot`
 
-Contains:
+Enthält:
 
 - `settings`
 - `runtime`
 
 ### `gemini_service::SettingsPatch`
 
-Current fields:
+Aktuelle Felder:
 
 - `has_api_key`
 - `api_key`
 
 ### `gemini_service::Result`
 
-Current fields:
+Aktuelle Felder:
 
 - `success`
 - `validation_error`
@@ -216,29 +221,29 @@ Current fields:
 - `error_code`
 - `message`
 
-## Backend Endpoints
+## Backend-Endpunkte
 
-Current backend endpoints:
+Aktuelle Backend-Endpunkte:
 
 - `GET /api/settings/gemini`
 - `PATCH /api/settings/gemini`
 - `POST /api/settings/gemini/reset`
 - `GET /api/runtime/gemini`
 
-These routes are registered through the existing Wi-Fi backend server. Gemini
-does not start its own HTTP server.
+Diese Routen werden über den bestehenden WLAN-Backend-Server registriert.
+Gemini startet keinen eigenen HTTP-Server.
 
-Constraints:
+Einschränkungen:
 
-- content type is JSON
-- `PATCH` requires a JSON object body
-- `PATCH` body must be greater than `0` bytes and at most `512` bytes
+- Content-Type ist JSON
+- `PATCH` erfordert einen JSON-Objekt-Body
+- der `PATCH`-Body muss größer als `0` Byte und höchstens `512` Byte sein
 
-## JSON Contracts
+## JSON-Verträge
 
 ### `PATCH /api/settings/gemini`
 
-Current request shape:
+Aktuelle Anfrage-Form:
 
 ```json
 {
@@ -246,21 +251,21 @@ Current request shape:
 }
 ```
 
-Current validation rules:
+Aktuelle Validierungsregeln:
 
-- `api_key` must be present
-- `api_key` must be a non-empty string after trimming
+- `api_key` muss vorhanden sein
+- `api_key` muss nach dem Trimmen eine nicht-leere Zeichenkette sein
 
-### Snapshot Responses
+### Snapshot-Antworten
 
-Used by:
+Verwendet von:
 
 - `GET /api/settings/gemini`
 - `GET /api/runtime/gemini`
-- successful `PATCH /api/settings/gemini`
-- successful `POST /api/settings/gemini/reset`
+- erfolgreichem `PATCH /api/settings/gemini`
+- erfolgreichem `POST /api/settings/gemini/reset`
 
-Current response shape:
+Aktuelle Antwort-Form:
 
 ```json
 {
@@ -292,15 +297,15 @@ Current response shape:
 }
 ```
 
-Notes:
+Hinweise:
 
-- `api_key_last4` is intentionally masked metadata only
-- the raw API key is never returned by the backend
-- `message` varies by endpoint and outcome
+- `api_key_last4` ist absichtlich nur maskierte Metadaten
+- der rohe API-Key wird vom Backend niemals zurückgegeben
+- `message` variiert je nach Endpunkt und Ausgang
 
-### Error Responses
+### Fehler-Antworten
 
-Current error response shape:
+Aktuelle Fehler-Antwort-Form:
 
 ```json
 {
@@ -311,7 +316,7 @@ Current error response shape:
 }
 ```
 
-Common current error codes:
+Verbreitete aktuelle Fehlercodes:
 
 - `missing_api_key`
 - `invalid_api_key`
@@ -320,50 +325,50 @@ Common current error codes:
 - `not_configured`
 - `task_alloc_failed`
 - `task_start_failed`
-- provider error codes returned from Gemini HTTP error payloads when present
+- Provider-Fehlercodes aus Gemini-HTTP-Fehler-Payloads, wenn vorhanden
 
-## UI Integration
+## UI-Integration
 
-Followup currently uses Gemini readiness in two product-facing ways:
+Followup nutzt Gemini-Bereitschaft aktuell auf zwei produktseitige Arten:
 
-- the status bar shows the star icon when Wi-Fi is connected and Gemini is
-  authenticated
-- the feedback layer plays a dedicated Gemini-connected cue when readiness
-  transitions from false to true
+- die Statusleiste zeigt das Stern-Symbol, wenn WLAN verbunden und Gemini
+  authentifiziert ist
+- die Feedback-Ebene spielt einen eigenen Gemini-verbunden-Cue ab, wenn die
+  Bereitschaft von false auf true wechselt
 
-The current status-bar icon is the star asset already present in
-`project_assets`. This firmware is not yet using the broader upstream Gemini-specific
-page/UI flows.
+Das aktuelle Statusleisten-Symbol ist das bereits in `project_assets`
+vorhandene Stern-Asset. Diese Firmware nutzt noch nicht die breiteren
+Upstream-Gemini-spezifischen Seiten-/UI-Abläufe.
 
 ## Logging
 
-Current logs cover:
+Aktuelle Logs decken ab:
 
-- service initialization
-- auth start
-- auth success
-- auth failure
-- stale auth result suppression
-- backend route registration failures
-- NVS read/write/clear failures
-- app-facing Gemini event snapshots in `app_shell`
+- Service-Initialisierung
+- Auth-Start
+- Auth-Erfolg
+- Auth-Fehlschlag
+- Unterdrückung veralteter Auth-Ergebnisse
+- Fehlschläge bei der Backend-Routen-Registrierung
+- NVS-Lese-/Schreib-/Lösch-Fehlschläge
+- app-seitige Gemini-Ereignis-Snapshots in `app_shell`
 
-These logs are intended to make bring-up and backend integration easier before
-the larger Gemini feature set is ported.
+Diese Logs sollen Inbetriebnahme und Backend-Integration erleichtern, bevor
+der größere Gemini-Funktionsumfang portiert wird.
 
-## Deferred Followup Features
+## Zurückgestellte Followup-Funktionen
 
-The upstream Followup Gemini stack is broader than this implementation.
+Der Upstream-Followup-Gemini-Stack ist breiter als diese Implementierung.
 
-Not yet ported:
+Noch nicht portiert:
 
-- transcription jobs
-- summary generation
-- token counting
-- archived audio upload
-- provider worker queue shared across multiple Gemini job types
-- frontend portal UI for Gemini settings
+- Transkriptions-Jobs
+- Zusammenfassungs-Erzeugung
+- Token-Zählung
+- Upload archivierter Audiodateien
+- Provider-Worker-Queue, gemeinsam genutzt über mehrere Gemini-Job-Typen
+- Frontend-Portal-UI für Gemini-Einstellungen
 
-When those features are ported, this document should be expanded rather than
-replaced so it remains accurate for this firmware's actual runtime behavior at each
-stage.
+Wenn diese Funktionen portiert werden, sollte dieses Dokument erweitert statt
+ersetzt werden, damit es für das tatsächliche Laufzeitverhalten dieser
+Firmware in jeder Phase korrekt bleibt.

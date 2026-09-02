@@ -1,100 +1,100 @@
-# Followup Product Introduction
+# Followup Produktvorstellung
 
-Followup is a place to capture your thoughts — whether it's an idea, a to-do, or just a note. Record what's on your mind at that light-bulb moment, before it slips away, and Followup helps you organize it afterward. With a local AI server on your own network, your recordings are transcribed and summarized automatically. Everything is stored on your SD card.
+Followup ist ein Ort, um deine Gedanken festzuhalten — egal ob Idee, To-do oder einfach eine Notiz. Nimm auf, was dir gerade durch den Kopf geht, im Moment der Eingebung, bevor es wieder verschwindet, und Followup hilft dir danach, es zu ordnen. Mit einem lokalen KI-Server im eigenen Netzwerk werden deine Aufnahmen automatisch transkribiert und zusammengefasst. Alles wird auf deiner SD-Karte gespeichert.
 
-It runs on the [Waveshare ESP32-S3-ePaper-3.97](https://docs.waveshare.com/ESP32-S3-ePaper-3.97), so your thoughts live on a quiet, always-on screen you can place anywhere — a constant, low-interruption reminder instead of one more notification buried in your phone.
+Followup läuft auf dem [Waveshare ESP32-S3-ePaper-3.97](https://docs.waveshare.com/ESP32-S3-ePaper-3.97) — deine Gedanken leben also auf einem ruhigen, dauerhaft eingeschalteten Bildschirm, den du überall hinstellen kannst: eine ständige, unaufdringliche Erinnerung statt einer weiteren Benachrichtigung, die im Handy untergeht.
 
-## One-Sentence Positioning
+## Positionierung in einem Satz
 
-**Followup is a voice-first thought-capture companion on always-on ePaper: record ideas, to-dos, and notes in the moment, let a local AI server transcribe and summarize them, and keep the ones that matter in front of you as stickies.**
+**Followup ist ein sprachbasierter Begleiter fürs Festhalten von Gedanken auf einem dauerhaft eingeschalteten ePaper-Display: nimm Ideen, To-dos und Notizen im Moment auf, lass sie von einem lokalen KI-Server transkribieren und zusammenfassen, und behalte die wichtigen als Klebezettel im Blick.**
 
-## What It Is Suitable For
+## Wofür es geeignet ist
 
-- Capturing a sudden idea by voice at the light-bulb moment, before it's forgotten
-- Jotting quick to-dos and notes hands-free while you're in the middle of something else
-- Keeping a small, always-visible set of follow-ups on a desk, fridge, or wall
-- Revisiting past ideas later to decide what's still worth pursuing
-- Anyone who wants their thoughts organized without living inside another app on their phone
+- Eine plötzliche Idee per Sprache festhalten, im Moment der Eingebung, bevor sie vergessen ist
+- Schnelle To-dos und Notizen freihändig festhalten, während man gerade mit etwas anderem beschäftigt ist
+- Eine kleine, dauerhaft sichtbare Sammlung an Follow-ups auf dem Schreibtisch, am Kühlschrank oder an der Wand
+- Alte Ideen später erneut ansehen, um zu entscheiden, was noch verfolgenswert ist
+- Für alle, die ihre Gedanken geordnet haben wollen, ohne dafür in einer weiteren Handy-App zu leben
 
-## Key Features
+## Kernfunktionen
 
-### 1. Capture at the Light-Bulb Moment
+### 1. Festhalten im Moment der Eingebung
 
-Press record and speak. Every capture starts as a voice recording, tagged as an **Idea**, a **To-do**, or a **Note**, so you can get the thought down the instant it arrives without stopping to type.
+Aufnahme drücken und sprechen. Jede Aufnahme beginnt als Sprachmitschnitt, getaggt als **Idee**, **To-do** oder **Notiz** — der Gedanke ist so in dem Moment festgehalten, in dem er kommt, ohne zum Tippen anzuhalten.
 
-### 2. Local AI Transcription and Summarization
+### 2. Lokale KI-Transkription und -Zusammenfassung
 
-Once a recording is saved, a local AI server on your network transcribes the audio and summarizes it — turning a rambling voice memo into readable text and a concise summary you can scan at a glance.
+Sobald eine Aufnahme gespeichert ist, transkribiert und fasst ein lokaler KI-Server im eigenen Netzwerk das Audio zusammen — aus einer ausschweifenden Sprachnotiz wird lesbarer Text und eine knappe Zusammenfassung, die sich auf einen Blick erfassen lässt.
 
-A local AI server on the same network is required (this fork targets a household server running LM Studio with google/gemma-4-e2b for summaries and faster-whisper for transcription -- see docs/local-ai-service.md). No cloud account, no API key, no usage limits.
+Ein lokaler KI-Server im selben Netzwerk ist dafür erforderlich (dieser Fork zielt auf einen Heimserver mit LM Studio, google/gemma-4-e2b für Zusammenfassungen und faster-whisper für die Transkription — siehe docs/local-ai-service.md). Kein Cloud-Konto, kein API-Key, keine Nutzungsgrenzen.
 
-### 3. Everything Stored on Your SD Card
+### 3. Alles auf deiner SD-Karte gespeichert
 
-Recordings, transcripts, and summaries are stored locally on the device's SD card. Your thoughts stay with you, on your own storage.
+Aufnahmen, Transkripte und Zusammenfassungen werden lokal auf der SD-Karte des Geräts gespeichert. Deine Gedanken bleiben bei dir, auf deinem eigenen Speicher.
 
-### 4. Vibe-Check Your Ideas
+### 4. Vibe-Check für deine Ideen
 
-Ideas don't all age well. Review each one and decide whether it's still a vibe worth keeping — or something to trash so you can move on with a clear head.
+Nicht jede Idee altert gut. Sieh dir jede einzelne an und entscheide, ob sie noch einen Vibe hat, den es zu behalten lohnt — oder ob sie in den Müll kann, damit du mit klarem Kopf weitermachen kannst.
 
-### 5. Follow Up on Tasks and Notes
+### 5. Follow-up für Aufgaben und Notizen
 
-Mark a task or note as a follow-up to keep it on your radar. Followup helps you stay on track and focused on what actually needs doing next.
+Markiere eine Aufgabe oder Notiz als Follow-up, um sie im Blick zu behalten. Followup hilft dir, den Überblick zu behalten und dich auf das zu konzentrieren, was als Nächstes wirklich ansteht.
 
-### 6. Display Your Follow-Ups as Stickies
+### 6. Deine Follow-ups als Klebezettel anzeigen
 
-Pin your follow-ups to the ePaper display as sticky notes. Because the screen is always on and low-power, they stay in front of you as a constant, gentle reminder.
+Pinne deine Follow-ups als Klebezettel auf das ePaper-Display. Weil der Bildschirm dauerhaft eingeschaltet und stromsparend ist, bleiben sie als ständige, sanfte Erinnerung vor dir.
 
-## Typical Applications
+## Typische Anwendungen
 
-| Application | Description |
+| Anwendung | Beschreibung |
 | --- | --- |
-| Idea | Capture a spark by voice and revisit it later with a vibe check |
-| To-do | Record a task hands-free and follow up until it's done |
-| Note | Keep a quick thought or reminder, transcribed and summarized |
-| Follow-up | Flag the items that matter so they stay top of mind |
-| Stickies | Display your active follow-ups on the ePaper as always-on reminders |
-| Summaries | Let your local AI server condense long recordings into a glanceable summary |
+| Idee | Einen Einfall per Sprache festhalten und später mit einem Vibe-Check erneut ansehen |
+| To-do | Eine Aufgabe freihändig aufnehmen und dranbleiben, bis sie erledigt ist |
+| Notiz | Einen schnellen Gedanken oder eine Erinnerung festhalten, transkribiert und zusammengefasst |
+| Follow-up | Die Dinge markieren, die wichtig sind, damit sie im Kopf bleiben |
+| Klebezettel | Die aktiven Follow-ups auf dem ePaper als dauerhafte Erinnerungen anzeigen |
+| Zusammenfassungen | Den lokalen KI-Server lange Aufnahmen zu einer überschaubaren Zusammenfassung verdichten lassen |
 
-## Brief Specifications
+## Kurzspezifikationen
 
-Followup runs on the [Waveshare ESP32-S3-ePaper-3.97](https://docs.waveshare.com/ESP32-S3-ePaper-3.97).
+Followup läuft auf dem [Waveshare ESP32-S3-ePaper-3.97](https://docs.waveshare.com/ESP32-S3-ePaper-3.97).
 
-| Item | Information |
+| Punkt | Angabe |
 | --- | --- |
-| Product Name | Followup (on ESP32-S3-ePaper-3.97) |
-| Product Type | Voice-capture notes app on an ePaper terminal |
-| MCU | ESP32-S3R8, dual-core Xtensa LX7 up to 240MHz |
-| Memory | 8MB PSRAM, 16MB flash |
-| Screen | 3.97-inch black-and-white ePaper, 800 x 480, SSD1677 controller |
-| Interaction | Buttons only — this board has no touchscreen (see [Controls](#controls)) |
-| Connectivity | 2.4GHz Wi-Fi (802.11 b/g/n), Bluetooth 5 (LE) |
-| Audio | ES8311 codec, onboard microphone, NS4150B amplifier, speaker header |
-| Sensors | QMI8658 6-axis IMU, PCF85063 real-time clock |
-| Power | AXP2101 PMIC, 3.7V lithium battery (MX1.25 connector), USB-C charging |
-| Storage | microSD card (recordings, transcripts, summaries) |
-| AI | Local AI server (LAN, no cloud) transcription and summarization, over Wi-Fi |
+| Produktname | Followup (auf ESP32-S3-ePaper-3.97) |
+| Produkttyp | Sprachbasierte Notiz-App auf einem ePaper-Terminal |
+| MCU | ESP32-S3R8, Dual-Core Xtensa LX7 bis 240MHz |
+| Speicher | 8MB PSRAM, 16MB Flash |
+| Bildschirm | 3,97-Zoll Schwarz-Weiß-ePaper, 800 x 480, SSD1677-Controller |
+| Bedienung | Nur Tasten — dieses Board hat keinen Touchscreen (siehe [Bedienelemente](#bedienelemente)) |
+| Konnektivität | 2,4GHz WLAN (802.11 b/g/n), Bluetooth 5 (LE) |
+| Audio | ES8311-Codec, eingebautes Mikrofon, NS4150B-Verstärker, Lautsprecheranschluss |
+| Sensoren | QMI8658 6-Achsen-IMU, PCF85063 Echtzeituhr |
+| Stromversorgung | AXP2101 PMIC, 3,7V-Lithium-Akku (MX1.25-Anschluss), USB-C-Laden |
+| Speicherkarte | microSD-Karte (Aufnahmen, Transkripte, Zusammenfassungen) |
+| KI | Lokaler KI-Server (LAN, keine Cloud) für Transkription und Zusammenfassung, über WLAN |
 
-The board also carries an SHTC3 temperature/humidity sensor on the shared I2C bus. Followup does not currently read it.
+Das Board trägt außerdem einen SHTC3-Temperatur-/Feuchtigkeitssensor am gemeinsamen I2C-Bus. Followup liest ihn aktuell nicht aus.
 
-## Controls
+## Bedienelemente
 
-Followup is driven entirely by the three physical controls: a rocker, the BOOT button, and the PWR button.
+Followup wird ausschließlich über die drei physischen Bedienelemente gesteuert: eine Wipptaste, die BOOT-Taste und die PWR-Taste.
 
-| Control | Action |
+| Bedienelement | Aktion |
 | --- | --- |
-| Rocker up / down | Move the selection; hold to repeat |
-| Rocker down, held | Back out of a list or card you have entered |
-| Rocker middle | Select / confirm |
-| BOOT, tap | Select / confirm |
-| BOOT, press and hold | Record — recording starts on the hold and stops when you let go |
-| PWR, tap | Lock the screen, or unlock it |
-| PWR, hold ~1s | Open the shutdown confirmation |
-| PWR, hold 6s | Hardware power-off, straight from the PMIC |
+| Wipptaste hoch / runter | Auswahl bewegen; halten zum Wiederholen |
+| Wipptaste runter, gehalten | Aus einer Liste oder Karte zurückgehen, in die man hineingegangen ist |
+| Wipptaste Mitte | Auswählen / bestätigen |
+| BOOT, tippen | Auswählen / bestätigen |
+| BOOT, gedrückt halten | Aufnehmen — die Aufnahme beginnt beim Halten und stoppt beim Loslassen |
+| PWR, tippen | Bildschirm sperren oder entsperren |
+| PWR, ~1s halten | Herunterfahr-Bestätigung öffnen |
+| PWR, 6s halten | Hardware-Abschaltung, direkt über den PMIC |
 
-Recording is exclusive to BOOT, so no other control can start or stop a capture by accident. The 6-second PWR hold bypasses the firmware entirely and always cuts power.
+Aufnehmen ist exklusiv der BOOT-Taste vorbehalten, damit kein anderes Bedienelement versehentlich eine Aufnahme starten oder stoppen kann. Das 6-Sekunden-Halten der PWR-Taste umgeht die Firmware komplett und kappt immer die Stromversorgung.
 
-## Product Value Summary
+## Produktwert zusammengefasst
 
-The value of Followup is a quiet, always-visible place to catch your thoughts and keep the important ones in front of you. Instead of losing an idea to a forgotten note app or burying a task in a notification stream, you speak it in the moment, let your local AI server turn it into clean text and a summary, and keep everything private on your SD card and your own network.
+Der Wert von Followup ist ein ruhiger, dauerhaft sichtbarer Ort, um Gedanken festzuhalten und die wichtigen im Blick zu behalten. Statt eine Idee in einer vergessenen Notiz-App zu verlieren oder eine Aufgabe in einem Strom von Benachrichtigungen zu vergraben, sprichst du sie im Moment aus, lässt sie von deinem lokalen KI-Server in sauberen Text und eine Zusammenfassung verwandeln und behältst alles privat auf deiner SD-Karte und in deinem eigenen Netzwerk.
 
-Ideas get a vibe check so you only carry forward what still matters. Tasks and notes become follow-ups so you stay on track. And the ones you care about most sit on the ePaper as stickies — a steady, low-interruption reminder of what's next.
+Ideen bekommen einen Vibe-Check, damit du nur das weiterträgst, was noch zählt. Aufgaben und Notizen werden zu Follow-ups, damit du dranbleibst. Und die, die dir am wichtigsten sind, liegen als Klebezettel auf dem ePaper — eine stetige, unaufdringliche Erinnerung daran, was als Nächstes ansteht.

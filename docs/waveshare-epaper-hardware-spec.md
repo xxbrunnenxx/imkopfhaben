@@ -1,240 +1,228 @@
-# esp-epaper Hardware Specification (Software Porting Edition)
+# esp-epaper Hardware-Spezifikation (Software-Porting-Edition)
 
-> This document is intended for firmware/software porting of the `followup`
-> firmware on its retained `esp-epaper` board target. It focuses on the main
-> controller, key ICs, I2C addresses, power control, and ESP32-S3 GPIO
-> definitions.
+> Dieses Dokument ist für das Firmware-/Software-Porting der `followup`-
+> Firmware auf ihr beibehaltenes `esp-epaper`-Board-Target gedacht. Es
+> konzentriert sich auf den Hauptcontroller, die wichtigsten ICs, I2C-
+> Adressen, die Stromversorgung und die ESP32-S3-GPIO-Definitionen.
 >
-> The underlying board is the Waveshare **ESP32-S3-ePaper-3.97**. Vendor wiki:
-> <https://docs.waveshare.com/ESP32-S3-ePaper-3.97>. Where the vendor wiki and
-> the firmware disagree, the firmware is authoritative for what the running code
-> actually drives — see [Software Porting Notes](#9-software-porting-notes).
+> Das zugrunde liegende Board ist das Waveshare **ESP32-S3-ePaper-3.97**.
+> Hersteller-Wiki: <https://docs.waveshare.com/ESP32-S3-ePaper-3.97>. Wo
+> sich Hersteller-Wiki und Firmware widersprechen, ist die Firmware
+> maßgeblich dafür, was der laufende Code tatsächlich ansteuert — siehe
+> [Software-Porting-Hinweise](#9-software-porting-hinweise).
 
-## 1. System Overview
+## 1. Systemübersicht
 
-| Item | Specification |
+| Punkt | Spezifikation |
 |---|---|
-| Board id | `esp-epaper` (Waveshare ESP32-S3-ePaper-3.97) |
-| Main controller | ESP32-S3-WROOM-1-N16R8 (`esp32s3` target) |
-| Flash / PSRAM | 16 MB flash / 8 MB octal PSRAM |
-| Wireless | 2.4 GHz Wi-Fi (802.11 b/g/n) + Bluetooth 5 LE |
-| Display | Waveshare 3.97" e-paper panel, `SSD1677` controller, `800x480` |
-| Display bus | SPI (`SPI3_HOST`), e-paper control signals |
-| Audio codec | ES8311 over I2S + shared I2C |
-| Audio amplifier | NS4150B (enabled via `GPIO39`) |
-| Board PCM format | `24 kHz`, mono, 16-bit |
-| Storage expansion | MicroSD via `SDMMC 4-bit` mode |
-| Power management | AXP2101 PMIC (wiki labels it `TG28`) |
+| Board-ID | `esp-epaper` (Waveshare ESP32-S3-ePaper-3.97) |
+| Hauptcontroller | ESP32-S3-WROOM-1-N16R8 (`esp32s3`-Target) |
+| Flash / PSRAM | 16 MB Flash / 8 MB Octal-PSRAM |
+| Funk | 2,4 GHz WLAN (802.11 b/g/n) + Bluetooth 5 LE |
+| Display | Waveshare 3,97"-E-Paper-Panel, `SSD1677`-Controller, `800x480` |
+| Display-Bus | SPI (`SPI3_HOST`), E-Paper-Steuersignale |
+| Audio-Codec | ES8311 über I2S + gemeinsam genutztes I2C |
+| Audio-Verstärker | NS4150B (aktiviert über `GPIO39`) |
+| Board-PCM-Format | `24 kHz`, Mono, 16-Bit |
+| Speicher-Erweiterung | MicroSD über `SDMMC 4-Bit`-Modus |
+| Energieverwaltung | AXP2101-PMIC (Wiki bezeichnet ihn als `TG28`) |
 | RTC | PCF85063 |
-| IMU | QMI8658 (6-axis) |
-| Temp/humidity | SHTC3 (present on board; not driven by current firmware) |
-| USB | Native `USB-OTG` over the board USB-C connector |
-| Shared control bus | I2C on `GPIO41` (SDA) / `GPIO42` (SCL) |
+| IMU | QMI8658 (6-Achsen) |
+| Temperatur/Feuchtigkeit | SHTC3 (auf dem Board vorhanden; von der aktuellen Firmware nicht angesteuert) |
+| USB | Natives `USB-OTG` über den USB-C-Anschluss des Boards |
+| Gemeinsamer Steuerbus | I2C auf `GPIO41` (SDA) / `GPIO42` (SCL) |
 
-## 2. Key IC Part Numbers
+## 2. Wichtige IC-Bauteilnummern
 
-| Function | Part Number | I2C Address | Software-Relevant Notes |
+| Funktion | Bauteilnummer | I2C-Adresse | Software-relevante Hinweise |
 |---|---|---|---|
-| Main controller | ESP32-S3-WROOM-1-N16R8 | — | ESP-IDF target `esp32s3`; 16 MB flash / 8 MB PSRAM |
-| E-paper controller | SSD1677 | — | 800x480 panel; SPI command interface |
-| Audio codec | ES8311 | `0x30` | I2S audio + I2C control; PA enable on `GPIO39` |
-| Audio amplifier | NS4150B | — | Speaker power amp; enable driven by codec PA pin `GPIO39` |
-| Power management IC | AXP2101 | `0x34` | Battery charging + system power rails + VBUS events |
-| RTC | PCF85063 | `0x51` | Real-time clock; interrupt on `GPIO45` |
-| 6-axis IMU | QMI8658 | `0x6B` / `0x6A` | Default `0x6B`, alternate `0x6A` (auto-tried); INT2 on `GPIO40` |
-| Temp/humidity sensor | SHTC3 | `0x70` | On shared I2C bus; no driver in current firmware |
-| MicroSD | — | — | `SDMMC 4-bit` mode socket |
+| Hauptcontroller | ESP32-S3-WROOM-1-N16R8 | — | ESP-IDF-Target `esp32s3`; 16 MB Flash / 8 MB PSRAM |
+| E-Paper-Controller | SSD1677 | — | 800x480-Panel; SPI-Kommandoschnittstelle |
+| Audio-Codec | ES8311 | `0x30` | I2S-Audio + I2C-Steuerung; PA-Freigabe auf `GPIO39` |
+| Audio-Verstärker | NS4150B | — | Lautsprecher-Endstufe; Freigabe über den Codec-PA-Pin `GPIO39` |
+| Power-Management-IC | AXP2101 | `0x34` | Akkuladung + System-Spannungsschienen + VBUS-Ereignisse |
+| RTC | PCF85063 | `0x51` | Echtzeituhr; Interrupt auf `GPIO45` |
+| 6-Achsen-IMU | QMI8658 | `0x6B` / `0x6A` | Standard `0x6B`, Alternative `0x6A` (wird automatisch probiert); INT2 auf `GPIO40` |
+| Temperatur-/Feuchtigkeitssensor | SHTC3 | `0x70` | Am gemeinsamen I2C-Bus; kein Treiber in der aktuellen Firmware |
+| MicroSD | — | — | Steckplatz im `SDMMC 4-Bit`-Modus |
 
-## 3. I2C Peripheral Addresses
+## 3. I2C-Peripherie-Adressen
 
-All I2C peripherals share the same master bus (`GPIO41` SDA / `GPIO42` SCL).
+Alle I2C-Peripheriegeräte teilen sich denselben Master-Bus (`GPIO41` SDA / `GPIO42` SCL).
 
-| Peripheral | Part Number | Address | Notes |
+| Peripheriegerät | Bauteilnummer | Adresse | Hinweise |
 |---|---|---|---|
-| Audio codec | ES8311 | `0x30` | `ES8311_CODEC_DEFAULT_ADDR` |
+| Audio-Codec | ES8311 | `0x30` | `ES8311_CODEC_DEFAULT_ADDR` |
 | PMIC | AXP2101 | `0x34` | `AXP2101_SLAVE_ADDRESS` |
 | RTC | PCF85063 | `0x51` | `Pcf85063::kDefaultAddress` |
-| 6-axis IMU | QMI8658 | `0x6B` / `0x6A` | Firmware tries `0x6B` first, then `0x6A` |
-| Temp/humidity sensor | SHTC3 | `0x70` | On the bus per board design; not accessed by current firmware |
+| 6-Achsen-IMU | QMI8658 | `0x6B` / `0x6A` | Firmware probiert zuerst `0x6B`, dann `0x6A` |
+| Temperatur-/Feuchtigkeitssensor | SHTC3 | `0x70` | Laut Board-Design am Bus; von der aktuellen Firmware nicht angesprochen |
 
-## 4. ESP32-S3 GPIO Definitions
+## 4. ESP32-S3-GPIO-Definitionen
 
-### 4.1 E-paper Display (SPI3)
+### 4.1 E-Paper-Display (SPI3)
 
-| Signal | GPIO | Direction (from controller perspective) | Purpose |
+| Signal | GPIO | Richtung (aus Controller-Sicht) | Zweck |
 |---|---:|---|---|
-| `EPD_DC` | GPIO9 | Output | E-paper D/C select |
-| `EPD_CS` | GPIO10 | Output | E-paper SPI CS |
-| `EPD_SCK` | GPIO11 | Output | E-paper SPI CLK |
-| `EPD_MOSI` | GPIO12 | Output | E-paper SPI MOSI (DIN) |
-| `EPD_RST` | GPIO46 | Output | E-paper reset |
-| `EPD_BUSY` | GPIO3 | Input | E-paper busy status |
+| `EPD_DC` | GPIO9 | Ausgang | E-Paper D/C-Auswahl |
+| `EPD_CS` | GPIO10 | Ausgang | E-Paper SPI CS |
+| `EPD_SCK` | GPIO11 | Ausgang | E-Paper SPI CLK |
+| `EPD_MOSI` | GPIO12 | Ausgang | E-Paper SPI MOSI (DIN) |
+| `EPD_RST` | GPIO46 | Ausgang | E-Paper-Reset |
+| `EPD_BUSY` | GPIO3 | Eingang | E-Paper-Busy-Status |
 
 ### 4.2 Audio (I2S + Codec)
 
-| Signal | GPIO | Direction (from controller perspective) | Purpose |
+| Signal | GPIO | Richtung (aus Controller-Sicht) | Zweck |
 |---|---:|---|---|
-| `I2S_MCLK` | GPIO13 | Output | Codec master clock |
-| `I2S_BCLK` | GPIO14 | Output | Codec bit clock |
-| `I2S_WS` (LRCK) | GPIO47 | Output | Codec word select / LR clock |
-| `I2S_DOUT` | GPIO48 | Output | Codec data out (playback) |
-| `I2S_DIN` | GPIO21 | Input | Codec data in (mic capture) |
-| `CODEC_PA` | GPIO39 | Output | Codec power-amplifier enable |
-| `CODEC_I2C_SDA` | GPIO41 | I/O | Codec control I2C SDA (shared bus) |
-| `CODEC_I2C_SCL` | GPIO42 | Output | Codec control I2C SCL (shared bus) |
+| `I2S_MCLK` | GPIO13 | Ausgang | Codec-Master-Takt |
+| `I2S_BCLK` | GPIO14 | Ausgang | Codec-Bit-Takt |
+| `I2S_WS` (LRCK) | GPIO47 | Ausgang | Codec Word-Select / LR-Takt |
+| `I2S_DOUT` | GPIO48 | Ausgang | Codec-Datenausgang (Wiedergabe) |
+| `I2S_DIN` | GPIO21 | Eingang | Codec-Dateneingang (Mikrofonaufnahme) |
+| `CODEC_PA` | GPIO39 | Ausgang | Freigabe des Codec-Leistungsverstärkers |
+| `CODEC_I2C_SDA` | GPIO41 | I/O | Codec-Steuerung I2C SDA (gemeinsamer Bus) |
+| `CODEC_I2C_SCL` | GPIO42 | Ausgang | Codec-Steuerung I2C SCL (gemeinsamer Bus) |
 
-### 4.3 I2C And Interrupts
+### 4.3 I2C und Interrupts
 
-| Signal | GPIO | Direction (from controller perspective) | Purpose |
+| Signal | GPIO | Richtung (aus Controller-Sicht) | Zweck |
 |---|---:|---|---|
-| `I2C_SDA` | GPIO41 | I/O/Open-drain | Shared I2C SDA (codec/PMIC/RTC/IMU) |
-| `I2C_SCL` | GPIO42 | Output/Open-drain | Shared I2C SCL (codec/PMIC/RTC/IMU) |
-| `PMIC_IRQ` | GPIO38 | Input | AXP2101 interrupt (incl. VBUS insert/remove) |
-| `RTC_INT` | GPIO45 | Input | PCF85063 RTC interrupt |
-| `QMI8658_INT2` | GPIO40 | Input | IMU interrupt 2 |
+| `I2C_SDA` | GPIO41 | I/O/Open-Drain | Gemeinsames I2C SDA (Codec/PMIC/RTC/IMU) |
+| `I2C_SCL` | GPIO42 | Ausgang/Open-Drain | Gemeinsames I2C SCL (Codec/PMIC/RTC/IMU) |
+| `PMIC_IRQ` | GPIO38 | Eingang | AXP2101-Interrupt (inkl. VBUS-Anstecken/-Abziehen) |
+| `RTC_INT` | GPIO45 | Eingang | PCF85063-RTC-Interrupt |
+| `QMI8658_INT2` | GPIO40 | Eingang | IMU-Interrupt 2 |
 
-### 4.4 Buttons And Navigation
+### 4.4 Tasten und Navigation
 
-| Signal | GPIO | Direction (from controller perspective) | Purpose |
+| Signal | GPIO | Richtung (aus Controller-Sicht) | Zweck |
 |---|---:|---|---|
-| `BOOT_BUTTON` | GPIO0 | Input | BOOT/strap pin, also the primary action button |
-| `NAV_BUTTON_UP` | GPIO4 | Input | Navigation up |
-| `NAV_BUTTON_FUNCTION` | GPIO5 | Input | Navigation function / middle key |
-| `NAV_BUTTON_DOWN` | GPIO6 | Input | Navigation down |
+| `BOOT_BUTTON` | GPIO0 | Eingang | BOOT/Strap-Pin, zugleich die primäre Aktionstaste |
+| `NAV_BUTTON_UP` | GPIO4 | Eingang | Navigation hoch |
+| `NAV_BUTTON_FUNCTION` | GPIO5 | Eingang | Navigation Funktion / mittlere Taste |
+| `NAV_BUTTON_DOWN` | GPIO6 | Eingang | Navigation runter |
 
-### 4.5 MicroSD (SDMMC 4-bit)
+### 4.5 MicroSD (SDMMC 4-Bit)
 
-| Signal | GPIO | Direction (from controller perspective) | Purpose |
+| Signal | GPIO | Richtung (aus Controller-Sicht) | Zweck |
 |---|---:|---|---|
-| `SD_D0` | GPIO15 | I/O | SD data 0 |
-| `SD_D1` | GPIO7 | I/O | SD data 1 |
-| `SD_D2` | GPIO8 | I/O | SD data 2 |
-| `SD_D3` | GPIO18 | I/O | SD data 3 |
-| `SD_CLK` | GPIO16 | Output | SD clock |
-| `SD_CMD` | GPIO17 | I/O | SD command |
+| `SD_D0` | GPIO15 | I/O | SD-Daten 0 |
+| `SD_D1` | GPIO7 | I/O | SD-Daten 1 |
+| `SD_D2` | GPIO8 | I/O | SD-Daten 2 |
+| `SD_D3` | GPIO18 | I/O | SD-Daten 3 |
+| `SD_CLK` | GPIO16 | Ausgang | SD-Takt |
+| `SD_CMD` | GPIO17 | I/O | SD-Kommando |
 
-## 5. Power and Charging (AXP2101)
+## 5. Stromversorgung und Laden (AXP2101)
 
-The AXP2101 PMIC owns system power, battery charging, and USB VBUS state. The
-firmware profile is configured in the `Pmic` constructor in
-[`components/board_epaper/epaper_board.cc`](/Users/tieuvong/Development/followup/components/board_epaper/epaper_board.cc).
+Der AXP2101-PMIC verantwortet die Systemstromversorgung, das Laden des Akkus und den USB-VBUS-Zustand. Das Firmware-Profil wird im `Pmic`-Konstruktor in
+[`components/board_epaper/epaper_board.cc`](/Users/tieuvong/Development/followup/components/board_epaper/epaper_board.cc) konfiguriert.
 
-### 5.1 Power Rails
+### 5.1 Spannungsschienen
 
-These are the PMIC outputs the firmware enables at bring-up:
+Das sind die PMIC-Ausgänge, die die Firmware beim Hochfahren aktiviert:
 
-| Rail | State | Voltage | Notes |
+| Schiene | Zustand | Spannung | Hinweise |
 |---|---|---|---|
-| `DC1` | enabled | `3300 mV` | Main system 3.3 V |
-| `ALDO1` | enabled | `3300 mV` | 3.3 V peripheral LDO |
-| `ALDO2` | enabled | `3300 mV` | 3.3 V peripheral LDO |
-| `ALDO3` | enabled | `3300 mV` | 3.3 V peripheral LDO |
-| Button/backup battery | charge enabled | `3000 mV` | Coin/backup cell charge (e.g. RTC backup) |
-| System power-down | — | `2800 mV` | PMIC cuts system power below this |
+| `DC1` | aktiviert | `3300 mV` | Haupt-System 3,3 V |
+| `ALDO1` | aktiviert | `3300 mV` | 3,3 V Peripherie-LDO |
+| `ALDO2` | aktiviert | `3300 mV` | 3,3 V Peripherie-LDO |
+| `ALDO3` | aktiviert | `3300 mV` | 3,3 V Peripherie-LDO |
+| Knopfzellen-/Backup-Akku | Laden aktiviert | `3000 mV` | Laden der Knopf-/Backup-Zelle (z. B. RTC-Backup) |
+| System-Abschaltung | — | `2800 mV` | PMIC kappt die Systemversorgung unterhalb dieses Werts |
 
-> Per-rail **load assignment** (which LDO feeds the display, codec, SD, or RTC)
-> is a schematic-level fact and is not declared in firmware — the code only sets
-> voltages and enables. Confirm rail→peripheral mapping against the board
-> schematic before repurposing any rail.
+> Die **Zuordnung**, welche LDO-Schiene Display, Codec, SD oder RTC
+> versorgt, ist eine Tatsache auf Schaltplan-Ebene und wird in der
+> Firmware nicht deklariert — der Code setzt nur Spannungen und
+> Freigaben. Die Zuordnung Schiene→Peripherie vor einer Umwidmung einer
+> Schiene am Board-Schaltplan gegenprüfen.
 
-### 5.2 Charging And VBUS
+### 5.2 Laden und VBUS
 
-| Parameter | Value |
+| Parameter | Wert |
 |---|---|
-| VBUS voltage limit | `4.36 V` |
-| VBUS current limit | `900 mA` |
-| Charge target voltage | `4.2 V` |
-| Charge constant current | `400 mA` |
-| Precharge current | `75 mA` |
-| Termination current | `25 mA` |
-| Thermal threshold | `80 °C` |
-| System power-down voltage | `2800 mV` |
-| Low-battery warn threshold | `10 %` |
-| Low-battery shutdown threshold | `5 %` |
+| VBUS-Spannungsgrenze | `4,36 V` |
+| VBUS-Strombegrenzung | `900 mA` |
+| Ziel-Ladespannung | `4,2 V` |
+| Konstanter Ladestrom | `400 mA` |
+| Vorladestrom | `75 mA` |
+| Abschaltstrom | `25 mA` |
+| Temperatur-Schwellwert | `80 °C` |
+| System-Abschaltspannung | `2800 mV` |
+| Schwellwert für Akku-Warnung | `10 %` |
+| Schwellwert für Akku-Abschaltung | `5 %` |
 
-### 5.3 Shutdown Model
+### 5.3 Abschalt-Modell
 
-Shutdown model (hybrid):
+Abschalt-Modell (hybrid):
 
-- power on from the PMIC hardware key path
-- firmware-confirmed shutdown before PMIC power-off for the normal in-app flow
-- PMIC-enforced `6s` power-key long-press shutdown as a forced fallback
+- Einschalten über den PMIC-Hardware-Tasten-Pfad
+- Firmware-bestätigtes Herunterfahren vor dem PMIC-Power-off für den normalen In-App-Ablauf
+- vom PMIC erzwungenes Herunterfahren nach `6 s` langem Drücken der Ein-/Austaste als erzwungener Fallback
 
-The PMIC interrupt line (`GPIO38`) also exposes USB cable insert/remove state,
-used for OTG/storage-mode cable detection and automatic exit back to app-owned
-SD-card mode.
+Die PMIC-Interrupt-Leitung (`GPIO38`) zeigt auch das Anstecken/Abziehen des USB-Kabels an, genutzt für die Kabelerkennung im OTG-/Speicher-Modus und den automatischen Ausstieg zurück in den App-eigenen SD-Karten-Modus.
 
-## 6. Sleep and Wake-Up
+## 6. Schlafen und Aufwachen
 
-The firmware uses **light sleep** (not deep sleep) for inactivity, driven by the
-device sleep service. The wake path is implemented in
+Die Firmware nutzt **Light Sleep** (nicht Deep Sleep) bei Inaktivität, gesteuert vom Device-Sleep-Service. Der Aufwach-Pfad ist implementiert in
 [`main/service_runtime/device_sleep_runtime.cc`](/Users/tieuvong/Development/followup/main/service_runtime/device_sleep_runtime.cc).
 
-Entry sequence before `esp_light_sleep_start()`:
+Ablauf vor `esp_light_sleep_start()`:
 
-- suppress display refresh and put the e-paper panel to sleep (`SleepPanel()`)
-- prepare board power interrupts for wake
-- arm GPIO wake sources, then sleep
+- Display-Refresh unterdrücken und das E-Paper-Panel schlafen legen (`SleepPanel()`)
+- Board-Power-Interrupts fürs Aufwachen vorbereiten
+- GPIO-Aufwach-Quellen scharfschalten, dann schlafen
 
-### 6.1 Wake Sources
+### 6.1 Aufwach-Quellen
 
-| Signal | GPIO | Trigger | Purpose |
+| Signal | GPIO | Auslöser | Zweck |
 |---|---:|---|---|
-| `PMIC_IRQ` (POWERKEY) | GPIO38 | Low level | Power-key press / PMIC event wake |
-| `BOOT_BUTTON` | GPIO0 | Low level | Primary action button wake |
+| `PMIC_IRQ` (POWERKEY) | GPIO38 | Low-Pegel | Aufwachen durch Ein-/Austasten-Druck / PMIC-Ereignis |
+| `BOOT_BUTTON` | GPIO0 | Low-Pegel | Aufwachen durch primäre Aktionstaste |
 
-Both are armed with `gpio_wakeup_enable(..., GPIO_INTR_LOW_LEVEL)` +
-`esp_sleep_enable_gpio_wakeup()`. On exit the firmware reads both pin levels to
-attribute the wake cause and suppress the spurious press event that caused it,
-then calls `gpio_wakeup_disable()` on both and restores normal power interrupts.
+Beide werden mit `gpio_wakeup_enable(..., GPIO_INTR_LOW_LEVEL)` +
+`esp_sleep_enable_gpio_wakeup()` scharfgeschaltet. Beim Verlassen liest die Firmware beide Pin-Pegel, um die Aufwach-Ursache zuzuordnen und das dadurch ausgelöste Fehl-Tastenereignis zu unterdrücken, ruft dann bei beiden `gpio_wakeup_disable()` auf und stellt die normalen Power-Interrupts wieder her.
 
-### 6.2 Notes
+### 6.2 Hinweise
 
-- This is **light sleep**, so it keeps RAM/peripheral state; there is no EXT1 /
-  RTC-domain `esp_sleep_enable_ext1_wakeup_io()` deep-sleep path in this firmware.
-- IMU wake-on-motion is available in the QMI8658 driver but is **disabled** in
-  this board profile (`QMI8658_ENABLE_WAKE_ON_MOTION = false`), so motion is not
-  a wake source.
-- RTC alarm handling is a firmware timer poll that is disabled during sleep — the
-  RTC (`GPIO45`) is not used as a light-sleep wake GPIO.
+- Das ist **Light Sleep**, es bleibt also RAM-/Peripheriezustand erhalten; in dieser Firmware gibt es keinen EXT1-/RTC-Domain-`esp_sleep_enable_ext1_wakeup_io()`-Deep-Sleep-Pfad.
+- Aufwachen der IMU bei Bewegung ist im QMI8658-Treiber vorhanden, aber in diesem Board-Profil **deaktiviert** (`QMI8658_ENABLE_WAKE_ON_MOTION = false`) — Bewegung ist also keine Aufwach-Quelle.
+- Die RTC-Alarmbehandlung ist ein Firmware-Timer-Polling, das während des Schlafs deaktiviert ist — die RTC (`GPIO45`) wird nicht als Light-Sleep-Aufwach-GPIO genutzt.
 
-## 7. Strapping Pins
+## 7. Strap-Pins
 
-The ESP32-S3 strapping pins carry startup risk; several are reused as functional
-signals on this board and must keep a Boot-safe default level at reset:
+Die Strap-Pins des ESP32-S3 bergen ein Startup-Risiko; mehrere davon werden auf diesem Board als funktionale Signale wiederverwendet und müssen beim Reset einen Boot-sicheren Standardpegel halten:
 
-| GPIO | Strap role | Board use | Caution |
+| GPIO | Strap-Rolle | Nutzung auf dem Board | Vorsicht |
 |---|---:|---|---|
-| `GPIO0` | Boot / download select | Primary action button (also POWERKEY wake) | Must be high at reset for normal boot |
-| `GPIO3` | JTAG source select | `EPD_BUSY` input | Keep default level Boot-safe at startup |
-| `GPIO45` | VDD_SPI voltage | `RTC_INT` input | Avoid asserting during reset |
-| `GPIO46` | Boot / ROM messaging | `EPD_RST` output | Avoid asserting during reset |
+| `GPIO0` | Boot-/Download-Auswahl | Primäre Aktionstaste (auch POWERKEY-Aufwachen) | Muss beim Reset high sein für normalen Boot |
+| `GPIO3` | JTAG-Quellenauswahl | `EPD_BUSY`-Eingang | Standardpegel beim Start Boot-sicher halten |
+| `GPIO45` | VDD_SPI-Spannung | `RTC_INT`-Eingang | Während des Resets nicht aktiv schalten |
+| `GPIO46` | Boot-/ROM-Meldungen | `EPD_RST`-Ausgang | Während des Resets nicht aktiv schalten |
 
-## 8. USB / OTG Storage
+## 8. USB-/OTG-Speicher
 
-- OTG mode uses the ESP32-S3 native USB device path to expose the SD card as
-  USB mass storage
-- the user enters USB storage from the Settings page via the `Enable OTG` action
-- while active, the SD card is host-owned and the app blocks normal navigation
-  behind a storage modal
-- short power-key press, BOOT key activation, or USB cable removal requests exit
-  back to app-mounted SD-card mode
+- Der OTG-Modus nutzt den nativen ESP32-S3-USB-Device-Pfad, um die SD-Karte als USB-Massenspeicher bereitzustellen
+- der Nutzer wechselt über die Aktion `Enable OTG` auf der Einstellungsseite in den USB-Speicher-Modus
+- während der Aktivierung gehört die SD-Karte dem Host, und die App blockiert die normale Navigation hinter einem Speicher-Modal
+- kurzer Druck der Ein-/Austaste, Betätigung der BOOT-Taste oder Abziehen des USB-Kabels fordern den Ausstieg zurück in den App-gemounteten SD-Karten-Modus an
 
-## 9. Software Porting Notes
+## 9. Software-Porting-Hinweise
 
-| Item | Notes |
+| Punkt | Hinweise |
 |---|---|
-| Source of truth | Pin values come from `epaper_board_config.h`; do not treat `docs/hardware-reference.md` audio pins as current — that file lists an older I2S mapping (`WS`/`DOUT`/`DIN` on GP15/GP16/GP21). The config header uses `WS=GPIO47`, `DOUT=GPIO48`, `DIN=GPIO21`, `MCLK=GPIO13`, `BCLK=GPIO14`. |
-| Shared I2C bus | Codec, PMIC, RTC, and IMU share one master bus on `GPIO41`/`GPIO42`. |
-| IMU address | QMI8658 auto-detects: try `0x6B` first, fall back to `0x6A`. |
-| Strapping pins | `GPIO0/3/45/46` are strapping pins reused as functional signals — see [Strapping Pins](#7-strapping-pins). |
-| SD mode | `SDMMC 4-bit` (not SPI); all four data lines connected (`D0`–`D3`). |
-| Audio sample rate | Codec runs at `24 kHz` mono/16-bit; Gemini uplink path downsamples mic audio to `16 kHz` in software. |
-| PMIC naming | The Waveshare wiki lists the PMIC as `TG28`; the firmware driver targets an AXP2101-compatible PMIC at I2C `0x34` and that is what actually works. Treat `0x34` / AXP2101 as authoritative. |
-| SHTC3 sensor | Present on the board (shared I2C, `0x70`) but the current firmware ships no SHTC3 driver — add one before relying on temp/humidity. |
-| Connectors | Battery, speaker, and RTC-backup-battery use MX1.25 headers (per vendor wiki); USB-C is used for flashing/logging and native USB-OTG. |
+| Quelle der Wahrheit | Pin-Werte stammen aus `epaper_board_config.h`; die Audio-Pins in `docs/hardware-reference.md` nicht als aktuell behandeln — diese Datei listet ein älteres I2S-Mapping (`WS`/`DOUT`/`DIN` auf GP15/GP16/GP21). Der Config-Header nutzt `WS=GPIO47`, `DOUT=GPIO48`, `DIN=GPIO21`, `MCLK=GPIO13`, `BCLK=GPIO14`. |
+| Gemeinsamer I2C-Bus | Codec, PMIC, RTC und IMU teilen sich einen Master-Bus auf `GPIO41`/`GPIO42`. |
+| IMU-Adresse | QMI8658 erkennt sich automatisch: zuerst `0x6B` probieren, dann `0x6A` als Fallback. |
+| Strap-Pins | `GPIO0/3/45/46` sind Strap-Pins, die als funktionale Signale wiederverwendet werden — siehe [Strap-Pins](#7-strap-pins). |
+| SD-Modus | `SDMMC 4-Bit` (nicht SPI); alle vier Datenleitungen angeschlossen (`D0`–`D3`). |
+| Audio-Abtastrate | Codec läuft mit `24 kHz` Mono/16-Bit; der Gemini-Upload-Pfad tastet Mikrofon-Audio softwareseitig auf `16 kHz` herunter. |
+| PMIC-Bezeichnung | Das Waveshare-Wiki listet den PMIC als `TG28`; der Firmware-Treiber zielt auf einen AXP2101-kompatiblen PMIC unter I2C `0x34`, und das ist es, was tatsächlich funktioniert. `0x34` / AXP2101 als maßgeblich behandeln. |
+| SHTC3-Sensor | Auf dem Board vorhanden (gemeinsames I2C, `0x70`), aber die aktuelle Firmware liefert keinen SHTC3-Treiber mit — vor Verlassen auf Temperatur/Feuchtigkeit erst einen hinzufügen. |
+| Anschlüsse | Akku, Lautsprecher und RTC-Backup-Akku nutzen MX1.25-Stecker (laut Hersteller-Wiki); USB-C wird zum Flashen/Loggen und für natives USB-OTG genutzt. |
 
-## 10. Build And Flash
+## 10. Build und Flash
 
 ```bash
 source $IDF_PATH/export.sh
@@ -243,7 +231,7 @@ idf.py build
 idf.py flash monitor
 ```
 
-Release helper:
+Release-Hilfsskript:
 
 ```bash
 python3 scripts/release.py esp-epaper

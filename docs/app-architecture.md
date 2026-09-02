@@ -1,108 +1,126 @@
-# Followup App Architecture
+# Followup App-Architektur
 
-This project is an ESP-IDF C++17 firmware application for the
+Dieses Projekt ist eine ESP-IDF-C++17-Firmware-Anwendung für das
 [Waveshare ESP32-S3-ePaper-3.97](https://docs.waveshare.com/ESP32-S3-ePaper-3.97).
-The board details are in `docs/waveshare-epaper-hardware-spec.md`.
+Die Board-Details stehen in `docs/waveshare-epaper-hardware-spec.md`.
 
-The codebase began as a port targeting the Seeed reTerminal Sticky, and parts of
-this document still describe that lineage where the design rationale carried
-over. Where the two boards differ, this document describes the Waveshare
-hardware, which is the only target the firmware builds for today. The most
-significant differences:
+Die Codebasis begann als Portierung für den Seeed reTerminal Sticky, und
+Teile dieses Dokuments beschreiben diese Herkunft noch dort, wo die
+Design-Begründung übernommen wurde. Wo sich die beiden Boards
+unterscheiden, beschreibt dieses Dokument die Waveshare-Hardware, die
+aktuell das einzige Ziel ist, für das die Firmware gebaut wird. Die
+wichtigsten Unterschiede:
 
-| Area | reTerminal Sticky | Waveshare ESP32-S3-ePaper-3.97 |
+| Bereich | reTerminal Sticky | Waveshare ESP32-S3-ePaper-3.97 |
 | --- | --- | --- |
-| Input | GT911 capacitive touch + buttons | Buttons only — no touch controller |
-| Microphone | PDM mic (`pdm_mic`, `microphone_service`) | ES8311 codec over I2S (`audio_hal`) |
-| Speaker | none | ES8311 + NS4150B amplifier |
-| Power | BQ27220 fuel gauge + discrete latch | AXP2101 PMIC (rails, charger, power key) |
+| Eingabe | GT911 kapazitives Touch + Tasten | Nur Tasten — kein Touch-Controller |
+| Mikrofon | PDM-Mikrofon (`pdm_mic`, `microphone_service`) | ES8311-Codec über I2S (`audio_hal`) |
+| Lautsprecher | keiner | ES8311 + NS4150B-Verstärker |
+| Strom | BQ27220-Fuel-Gauge + diskreter Latch | AXP2101-PMIC (Rails, Ladegerät, Power-Taste) |
 | RTC | PCF85063 | PCF85063 |
-| IMU | — | QMI8658 6-axis |
-| Display bus | SPI2 shared with SD | Dedicated SPI3, no bus sharing |
+| IMU | — | QMI8658 6-Achsen |
+| Display-Bus | SPI2 gemeinsam mit SD | Eigener SPI3, kein geteilter Bus |
 
-## Current Scope
+## Aktueller Umfang
 
-The repository is a multi-page ESP-IDF product application (dashboard home,
-onboarding, and a set of feature pages plus overlays) built on:
+Das Repository ist eine mehrseitige ESP-IDF-Produktanwendung
+(Dashboard-Startseite, Onboarding und eine Reihe von Feature-Seiten plus
+Overlays), aufgebaut auf:
 
-- ESP32-S3 target configuration.
-- 16 MB flash configuration.
-- 8 MB PSRAM configuration.
-- OTA-ready partition layout with rollback enabled.
-- A minimal C++ `app_main()`.
-- An `axp2101` component: the PMIC driver that owns the rails, charger, battery
-  telemetry, and the power-key interrupt stream.
-- A ported PCF85063 RTC driver.
-- A `qmi8658` component for the 6-axis IMU used by motion wake.
-- A `board` component (`waveshare_board`) that owns Waveshare-specific pin
-  mapping, PMIC rail bring-up, the shared sensor I2C bus, and the audio codec
-  instance.
-- A `power_service` component that initializes power hardware and logs a
-  diagnostic power/battery/RTC snapshot.
-- A `button_service` component that logs app-facing button events through
-  Espressif's managed button component.
-- An `audio_hal` component wrapping the ES8311 codec for full-duplex 16 kHz
-  capture and playback, including the NS4150B power-amp enable.
-- A `system_sound_service` component that owns the decoded sound-cue catalog and
-  streams cues to the codec.
-- A `feedback_service` component that owns app-facing interaction feedback
-  policy and maps app events onto sound cues.
-- A `playback_service` component that streams a clip to the codec, either from a
-  WAV file on SD or straight from the PSRAM chunks `recording_service` holds.
-- A `design_tokens` component that owns shared product UI constants such as
-  spacing, colors, typography roles, and component sizing.
-- An `epaper_ui` component that owns the reusable e-paper presentation
-  primitives (status bar, global footer, lock screen, card modal, select modal,
-  toast, keyboard, carousel, scroll container, timeline list, sticky note, and
-  the many list/menu/input widgets) plus the full page renderers (dashboard,
-  onboarding, vibe check, summarize, notes, todos, follow-up, details, settings,
-  wifi, time).
-- A ported `sd_card` component for SDMMC/FATFS MicroSD access.
-- A `storage_service` component that owns app-facing MicroSD mount, format, and
-  debug status policy.
-- A `wifi_service` component that owns ESP-IDF Wi-Fi station/AP lifecycle,
-  saved credentials, scan state, and the backend HTTP routes for setup/status.
-- A `timezone_service` component that owns timezone settings, SNTP sync,
-  system-time updates, PCF85063 RTC writeback, and backend HTTP routes for time
-  settings/runtime state.
-- A `gemini_service` component that owns Gemini API key settings precedence,
-  backend HTTP routes, and Gemini authentication readiness state.
-- A `recording_service` component that owns voice-input recording state,
-  pre-roll buffering, PSRAM-backed clips, input-level tracking, and WAV export
-  to MicroSD.
-- A `recording_session_service` component that owns the press/hold recording
-  flow, the start/stop sound cues, the review playback of the take, tag
-  selection, and save/transcription orchestration.
-- A `recording_archive_service` component that owns the SD recording index
-  (listing, metadata, follow-up flags) surfaced by the Notes/Todos/Follow-up
-  pages and the sticky-note overlay.
-- A `transcription_service` and a `summary_service` component that own the
-  Gemini-backed transcription and summary flows respectively (these live in
-  their own components, not inside `gemini_service`).
-- A ported mono SSD1677 e-paper panel driver. On this board the panel owns a
-  dedicated SPI3 bus, so there is no shared-bus serialization to do — the
-  Sticky's `shared_bus_service` has no counterpart here.
-- A `display_service` component that owns app-facing e-paper bring-up, blank
-  screen refresh, display sleep, and light-sleep recovery.
-- Staged e-paper asset generation scripts and source PNG/TTF assets for the
-  app UI.
+- ESP32-S3-Zielkonfiguration.
+- 16-MB-Flash-Konfiguration.
+- 8-MB-PSRAM-Konfiguration.
+- OTA-fähiges Partitions-Layout mit aktiviertem Rollback.
+- Ein minimales C++ `app_main()`.
+- Eine `axp2101`-Komponente: der PMIC-Treiber, der die Rails, das
+  Ladegerät, die Akku-Telemetrie und den Power-Taste-Interrupt-Stream
+  besitzt.
+- Ein portierter PCF85063-RTC-Treiber.
+- Eine `qmi8658`-Komponente für den 6-Achsen-IMU, der für das
+  Bewegungs-Aufwachen genutzt wird.
+- Eine `board`-Komponente (`waveshare_board`), die die Waveshare-
+  spezifische Pin-Zuordnung, das PMIC-Rail-Hochfahren, den geteilten
+  Sensor-I2C-Bus und die Audio-Codec-Instanz besitzt.
+- Eine `power_service`-Komponente, die die Strom-Hardware initialisiert
+  und einen diagnostischen Strom-/Akku-/RTC-Snapshot loggt.
+- Eine `button_service`-Komponente, die App-seitige Tasten-Ereignisse
+  über Espressifs verwaltete Button-Komponente loggt.
+- Eine `audio_hal`-Komponente, die den ES8311-Codec für vollduplex
+  16-kHz-Aufnahme und -Wiedergabe kapselt, inklusive Aktivierung des
+  NS4150B-Verstärkers.
+- Eine `system_sound_service`-Komponente, die den dekodierten
+  Sound-Cue-Katalog besitzt und Cues an den Codec streamt.
+- Eine `feedback_service`-Komponente, die die App-seitige
+  Interaktions-Feedback-Policy besitzt und App-Ereignisse auf Sound-Cues
+  abbildet.
+- Eine `playback_service`-Komponente, die einen Clip an den Codec
+  streamt, entweder aus einer WAV-Datei auf der SD-Karte oder direkt aus
+  den PSRAM-Chunks, die `recording_service` hält.
+- Eine `design_tokens`-Komponente, die gemeinsame Produkt-UI-Konstanten
+  wie Abstände, Farben, Typografie-Rollen und Komponentengrößen besitzt.
+- Eine `epaper_ui`-Komponente, die die wiederverwendbaren
+  E-Paper-Präsentations-Primitiven besitzt (Statusleiste, globale
+  Fußzeile, Sperrbildschirm, Karten-Modal, Auswahl-Modal, Toast,
+  Tastatur, Karussell, Scroll-Container, Timeline-Liste, Sticky Note und
+  die vielen Listen-/Menü-/Eingabe-Widgets) plus die vollständigen
+  Seiten-Renderer (Dashboard, Onboarding, Vibe Check, Zusammenfassen,
+  Notizen, Todos, Follow-up, Details, Einstellungen, WLAN, Zeit).
+- Eine portierte `sd_card`-Komponente für SDMMC/FATFS-MicroSD-Zugriff.
+- Eine `storage_service`-Komponente, die die App-seitige MicroSD-Mount-,
+  Format- und Debug-Status-Policy besitzt.
+- Eine `wifi_service`-Komponente, die den ESP-IDF-WLAN-
+  Station-/AP-Lebenszyklus, gespeicherte Zugangsdaten, Scan-Status und
+  die Backend-HTTP-Routen für Einrichtung/Status besitzt.
+- Eine `timezone_service`-Komponente, die Zeitzonen-Einstellungen,
+  SNTP-Sync, System-Zeit-Updates, PCF85063-RTC-Rückschreiben und
+  Backend-HTTP-Routen für Zeit-Einstellungen/Runtime-Status besitzt.
+- Eine `gemini_service`-Komponente, die die Vorrang-Regeln für
+  Gemini-API-Key-Einstellungen, Backend-HTTP-Routen und den
+  Gemini-Authentifizierungs-Bereitschaftsstatus besitzt.
+- Eine `recording_service`-Komponente, die den Sprach-Eingabe-
+  Aufnahmestatus, Pre-Roll-Pufferung, PSRAM-gestützte Clips,
+  Eingangspegel-Tracking und WAV-Export auf die MicroSD besitzt.
+- Eine `recording_session_service`-Komponente, die den
+  Drücken/Halten-Aufnahme-Ablauf, die Start-/Stop-Sound-Cues, die
+  Review-Wiedergabe der Aufnahme, die Tag-Auswahl und die
+  Speichern-/Transkriptions-Orchestrierung besitzt.
+- Eine `recording_archive_service`-Komponente, die den SD-Aufnahme-Index
+  (Auflistung, Metadaten, Follow-up-Flags) besitzt, der von den
+  Notizen-/Todos-/Follow-up-Seiten und dem Sticky-Note-Overlay angezeigt
+  wird.
+- Eine `transcription_service`- und eine `summary_service`-Komponente,
+  die die Gemini-gestützten Transkriptions- bzw. Zusammenfassungs-Abläufe
+  besitzen (diese leben in eigenen Komponenten, nicht innerhalb von
+  `gemini_service`).
+- Ein portierter Mono-SSD1677-E-Paper-Panel-Treiber. Auf diesem Board
+  besitzt das Panel einen eigenen SPI3-Bus, es gibt also keine
+  geteilte-Bus-Serialisierung zu tun — das `shared_bus_service` des
+  Sticky hat hier kein Gegenstück.
+- Eine `display_service`-Komponente, die das App-seitige E-Paper-
+  Hochfahren, den Leer-Bildschirm-Refresh, den Display-Sleep und die
+  Light-Sleep-Wiederherstellung besitzt.
+- Vorbereitete E-Paper-Asset-Generierungs-Skripte und Quell-PNG/TTF-
+  Assets für die App-UI.
 
-- A ported QMI8658 6-axis inertial sensor driver.
-- An `imu_service` component that owns app-facing IMU bring-up and sample
-  logging, used by motion-based wake.
-- A `device_sleep_service` component that owns auto-sleep policy state,
-  inactivity timing, app-level blocker checks, and staged sleep events.
-- A `task_config` component that owns the app-created FreeRTOS task priority
-  and core-affinity mapping.
-The board carries an SHTC3 temperature/humidity sensor on the shared sensor I2C
-bus. It is not driven by any component today.
+- Ein portierter QMI8658-6-Achsen-Trägheitssensor-Treiber.
+- Eine `imu_service`-Komponente, die das App-seitige IMU-Hochfahren und
+  Sample-Logging besitzt, genutzt vom bewegungsbasierten Aufwachen.
+- Eine `device_sleep_service`-Komponente, die den Auto-Sleep-Policy-
+  Status, Inaktivitäts-Timing, App-seitige Blocker-Prüfungen und
+  gestufte Sleep-Ereignisse besitzt.
+- Eine `task_config`-Komponente, die die von der App erzeugte
+  FreeRTOS-Task-Prioritäts- und Core-Affinitäts-Zuordnung besitzt.
 
-This board has no touch controller — input is entirely buttons. Some widget code
-still carries `kTouch*` hit-slop constants and a `kTouchContact` feedback cue
-inherited from the Sticky port; they are vestigial and nothing dispatches touch
-events.
+Das Board trägt einen SHTC3-Temperatur-/Feuchtigkeitssensor am geteilten
+Sensor-I2C-Bus. Er wird aktuell von keiner Komponente angesteuert.
 
-## Project Layout
+Dieses Board hat keinen Touch-Controller — die Eingabe erfolgt
+ausschließlich über Tasten. Manch ein Widget-Code trägt noch
+`kTouch*`-Hit-Slop-Konstanten und einen `kTouchContact`-Feedback-Cue aus
+der Sticky-Portierung; die sind Überbleibsel, nichts dispatcht
+Touch-Ereignisse.
+
+## Projekt-Layout
 
 ```text
 CMakeLists.txt
@@ -138,9 +156,9 @@ main/
   page_input_runtime.h
   page_input_runtime.cpp
   shared_page_interactions.h
-  # Per-page runtime families. Each feature page has a {runtime, coordinator,
-  # interactions} trio (settings/wifi/time predate the coordinator split and
-  # keep their state in the runtime):
+  # Pro-Seite-Runtime-Familien. Jede Feature-Seite hat ein {runtime, coordinator,
+  # interactions}-Trio (settings/wifi/time stammen von vor der Coordinator-Aufteilung
+  # und halten ihren Status weiterhin in der runtime):
   #   dashboard_page_*  onboarding_page_*  vibe_check_page_*  summarize_page_*
   #   notes_page_*  todos_page_*  follow_up_page_*  details_page_*
   #   settings_page_{runtime,coordinator,interactions}  wifi_page_*  time_page_*
@@ -152,7 +170,7 @@ main/
   time_page_interactions.cpp
   page_interaction_runtime.h
   page_interaction_runtime.cpp
-  timeline_format.h                # shared timeline date/time formatters ("Today" logic)
+  timeline_format.h                # gemeinsame Timeline-Datum/Zeit-Formatierer ("Heute"-Logik)
   timeline_format.cpp
   ui_refresh_runtime.h
   ui_refresh_runtime.cpp
@@ -207,605 +225,727 @@ scripts/
   generate_epaper_project_assets.py
 ```
 
-## Component Boundaries
+## Komponenten-Grenzen
 
 ### `components/project_assets`
 
-This component owns embedded assets that are compiled into the firmware image.
-The source PNG/TTF files and generator scripts live outside the component; this
-component exposes only the generated C++ data and a small app-facing lookup API.
+Diese Komponente besitzt eingebettete Assets, die ins Firmware-Image
+kompiliert werden. Die Quell-PNG/TTF-Dateien und Generator-Skripte liegen
+außerhalb der Komponente; diese Komponente stellt nur die generierten
+C++-Daten und eine kleine App-seitige Lookup-API bereit.
 
-Current scope:
+Aktueller Umfang:
 
-- packed monochrome image metadata through `asset_types.h`
-- manifest-driven asset generation through `assets/epaper_assets.json`
-- generated e-paper logo assets for the ALXV Labs and Folloup logos
-- generated e-paper icon assets for all PNG files currently in `assets/icons/`
-- empty generated footer-icon scaffolding ready for future manifest entries
-- `project_assets::GetLogo(...)`, `GetIcon(...)`, and `GetFooterIcon(...)`
-  lookup helpers by generated enum IDs
+- gepackte Monochrom-Bild-Metadaten über `asset_types.h`
+- Manifest-gesteuerte Asset-Generierung über `assets/epaper_assets.json`
+- generierte E-Paper-Logo-Assets für die ALXV-Labs- und Folloup-Logos
+- generierte E-Paper-Icon-Assets für alle PNG-Dateien, die aktuell in
+  `assets/icons/` liegen
+- leeres generiertes Footer-Icon-Gerüst, bereit für künftige
+  Manifest-Einträge
+- `project_assets::GetLogo(...)`, `GetIcon(...)` und `GetFooterIcon(...)`
+  als Lookup-Helfer über generierte Enum-IDs
 
-Keep generated files reproducible from `assets/` and `scripts/`. Do not hand
-edit generated asset source files. See `docs/asset-generation.md`.
+Die generierten Dateien reproduzierbar aus `assets/` und `scripts/`
+halten. Generierte Asset-Quelldateien nicht von Hand bearbeiten. Siehe
+`docs/asset-generation.md`.
 
 ### `components/design_tokens`
 
-This header-only component owns shared product UI constants. It is intentionally
-named `design_tokens`, not e-paper design tokens, because the values describe
-the Folloup UI language rather than the SSD1677 display driver.
+Diese reine Header-Komponente besitzt gemeinsame Produkt-UI-Konstanten.
+Sie heißt absichtlich `design_tokens`, nicht E-Paper-Design-Tokens, weil
+die Werte die Folloup-UI-Sprache beschreiben, nicht den
+SSD1677-Display-Treiber.
 
-Current scope:
+Aktueller Umfang:
 
-- spacing scale
-- a canonical four-step e-paper grayscale ramp (`gray1` through `gray4`) plus
-  semantic grayscale color roles
-- typography roles, sizes, and weights
-- common component sizing constants used by the e-paper UI being ported
+- Abstandsskala
+- eine kanonische vierstufige E-Paper-Graustufen-Rampe (`gray1` bis
+  `gray4`) plus semantische Graustufen-Farbrollen
+- Typografie-Rollen, -Größen und -Gewichte
+- gemeinsame Komponenten-Größenkonstanten, genutzt von der portierten
+  E-Paper-UI
 
-Use this component as the first dependency when porting small pieces from the
-old `epaper_lib`. Keep UI tokens independent from display hardware and
-framebuffer mechanics.
+Diese Komponente als erste Abhängigkeit nutzen, wenn kleine Teile aus dem
+alten `epaper_lib` portiert werden. UI-Tokens unabhängig von
+Display-Hardware und Framebuffer-Mechanik halten.
 
 ### `components/epaper_ui`
 
-This component owns reusable e-paper UI primitives that render into the app's
-portrait framebuffer. It depends on `design_tokens` for visual constants and
-`project_assets` for embedded icons/logos, but it does not depend on app
-services or startup/runtime policy.
+Diese Komponente besitzt wiederverwendbare E-Paper-UI-Primitiven, die in
+den Portrait-Framebuffer der App rendern. Sie hängt von `design_tokens`
+für visuelle Konstanten und von `project_assets` für eingebettete
+Icons/Logos ab, hängt aber nicht von App-Diensten oder
+Start-/Runtime-Policy ab.
 
-Current scope:
+Aktueller Umfang:
 
-- generated Inter bitmap fonts used by e-paper UI typography roles
-- a small role-aware bitmap font renderer
-- the app status-bar state contract and renderer
-- a reusable lock-screen renderer plus its dedicated state contract
+- generierte Inter-Bitmap-Fonts, genutzt von den E-Paper-UI-
+  Typografie-Rollen
+- ein kleiner rollenbewusster Bitmap-Font-Renderer
+- der App-Statusleisten-Zustands-Vertrag und -Renderer
+- ein wiederverwendbarer Sperrbildschirm-Renderer plus sein eigener
+  Zustands-Vertrag
 
-App-owned runtime helpers in `main/` may compose service state into these UI
-contracts, but the drawing primitives themselves should stay reusable and
-service-agnostic.
+App-eigene Runtime-Helfer in `main/` dürfen Dienst-Status in diese
+UI-Verträge komponieren, aber die Zeichen-Primitiven selbst sollen
+wiederverwendbar und dienst-unabhängig bleiben.
 
-### UI Layering
+### UI-Schichtung
 
-The e-paper UI stack is now intentionally split across three layers:
+Der E-Paper-UI-Stack ist jetzt bewusst in drei Schichten aufgeteilt:
 
-- `design_tokens` owns product-wide spacing, grayscale, typography, and
-  component metrics.
-- `epaper_ui` owns reusable presentation primitives such as bitmap fonts,
-  role-aware text rendering, the status bar renderer, the lock-screen
-  renderer, and future view widgets ported from `followup`.
-- app-owned runtime helpers in `main/` compose service state into UI contracts.
-  Today that includes `status_bar_runtime`, which translates
-  `power_service`, `wifi_service`, `timezone_service`, and sleep/shutdown state
-  into a neutral `epaper_ui::StatusBarState`, `footer_runtime`, which projects
-  footer layout plus shared-focus projection into
-  `epaper_ui::GlobalFooterState`, `overlay_runtime`, which owns retained
-  modal/toast UI contracts, and `lock_screen_runtime`, which composes time plus
-  status indicators into `epaper_ui::LockScreenState` and lock-screen
-  visibility.
+- `design_tokens` besitzt produktweite Abstände, Graustufen, Typografie
+  und Komponenten-Maße.
+- `epaper_ui` besitzt wiederverwendbare Präsentations-Primitiven wie
+  Bitmap-Fonts, rollenbewusstes Text-Rendering, den Statusleisten-
+  Renderer, den Sperrbildschirm-Renderer und künftige, aus `followup`
+  portierte View-Widgets.
+- App-eigene Runtime-Helfer in `main/` komponieren Dienst-Status in
+  UI-Verträge. Heute gehört dazu `status_bar_runtime`, das
+  `power_service`-, `wifi_service`-, `timezone_service`- und
+  Sleep-/Shutdown-Status in ein neutrales `epaper_ui::StatusBarState`
+  übersetzt, `footer_runtime`, das das Footer-Layout plus die
+  geteilte-Fokus-Projektion in `epaper_ui::GlobalFooterState`
+  projiziert, `overlay_runtime`, das die persistenten
+  Modal-/Toast-UI-Verträge besitzt, und `lock_screen_runtime`, das Zeit
+  plus Status-Indikatoren in `epaper_ui::LockScreenState` und die
+  Sperrbildschirm-Sichtbarkeit komponiert.
 
-`display_service` remains the owner of the physical panel, framebuffer, refresh
-mode decisions, and sleep/wake transitions. It may consume `epaper_ui`
-renderers, but it should not become the home for product state composition or a
-grab bag of reusable widgets.
+`display_service` bleibt Besitzer des physischen Panels, des
+Framebuffers, der Refresh-Modus-Entscheidungen und der
+Sleep-/Wake-Übergänge. Es darf `epaper_ui`-Renderer konsumieren, sollte
+aber nicht zur Heimat für Produkt-Status-Komposition oder eine
+Grab-Bag-Sammlung wiederverwendbarer Widgets werden.
 
-### Screens and overlays
+### Bildschirme und Overlays
 
-Screens are mutually-exclusive full-screen underlays selected by `ScreenId`.
-Overlays composite on top of the active screen and (except the toast) capture
-input while visible.
+Bildschirme sind sich gegenseitig ausschließende Vollbild-Underlays,
+ausgewählt per `ScreenId`. Overlays legen sich über den aktiven
+Bildschirm und fangen (außer dem Toast) währenddessen die Eingabe ab.
 
-Screens (`ScreenId`):
+Bildschirme (`ScreenId`):
 
-- `kHome` — the dashboard: a focusable menu that opens the feature pages.
-- `kOnboarding` — a first-boot carousel (Close / Prev / Next). Shown once, gated
-  by NVS `app_state`/`onboarded`; re-launchable from Settings → "Manual".
-- `kVibeCheck`, `kSummarize` — AI idea / summary cards.
-- `kNotes`, `kTodos`, `kFollowUp` — recording timelines (two-level: date-group
-  chips → an entered, scrollable item list) built on the `timeline_list`
-  primitive and `timeline_format` (the "Today"/absolute-date labels).
-- `kDetails` — a single recording's details with an entered transcript scroll
-  container.
-- `kSettings` (WiFi/AP toggles, Format SD, "Manual" onboarding), `kWifi`,
-  `kTime`, `kLockScreen`.
+- `kHome` — das Dashboard: ein fokussierbares Menü, das die
+  Feature-Seiten öffnet.
+- `kOnboarding` — ein Erstboot-Karussell (Schließen / Zurück / Weiter).
+  Wird einmal gezeigt, gesteuert über NVS `app_state`/`onboarded`;
+  erneut startbar über Einstellungen → "Manuell".
+- `kVibeCheck`, `kSummarize` — KI-Idee-/Zusammenfassungs-Karten.
+- `kNotes`, `kTodos`, `kFollowUp` — Aufnahme-Timelines (zweistufig:
+  Datums-Gruppen-Chips → eine betretene, scrollbare Elementliste),
+  aufgebaut auf der `timeline_list`-Primitive und `timeline_format` (die
+  "Heute"/absolute-Datum-Beschriftungen).
+- `kDetails` — die Details einer einzelnen Aufnahme mit einem betretenen
+  Transkript-Scroll-Container.
+- `kSettings` (WLAN-/AP-Umschalter, SD formatieren, "Manuell"-
+  Onboarding), `kWifi`, `kTime`, `kLockScreen`.
 
-Overlays (`overlay_runtime` + drawn in `display_service::DrawCurrentOverlays`,
-z-order keyboard → toast → select modal → card modal → sticky note):
+Overlays (`overlay_runtime` + gezeichnet in
+`display_service::DrawCurrentOverlays`, Z-Reihenfolge Tastatur → Toast →
+Auswahl-Modal → Karten-Modal → Sticky Note):
 
-- **card modal** — shutdown/storage confirmations (replaces the old
-  "shutdown modal").
-- **select modal** — single-choice pickers (e.g. tag / timezone).
-- **keyboard** — on-screen text entry.
-- **toast** — transient status, optionally closable.
-- **sticky note** — a full-page overlay opened by the footer Sticky button that
-  flips through the follow-up notes (Prev/Next wrap, Close), with a Details-style
-  scroll container for each transcript.
+- **Karten-Modal** — Shutdown-/Speicher-Bestätigungen (löst das alte
+  "Shutdown-Modal" ab).
+- **Auswahl-Modal** — Einfachauswahl-Picker (z. B. Tag / Zeitzone).
+- **Tastatur** — Texteingabe am Bildschirm.
+- **Toast** — flüchtiger Status, optional schließbar.
+- **Sticky Note** — ein Vollseiten-Overlay, geöffnet über den
+  Fußzeilen-Sticky-Button, das durch die Follow-up-Notizen blättert
+  (Zurück/Weiter mit Umlauf, Schließen), mit einem Details-artigen
+  Scroll-Container pro Transkript.
 
-### Overlay refresh suppression
+### Unterdrückung des Overlay-Refresh
 
-All page, status-bar, footer, and overlay repaints flow through
-`ui_refresh_runtime`, a keyed latest-wins worker. Each caller schedules an
-*apply callback* (which pushes fresh state into `display_service`) plus a
-refresh request, keyed by a `SurfaceKey` (`kOverlay`, `kLockScreen`,
-`kStatusBar`, `kFooter`, and one key per page: `kSettingsPage`, `kWifiPage`,
-`kTimePage`, `kDashboardPage`, `kVibeCheckPage`, `kSummarizePage`, `kNotesPage`,
-`kTodosPage`, `kFollowUpPage`, `kDetailsPage`, `kOnboardingPage`). The worker
-coalesces pending work per surface and issues at most one screen (underlay)
-refresh and one overlay refresh per drain.
+Alle Seiten-, Statusleisten-, Fußzeilen- und Overlay-Neuzeichnungen
+laufen über `ui_refresh_runtime`, einen keyed-latest-wins-Worker. Jeder
+Aufrufer plant einen *Apply-Callback* (der frischen Status in
+`display_service` schiebt) plus eine Refresh-Anfrage, gekeyt per
+`SurfaceKey` (`kOverlay`, `kLockScreen`, `kStatusBar`, `kFooter`, und je
+ein Key pro Seite: `kSettingsPage`, `kWifiPage`, `kTimePage`,
+`kDashboardPage`, `kVibeCheckPage`, `kSummarizePage`, `kNotesPage`,
+`kTodosPage`, `kFollowUpPage`, `kDetailsPage`, `kOnboardingPage`). Der
+Worker fasst anstehende Arbeit pro Surface zusammen und löst pro Drain
+höchstens einen Bildschirm-(Underlay-)Refresh und einen Overlay-Refresh
+aus.
 
-**The overlay rule:** while an overlay owns the screen — that is, while
-`overlay_runtime::IsInputCaptured()` is true (keyboard, select modal, card modal,
-the sticky-note overlay, a shutdown request in progress, or a closable toast) —
-the worker *suppresses underlay refreshes*
-(page/status/footer). The apply callbacks still run, so the stored state stays
-current; only the panel rebuild *beneath* the open overlay is skipped. Overlay
-refreshes (the overlay repainting itself) always proceed. When the overlay
-closes, the next underlay refresh resumes and the screen repaints with the
-latest state (the overlay-dismiss path already requests that refresh).
+**Die Overlay-Regel:** solange ein Overlay den Bildschirm besitzt — also
+solange `overlay_runtime::IsInputCaptured()` wahr ist (Tastatur,
+Auswahl-Modal, Karten-Modal, das Sticky-Note-Overlay, eine laufende
+Shutdown-Anfrage oder ein schließbarer Toast) —, *unterdrückt der Worker
+Underlay-Refreshes* (Seite/Status/Fußzeile). Die Apply-Callbacks laufen
+trotzdem weiter, sodass der gespeicherte Status aktuell bleibt; nur der
+Panel-Neuaufbau *unter* dem offenen Overlay wird ausgelassen.
+Overlay-Refreshes (das Overlay zeichnet sich selbst neu) laufen immer
+durch. Schließt das Overlay, greift beim nächsten Underlay-Refresh wieder
+der neueste Status und der Bildschirm zeichnet sich neu (der
+Overlay-Schließen-Pfad fordert diesen Refresh bereits an).
 
-This is a single global policy enforced in one place (`UiRefreshTask`), so it
-applies uniformly to every screen rather than being re-implemented per event
-handler. It exists because rebuilding a page underneath an open keyboard or
-modal — for example on every clock tick while editing the time page — made
-overlays feel laggy and, during rapid overlay navigation, could keep the
-display task busy long enough to starve the idle task and trip the task
-watchdog. Background events (clock ticks, Wi-Fi/scan updates, battery changes)
-therefore keep their contracts in sync without forcing a visible underlay
-rebuild while the user is busy inside an overlay. Auto-dismiss toasts do not
-capture input, so they never suppress underlay refreshes.
+Das ist eine einzige globale Policy, an einer Stelle durchgesetzt
+(`UiRefreshTask`), gilt also einheitlich für jeden Bildschirm statt pro
+Event-Handler neu implementiert zu werden. Sie existiert, weil das
+Neuaufbauen einer Seite unter einer offenen Tastatur oder einem Modal —
+zum Beispiel bei jedem Uhr-Tick beim Bearbeiten der Zeit-Seite —
+Overlays träge wirken ließ und, bei schneller Overlay-Navigation, den
+Display-Task lange genug beschäftigt halten konnte, um den Idle-Task
+auszuhungern und den Task-Watchdog auszulösen. Hintergrund-Ereignisse
+(Uhr-Ticks, WLAN-/Scan-Updates, Akku-Änderungen) halten ihre Verträge
+deshalb synchron, ohne einen sichtbaren Underlay-Neuaufbau zu erzwingen,
+während der Nutzer in einem Overlay beschäftigt ist. Auto-Dismiss-Toasts
+fangen keine Eingabe ab, sie unterdrücken also nie Underlay-Refreshes.
 
-Invariant: every `SurfaceKey` must map to a distinct slot in `ui_refresh_runtime`
-(`SurfaceIndex` plus `kSurfaceCount`). A missing `SurfaceIndex` case silently
-aliases that surface onto slot `0` (`kOverlay`), letting page refreshes clobber
-the keyboard/modal's pending overlay refresh — keep them in sync when adding a
-screen.
+Invariante: jeder `SurfaceKey` muss auf einen eigenen Slot in
+`ui_refresh_runtime` abbilden (`SurfaceIndex` plus `kSurfaceCount`). Ein
+fehlender `SurfaceIndex`-Fall aliast diese Surface still auf Slot `0`
+(`kOverlay`) und lässt Seiten-Refreshes den anstehenden
+Overlay-Refresh von Tastatur/Modal überschreiben — beim Hinzufügen eines
+Bildschirms synchron halten.
 
 ### `main`
 
-`main/` owns product composition for this firmware. It is not a reusable
-component. Keep it focused on startup ordering and app-level orchestration.
+`main/` besitzt die Produkt-Komposition für diese Firmware. Es ist keine
+wiederverwendbare Komponente. Auf Start-Reihenfolge und App-Ebene-
+Orchestrierung fokussiert halten.
 
-`main/main.cpp` is intentionally tiny: it is only the ESP-IDF `app_main()` entry
-point and delegates to `app_shell::Run()`.
+`main/main.cpp` ist bewusst winzig: es ist nur der ESP-IDF-
+`app_main()`-Einstiegspunkt und delegiert an `app_shell::Run()`.
 
-`main/app_shell.cpp` is an orchestration layer only. It may decide startup order,
-connect app-level policies, and choose whether an optional service failure is
-fatal, but it should not contain hardware driver logic, protocol logic, button
-debouncing, battery math, display drawing, networking workflows, or long-running
-feature loops. Put those behaviors in services/components and call them from the
-app shell.
+`main/app_shell.cpp` ist nur eine Orchestrierungs-Schicht. Es darf die
+Start-Reihenfolge entscheiden, App-Ebene-Policies verbinden und
+entscheiden, ob ein Ausfall eines optionalen Dienstes fatal ist, sollte
+aber keine Hardware-Treiber-Logik, Protokoll-Logik, Tasten-Entprellung,
+Akku-Mathematik, Display-Zeichnen, Netzwerk-Abläufe oder lang laufende
+Feature-Schleifen enthalten. Diese Verhaltensweisen gehören in
+Dienste/Komponenten, aufgerufen aus der App-Shell.
 
-`main/status_bar_runtime.cpp` is an example of the intended app-runtime helper
-pattern. It is not a reusable component and does not own hardware or rendering.
-Its job is to compose product state into UI-facing data contracts that
-`display_service` can render through `epaper_ui`.
+`main/status_bar_runtime.cpp` ist ein Beispiel für das beabsichtigte
+App-Runtime-Helfer-Muster. Es ist keine wiederverwendbare Komponente und
+besitzt weder Hardware noch Rendering. Seine Aufgabe ist es,
+Produkt-Status in UI-seitige Daten-Verträge zu komponieren, die
+`display_service` über `epaper_ui` rendern kann.
 
-The current app-runtime helpers under `main/` are:
+Die aktuellen App-Runtime-Helfer unter `main/` sind:
 
-- `status_bar_runtime`: compose Wi-Fi, Gemini, battery, sleep, and shutdown
-  state into `epaper_ui::StatusBarState`
-- `footer_runtime`: project footer layout and shared page focus into
-  `epaper_ui::GlobalFooterState` (Settings/WiFi/Time/Folder/Sticky/Home + Mic)
-- `overlay_runtime`: own retained overlay state (card modal, select modal,
-  keyboard, toast, and the full-page sticky-note overlay), hit testing, and
-  overlay presentation hooks
-- one runtime family per feature page — `{dashboard, onboarding, vibe_check,
-  summarize, notes, todos, follow_up, details}_page_{runtime, coordinator,
-  interactions}`, plus `settings/wifi/time` (runtime + interactions) — composing
-  page state and translating focus into neutral page outcomes + follow-on intents
-- `timeline_format`: shared date/time formatters for the Notes/Todos/Follow-up
-  timelines and the sticky-note overlay (the "Today"-vs-absolute-date logic)
-- `input_runtime_setup`: own app-facing button/touch binding setup plus the
-  shared inputs-enabled gate before events enter app routing
-- `input_focus_runtime`: own overlay-first button routing for roving focus
-  movement plus app-wide touch contact precedence
-- `page_input_runtime`: own active page input routing for the current
-  page-owned screens, including focus movement, page-local button activation,
-  footer projection hooks, touch-provider registration, and applying neutral
-  page interaction results into app-facing behavior
+- `status_bar_runtime`: komponiert WLAN-, Gemini-, Akku-, Sleep- und
+  Shutdown-Status in `epaper_ui::StatusBarState`
+- `footer_runtime`: projiziert Fußzeilen-Layout und geteilten
+  Seiten-Fokus in `epaper_ui::GlobalFooterState`
+  (Einstellungen/WLAN/Zeit/Ordner/Sticky/Home + Mikrofon)
+- `overlay_runtime`: besitzt persistenten Overlay-Status (Karten-Modal,
+  Auswahl-Modal, Tastatur, Toast und das Vollseiten-Sticky-Note-Overlay),
+  Hit-Testing und Overlay-Präsentations-Hooks
+- eine Runtime-Familie pro Feature-Seite — `{dashboard, onboarding,
+  vibe_check, summarize, notes, todos, follow_up,
+  details}_page_{runtime, coordinator, interactions}`, plus
+  `settings/wifi/time` (runtime + interactions) — komponiert
+  Seiten-Status und übersetzt Fokus in neutrale Seiten-Ergebnisse plus
+  Folge-Intents
+- `timeline_format`: gemeinsame Datum/Zeit-Formatierer für die
+  Notizen-/Todos-/Follow-up-Timelines und das Sticky-Note-Overlay (die
+  "Heute"-vs-absolutes-Datum-Logik)
+- `input_runtime_setup`: besitzt die App-seitige Tasten-/Touch-Bindung
+  plus das gemeinsame Eingaben-aktiviert-Gate, bevor Ereignisse ins
+  App-Routing gelangen
+- `input_focus_runtime`: besitzt Overlay-zuerst-Tasten-Routing für
+  umlaufende Fokus-Bewegung plus App-weite Touch-Kontakt-Priorität
+- `page_input_runtime`: besitzt das aktive Seiten-Eingabe-Routing für
+  aktuell seiteneigene Bildschirme, inklusive Fokus-Bewegung, seitenlokale
+  Tasten-Aktivierung, Fußzeilen-Projektions-Hooks, Touch-Provider-
+  Registrierung und das Anwenden neutraler Seiten-Interaktions-Ergebnisse
+  auf App-seitiges Verhalten
 - `settings_page_interactions` / `wifi_page_interactions` /
-  `time_page_interactions`: own page-local focus and activate semantics for the
-  current page-owned screens so the shared page-input layer applies
-  intent/results instead of open-coding page behavior inline inside each runtime
-- `page_interaction_runtime`: own the registration contract future page
-  runtimes/coordinators use to plug page targets into the shared touch
-  interaction path
-- `lock_screen_runtime`: own lock-screen visibility and clock-state composition
-- `ui_refresh_runtime`: own the keyed latest-wins UI presentation worker, and
-  enforce the global overlay refresh rule (see "Overlay refresh suppression")
+  `time_page_interactions`: besitzen seitenlokale Fokus- und
+  Aktivierungs-Semantik für die aktuell seiteneigenen Bildschirme, sodass
+  die gemeinsame Seiten-Eingabe-Schicht Intent/Ergebnisse anwendet statt
+  Seiten-Verhalten offen in jeder Runtime zu codieren
+- `page_interaction_runtime`: besitzt den Registrierungs-Vertrag, über
+  den künftige Seiten-Runtimes/Coordinators ihre Seiten-Ziele in den
+  gemeinsamen Touch-Interaktionspfad einklinken
+- `lock_screen_runtime`: besitzt Sperrbildschirm-Sichtbarkeit und
+  Uhr-Status-Komposition
+- `ui_refresh_runtime`: besitzt den keyed-latest-wins-UI-Präsentations-
+  Worker und setzt die globale Overlay-Refresh-Regel durch (siehe
+  "Unterdrückung des Overlay-Refresh")
 
-The current early startup sequence is:
+Die aktuelle frühe Start-Sequenz ist:
 
-- Detects whether the running image is `ESP_OTA_IMG_PENDING_VERIFY`.
-- Marks the image valid with `esp_ota_mark_app_valid_cancel_rollback()`.
-- Brings up the AXP2101 rails before OTA validation.
-- Initializes `power_service`.
-- Logs one power/battery diagnostic snapshot.
-- Initializes `feedback_service` and requests the startup feedback.
-- Initializes `storage_service` and logs one MicroSD diagnostic snapshot.
-  On this board, when a card is present, storage must initialize before the
-  shared-bus display path so the card enters SPI mode first and remains mounted.
-- Initializes `display_service` and clears the e-paper panel to a blank screen.
-- Initializes `ui_refresh_runtime`, which owns the shared latest-wins UI
-  presentation worker.
-- Initializes `overlay_runtime`, which owns global modal/toast overlay state,
-  shutdown-confirm focus, and overlay presentation hooks.
-- Initializes `imu_service` and logs three direct IMU samples for bring-up.
-- Initializes `power_key_runtime`, attaching the PMIC power-key handler that
-  routes a short press to the lock screen and a long press to the shutdown
-  confirmation.
-- Starts the auto-sleep runtime, which wires `device_sleep_service`, polls IMU
-  samples for inactivity, owns the auto-sleep worker task, and handles display
-  sleep/light sleep actions.
-- Initializes `timezone_service`, which loads timezone/time-sync state from
-  NVS, applies the configured timezone, and seeds system time from the PCF85063
-  RTC when available.
-- Initializes `wifi_service`, which loads saved Wi-Fi credentials or built-in
-  sdkconfig credentials, starts station mode when credentials exist, or starts
-  AP setup mode when no credentials are available.
-- Initializes `recording_service` and logs recording status.
-- Initializes `recording_session_service`, which owns the press/hold recording
-  flow, tag selection, and transcription/save orchestration.
-- Initializes `footer_runtime`, which seeds the footer layout (Settings, WiFi,
-  Time, Folder, Sticky, Home buttons — in that left-to-right order — plus the Mic
-  status) and the footer focus projection model. The Sticky button (left of Home)
-  opens the follow-up sticky-note overlay.
-- Initializes `button_service`.
-- Subscribes to button and touch events, forwards user activity into
-  auto-sleep, forwards interaction feedback into `feedback_service`, and handles
-  button-driven lock-screen, refresh, and shutdown intents.
-- Subscribes to Wi-Fi events and forwards connection state into
-  `timezone_service` so network time sync starts after station connectivity is
-  available.
-- Runs a small shutdown task so button callbacks can request shutdown without
-  directly executing the PMIC power-off sequence.
-- Seeds the status bar and footer state (no refresh), then renders the first
-  screen with a single **full** refresh as the first thing the panel paints, and
-  finally sets `s_startup_complete`. On first boot (NVS `app_state`/`onboarded`
-  unset) that first screen is the onboarding page (`ShowOnboardingScreen(kFull)`);
-  otherwise it is the dashboard home (`ShowHomeScreen(kFull)`).
+- Erkennt, ob das laufende Image `ESP_OTA_IMG_PENDING_VERIFY` ist.
+- Markiert das Image als gültig mit
+  `esp_ota_mark_app_valid_cancel_rollback()`.
+- Fährt die AXP2101-Rails hoch, noch vor der OTA-Validierung.
+- Initialisiert `power_service`.
+- Loggt einen diagnostischen Strom-/Akku-Snapshot.
+- Initialisiert `feedback_service` und fordert das Start-Feedback an.
+- Initialisiert `storage_service` und loggt einen diagnostischen
+  MicroSD-Snapshot. Auf diesem Board muss, wenn eine Karte steckt, der
+  Speicher vor dem geteilten-Bus-Display-Pfad initialisiert werden,
+  damit die Karte zuerst in den SPI-Modus geht und gemountet bleibt.
+- Initialisiert `display_service` und löscht das E-Paper-Panel auf einen
+  leeren Bildschirm.
+- Initialisiert `ui_refresh_runtime`, das den gemeinsamen
+  latest-wins-UI-Präsentations-Worker besitzt.
+- Initialisiert `overlay_runtime`, das globalen Modal-/Toast-Overlay-
+  Status, Shutdown-Bestätigungs-Fokus und Overlay-Präsentations-Hooks
+  besitzt.
+- Initialisiert `imu_service` und loggt drei direkte IMU-Samples fürs
+  Hochfahren.
+- Initialisiert `power_key_runtime`, das den PMIC-Power-Taste-Handler
+  anhängt, der einen kurzen Druck zum Sperrbildschirm und einen langen
+  Druck zur Shutdown-Bestätigung leitet.
+- Startet die Auto-Sleep-Runtime, die `device_sleep_service` verdrahtet,
+  IMU-Samples auf Inaktivität abfragt, den Auto-Sleep-Worker-Task besitzt
+  und Display-Sleep-/Light-Sleep-Aktionen behandelt.
+- Initialisiert `timezone_service`, das Zeitzonen-/Zeit-Sync-Status aus
+  NVS lädt, die konfigurierte Zeitzone anwendet und die Systemzeit aus
+  der PCF85063-RTC vorbelegt, wenn verfügbar.
+- Initialisiert `wifi_service`, das gespeicherte WLAN-Zugangsdaten oder
+  eingebaute sdkconfig-Zugangsdaten lädt, den Stationsmodus startet, wenn
+  Zugangsdaten vorhanden sind, oder den AP-Einrichtungsmodus startet,
+  wenn keine verfügbar sind.
+- Initialisiert `recording_service` und loggt den Aufnahmestatus.
+- Initialisiert `recording_session_service`, das den
+  Drücken/Halten-Aufnahme-Ablauf, die Tag-Auswahl und die
+  Transkriptions-/Speichern-Orchestrierung besitzt.
+- Initialisiert `footer_runtime`, das das Fußzeilen-Layout
+  (Einstellungen-, WLAN-, Zeit-, Ordner-, Sticky-, Home-Buttons — in
+  dieser Links-nach-rechts-Reihenfolge — plus den Mikrofon-Status) und
+  das Fußzeilen-Fokus-Projektionsmodell vorbelegt. Der Sticky-Button
+  (links von Home) öffnet das Follow-up-Sticky-Note-Overlay.
+- Initialisiert `button_service`.
+- Abonniert Tasten- und Touch-Ereignisse, leitet Nutzer-Aktivität an
+  Auto-Sleep weiter, leitet Interaktions-Feedback an `feedback_service`
+  weiter und behandelt Tasten-ausgelöste Sperrbildschirm-, Refresh- und
+  Shutdown-Intents.
+- Abonniert WLAN-Ereignisse und leitet den Verbindungsstatus an
+  `timezone_service` weiter, damit der Netzwerk-Zeit-Sync startet,
+  sobald Stationsverbindung verfügbar ist.
+- Führt einen kleinen Shutdown-Task aus, damit Tasten-Callbacks einen
+  Shutdown anfordern können, ohne direkt die PMIC-Abschalt-Sequenz
+  auszuführen.
+- Belegt Statusleisten- und Fußzeilen-Status vor (kein Refresh), zeichnet
+  dann den ersten Bildschirm mit einem einzigen **vollständigen**
+  Refresh als Erstes, das das Panel malt, und setzt schließlich
+  `s_startup_complete`. Beim ersten Boot (NVS
+  `app_state`/`onboarded` nicht gesetzt) ist dieser erste Bildschirm die
+  Onboarding-Seite (`ShowOnboardingScreen(kFull)`); sonst ist es das
+  Dashboard (`ShowHomeScreen(kFull)`).
 
-**Boot refresh policy — no partial refresh before the initial full paint.** The
-first thing the panel paints on boot is that single **full** refresh of the first
-screen (onboarding or home, the last step above). No partial
-refresh is allowed before it. Services initialize *before* that paint and several
-publish events during boot (the RTC time intent, Wi-Fi connection state, the
-recording-archive snapshot, storage mount); their handlers update UI state but
-must **not** request a refresh yet, because the upcoming full paint already
-redraws every surface — an earlier partial is redundant work, and a partial on a
-freshly-powered panel that has no full-flush baseline ghosts. The rule is
-enforced by gating every handler's refresh request on `s_startup_complete`,
-folded into the `ScreenActiveForRefresh(screen)` predicate
-(`s_startup_complete && GetCurrentScreen() == screen`); the status bar and footer
-paths check `s_startup_complete` directly. Anything new that repaints in response
-to a service event must route through the same gate so it stays silent until the
-initial full paint lands. After boot the predicate reduces to "is this screen
-active," so live updates partial-refresh normally.
+**Boot-Refresh-Policy — kein Partial-Refresh vor dem ersten vollständigen
+Anstrich.** Das Erste, was das Panel beim Booten malt, ist dieser eine
+**vollständige** Refresh des ersten Bildschirms (Onboarding oder Home,
+der letzte Schritt oben). Kein Partial-Refresh davor erlaubt. Dienste
+initialisieren sich *vor* diesem Anstrich und veröffentlichen mehrere
+Ereignisse während des Bootens (der RTC-Zeit-Intent, WLAN-
+Verbindungsstatus, der Aufnahme-Archiv-Snapshot, Speicher-Mount); ihre
+Handler aktualisieren UI-Status, dürfen aber noch **keinen** Refresh
+anfordern, weil der kommende vollständige Anstrich ohnehin jede Surface
+neu zeichnet — ein früherer Partial ist redundante Arbeit, und ein
+Partial auf einem frisch eingeschalteten Panel ohne vollständige
+Flush-Basislinie geistert. Die Regel wird durchgesetzt, indem jede
+Handler-Refresh-Anfrage auf `s_startup_complete` gegated wird, eingefaltet
+in das `ScreenActiveForRefresh(screen)`-Prädikat (`s_startup_complete &&
+GetCurrentScreen() == screen`); die Statusleisten- und Fußzeilen-Pfade
+prüfen `s_startup_complete` direkt. Alles Neue, das auf ein
+Dienst-Ereignis neu zeichnet, muss durch dasselbe Gate laufen, damit es
+still bleibt, bis der erste vollständige Anstrich landet. Nach dem Boot
+reduziert sich das Prädikat auf "ist dieser Bildschirm aktiv", sodass
+Live-Updates normal per Partial-Refresh laufen.
 
-Current app-level button interactions are:
+Aktuelle App-Ebene-Tasten-Interaktionen sind:
 
-- `UP` / `DOWN` move roving focus (or scroll an entered control) one step per
-  press, with wraparound, on the active screen. Navigation is driven on
-  press-down; a plain `UP` / `DOWN` single click (the release event) is inert.
-- `BOOT` and the rocker's middle key (`FN`) both single-click to activate /
-  submit the focused item on the active screen (footer target, page control, or
-  modal action). `button_service::IsPrimaryButton` is what makes the two
-  equivalent.
-- Pressing and **holding** `DOWN` (a long-press) is the app-wide "exit an entered
-  control" gesture, handled per screen: it backs out of a control the user has
-  stepped into -- e.g. the Vibe Check card, an entered scroll container /
-  timeline item list on the Summarize / Notes / Todos / Follow-up pages, the WiFi
-  network list, or the sticky-note transcript scroll. It is a no-op at the app
-  level. (This replaced the former `DOWN` double-click exit.)
-- A short press of the `PWR` key toggles the lock screen; a ~1s hold opens the
-  shutdown confirmation modal. `PWR` is not a GPIO button: both arrive as AXP2101
-  interrupts, decoded by `main/power_key_runtime`. A sustained 6s hold bypasses
-  firmware entirely and the PMIC cuts the rails.
-- The rocker middle key has no double-click or long-press action. Lock and
-  shutdown moved to `PWR`; recording is exclusive to `BOOT`.
-- Pressing and holding `BOOT` arms then starts the recording-session flow;
-  releasing stops it. See [Recording Flow](#recording-flow) for what happens
-  between the release and the tag menu.
-- while the select modal is visible, `UP` and `DOWN` press down plus gated
-  hold-repeat move roving focus with wraparound, a primary-button click submits the focused
-  item, and touch focuses the touched item on contact before submitting on
-  release.
-- while the shutdown modal is visible, `UP` and `DOWN` press down plus gated
-  hold-repeat move roving focus with wraparound, a primary-button click activates the
-  focused action, and touch focuses `Cancel` or `Shut down` on contact before
-  activating on release.
-- when no overlay captures input, footer targets participate in the same touch
-  model: touch-down focuses the footer item immediately and touch-up activates
-  the armed footer target. On page-owned screens, that touch-down focus is
-  translated straight into page-local focus truth before footer projection is
-  repainted.
+- `HOCH` / `RUNTER` bewegen den umlaufenden Fokus (oder scrollen ein
+  betretenes Steuerelement) einen Schritt pro Druck, mit Umlauf, auf dem
+  aktiven Bildschirm. Navigation wird beim Drücken (press-down)
+  ausgelöst; ein reiner `HOCH`/`RUNTER`-Einzelklick (das
+  Loslass-Ereignis) ist wirkungslos.
+- `BOOT` und die mittlere Wipptaste (`FN`) klicken beide einfach, um das
+  fokussierte Element auf dem aktiven Bildschirm zu aktivieren/
+  abzusenden (Fußzeilen-Ziel, Seiten-Steuerelement oder Modal-Aktion).
+  `button_service::IsPrimaryButton` macht die beiden gleichwertig.
+- `RUNTER` drücken und **halten** (ein langer Druck) ist die
+  app-weite "ein betretenes Steuerelement verlassen"-Geste, pro
+  Bildschirm behandelt: sie tritt aus einem Steuerelement heraus, in das
+  der Nutzer eingestiegen ist — z. B. die Vibe-Check-Karte, ein
+  betretener Scroll-Container/eine Timeline-Elementliste auf den
+  Seiten Zusammenfassen/Notizen/Todos/Follow-up, die WLAN-Netzwerkliste
+  oder das Sticky-Note-Transkript-Scrollen. Auf App-Ebene ist das ein
+  No-op. (Das löst den früheren `RUNTER`-Doppelklick-Ausstieg ab.)
+- Ein kurzer Druck der `PWR`-Taste schaltet den Sperrbildschirm um; ein
+  ~1s-Halten öffnet das Shutdown-Bestätigungs-Modal. `PWR` ist keine
+  GPIO-Taste: beide kommen als AXP2101-Interrupts an, dekodiert von
+  `main/power_key_runtime`. Ein anhaltendes 6s-Halten umgeht die
+  Firmware komplett, der PMIC kappt dann die Rails.
+- Die mittlere Wipptaste hat keine Doppelklick- oder Lang-Druck-Aktion.
+  Sperren und Shutdown zogen zu `PWR` um; Aufnahme ist exklusiv `BOOT`
+  vorbehalten.
+- `BOOT` drücken und halten bewaffnet und startet dann den
+  Aufnahme-Session-Ablauf; Loslassen stoppt ihn. Siehe
+  [Aufnahme-Ablauf](#aufnahme-ablauf) für das, was zwischen dem
+  Loslassen und dem Tag-Menü passiert.
+- während das Auswahl-Modal sichtbar ist, bewegen `HOCH` und `RUNTER`
+  beim Drücken plus gategatetem Halte-Wiederholen den umlaufenden Fokus
+  mit Umlauf, ein Primärtasten-Klick sendet das fokussierte Element ab,
+  und Touch fokussiert das berührte Element bei Kontakt, bevor beim
+  Loslassen abgesendet wird.
+- während das Shutdown-Modal sichtbar ist, bewegen `HOCH` und `RUNTER`
+  beim Drücken plus gategatetem Halte-Wiederholen den umlaufenden Fokus
+  mit Umlauf, ein Primärtasten-Klick aktiviert die fokussierte Aktion,
+  und Touch fokussiert `Abbrechen` oder `Herunterfahren` bei Kontakt,
+  bevor beim Loslassen aktiviert wird.
+- wenn kein Overlay die Eingabe abfängt, nehmen Fußzeilen-Ziele am
+  selben Touch-Modell teil: Touch-Down fokussiert das Fußzeilen-Element
+  sofort, und Touch-Up aktiviert das bewaffnete Fußzeilen-Ziel. Auf
+  seiteneigenen Bildschirmen wird dieser Touch-Down-Fokus direkt in den
+  seitenlokalen Fokus-Wahrheitswert übersetzt, bevor die
+  Fußzeilen-Projektion neu gezeichnet wird.
 
-Shutdown still runs through the deferred AppShell shutdown task so the
-PMIC power-off sequence does not execute inside the button callback. The
-shutdown chord now routes through the app-owned input/overlay path first, and
-only a confirmed modal action notifies the task. The task waits briefly before
-calling `power_service::RequestShutdown()` so the analog button/Q2 bootstrap
-path has time to stop feeding `PWR_EN`.
+Shutdown läuft weiterhin über den zurückgestellten AppShell-Shutdown-
+Task, damit die PMIC-Abschalt-Sequenz nicht innerhalb des
+Tasten-Callbacks ausgeführt wird. Der Shutdown-Akkord läuft jetzt zuerst
+über den App-eigenen Eingabe-/Overlay-Pfad, und nur eine bestätigte
+Modal-Aktion benachrichtigt den Task. Der Task wartet kurz, bevor er
+`power_service::RequestShutdown()` aufruft, damit der analoge
+Tasten-/Q2-Bootstrap-Pfad Zeit hat, das Speisen von `PWR_EN` zu stoppen.
 
-Current input precedence and focus ownership are:
+Aktuelle Eingabe-Priorität und Fokus-Besitz sind:
 
-- overlay roving/hit focus first: card modal, select modal, keyboard, and the
-  full-page sticky-note overlay, plus the closable toast
-- footer targets when no overlay captures input
-- registered page targets after footer under the shared page-touch contract
+- Overlay-umlaufender/Hit-Fokus zuerst: Karten-Modal, Auswahl-Modal,
+  Tastatur und das Vollseiten-Sticky-Note-Overlay, plus der
+  schließbare Toast
+- Fußzeilen-Ziele, wenn kein Overlay die Eingabe abfängt
+- registrierte Seiten-Ziele nach der Fußzeile, unter dem gemeinsamen
+  Seiten-Touch-Vertrag
 
-Current focus-surface inventory is:
+Aktuelles Fokus-Surface-Inventar ist:
 
-- `Home`: the dashboard page (focusable menu) plus the footer
-- `Onboarding`: the carousel page (Close / Prev / Next controls); no footer
-- `VibeCheck`, `Summarize`: shared page-focus path
-- `Notes`, `Todos`, `FollowUp`: shared page-focus path with a two-level timeline
-  (date-group chips → entered item list)
-- `Details`: shared page-focus path with an entered transcript scroll container
-- `Settings`: shared page-focus path (incl. the "Manual" onboarding button)
-- `WiFi`: shared page-focus path, with page-owned list sub-focus for networks
-- `Time`: shared page-focus path, with overlay editors (timezone select modal,
-  numeric keyboard per field)
-- `Lock screen`: no focusable page or footer surface today
-- card modal / select modal / keyboard / toast / sticky-note overlays: overlay path
+- `Home`: die Dashboard-Seite (fokussierbares Menü) plus die Fußzeile
+- `Onboarding`: die Karussell-Seite (Schließen-/Zurück-/Weiter-
+  Steuerelemente); keine Fußzeile
+- `VibeCheck`, `Summarize`: gemeinsamer Seiten-Fokus-Pfad
+- `Notes`, `Todos`, `FollowUp`: gemeinsamer Seiten-Fokus-Pfad mit einer
+  zweistufigen Timeline (Datums-Gruppen-Chips → betretene Elementliste)
+- `Details`: gemeinsamer Seiten-Fokus-Pfad mit einem betretenen
+  Transkript-Scroll-Container
+- `Settings`: gemeinsamer Seiten-Fokus-Pfad (inkl. dem "Manuell"-
+  Onboarding-Button)
+- `WiFi`: gemeinsamer Seiten-Fokus-Pfad, mit seiteneigenem
+  Listen-Unterfokus für Netzwerke
+- `Time`: gemeinsamer Seiten-Fokus-Pfad, mit Overlay-Editoren
+  (Zeitzonen-Auswahl-Modal, numerische Tastatur pro Feld)
+- `Sperrbildschirm`: heute keine fokussierbare Seiten- oder
+  Fußzeilen-Surface
+- Karten-Modal-/Auswahl-Modal-/Tastatur-/Toast-/Sticky-Note-Overlays:
+  Overlay-Pfad
 
-Ownership is intentionally split as:
+Der Besitz ist bewusst so aufgeteilt:
 
-- `components/page_navigation/roving_focus`: reusable wraparound index
-  primitive with no modal, display, or app-shell ownership baked in
-- `components/page_navigation/navigation_input_controller.*`: shared press
-  generation and hold-repeat gating for navigation buttons
-- `main/input_callback_dispatcher.*`: dedicated latest-wins input callback task
-  for app-owned button routing
-- `main/input_runtime_setup.*`: app-owned raw button/touch binding setup plus a
-  shared inputs-enabled gate before app routing begins
-- `main/button_input_runtime.*`: app-wide hardware-button dispatch policy that
-  converts raw button events into shared navigation press/hold behavior before
-  they reach page or overlay code
-- `main/input_focus_runtime.cpp`: app-owned focus routing, touch contact state,
-  and app-wide precedence for overlay, footer, and page targets
-- `main/page_input_runtime.*`: active page input routing for current page-owned
-  screens so `app_shell` and `input_focus_runtime` do not hard-code page
-  behavior directly, and so neutral page interaction results are applied in
-  one place instead of inside individual page runtimes
-- `main/settings_page_interactions.*`, `main/wifi_page_interactions.*`, and
-  `main/time_page_interactions.*`: focused interaction helpers that translate
-  current page focus into neutral page outcomes plus follow-on intents, while
-  leaving service effects and orchestration callbacks outside the coordinator
-- `main/page_interaction_runtime.cpp`: registration point for future page
-  runtimes/coordinators to provide `resolve -> focus -> activate` touch hooks
-- `main/overlay_runtime.cpp`: retained overlay state, focus-sync, submit, and
-  dismiss behavior for the card modal, select modal, keyboard, toast, and
-  sticky-note overlays
-- `main/footer_runtime.cpp`: presentation-only projection of footer layout and
-  shared page focus into the e-paper footer contract, plus footer
-  touch resolve/focus/activate hooks for footer-owned surfaces such as `Home`
-- `main/app_shell.cpp`: orchestration only; wires button/touch events into the
-  focused runtime helpers and composes higher-level product policy
+- `components/page_navigation/roving_focus`: wiederverwendbare
+  Umlauf-Index-Primitive ohne eingebauten Modal-, Display- oder
+  App-Shell-Besitz
+- `components/page_navigation/navigation_input_controller.*`: gemeinsame
+  Press-Erzeugung und Halte-Wiederholen-Gating für Navigationstasten
+- `main/input_callback_dispatcher.*`: dedizierter latest-wins-
+  Eingabe-Callback-Task für App-eigenes Tasten-Routing
+- `main/input_runtime_setup.*`: App-eigene Roh-Tasten-/Touch-Bindungs-
+  Einrichtung plus ein gemeinsames Eingaben-aktiviert-Gate vor Beginn des
+  App-Routings
+- `main/button_input_runtime.*`: app-weite Hardware-Tasten-Dispatch-
+  Policy, die rohe Tasten-Ereignisse in gemeinsames Navigations-
+  Press-/Halte-Verhalten übersetzt, bevor sie Seiten- oder
+  Overlay-Code erreichen
+- `main/input_focus_runtime.cpp`: App-eigenes Fokus-Routing,
+  Touch-Kontakt-Status und app-weite Priorität für Overlay-,
+  Fußzeilen- und Seiten-Ziele
+- `main/page_input_runtime.*`: aktives Seiten-Eingabe-Routing für
+  aktuell seiteneigene Bildschirme, damit `app_shell` und
+  `input_focus_runtime` Seiten-Verhalten nicht fest verdrahten, und
+  damit neutrale Seiten-Interaktions-Ergebnisse an einer Stelle
+  angewendet werden statt in einzelnen Seiten-Runtimes
+- `main/settings_page_interactions.*`, `main/wifi_page_interactions.*`
+  und `main/time_page_interactions.*`: fokussierte Interaktions-Helfer,
+  die aktuellen Seiten-Fokus in neutrale Seiten-Ergebnisse plus
+  Folge-Intents übersetzen, während Dienst-Effekte und
+  Orchestrierungs-Callbacks außerhalb des Coordinators bleiben
+- `main/page_interaction_runtime.cpp`: Registrierungspunkt, über den
+  künftige Seiten-Runtimes/Coordinators
+  `resolve -> focus -> activate`-Touch-Hooks bereitstellen
+- `main/overlay_runtime.cpp`: persistenter Overlay-Status,
+  Fokus-Sync, Absenden- und Verwerfen-Verhalten für Karten-Modal,
+  Auswahl-Modal, Tastatur, Toast und Sticky-Note-Overlays
+- `main/footer_runtime.cpp`: rein präsentations-seitige Projektion von
+  Fußzeilen-Layout und geteiltem Seiten-Fokus in den E-Paper-
+  Fußzeilen-Vertrag, plus Fußzeilen-Touch-resolve-/focus-/activate-Hooks
+  für fußzeileneigene Surfaces wie `Home`
+- `main/app_shell.cpp`: nur Orchestrierung; verdrahtet Tasten-/
+  Touch-Ereignisse in die fokussierten Runtime-Helfer und komponiert
+  übergeordnete Produkt-Policy
 
-The current shared page-touch contract for current and future page-owned
-screens is:
+Der aktuelle gemeinsame Seiten-Touch-Vertrag für aktuelle und künftige
+seiteneigene Bildschirme ist:
 
-- `resolve_touch_target(x, y, target)`: identify whether a page-owned
-  interactive target was touched
-- `focus_touch_target(target)`: update page-owned focus truth immediately
-- `activate_touch_target(target)`: perform page-owned activation on touch
-  release
+- `resolve_touch_target(x, y, target)`: feststellen, ob ein
+  seiteneigenes interaktives Ziel berührt wurde
+- `focus_touch_target(target)`: seiteneigenen Fokus-Wahrheitswert sofort
+  aktualisieren
+- `activate_touch_target(target)`: seiteneigene Aktivierung bei
+  Touch-Loslassen ausführen
 
-This contract is implemented by every page-owned screen: `Dashboard` (home),
-`Onboarding`, `VibeCheck`, `Summarize`, `Notes`, `Todos`, `FollowUp`, `Details`,
-`Settings`, `WiFi`, and `Time`. Dispatch for the active screen is centralized in
-`main/page_input_runtime.cpp` (`resolve/focus/activate` and button handling per
-`ScreenId`).
+Dieser Vertrag ist von jedem seiteneigenen Bildschirm implementiert:
+`Dashboard` (Home), `Onboarding`, `VibeCheck`, `Summarize`, `Notes`,
+`Todos`, `FollowUp`, `Details`, `Settings`, `WiFi` und `Time`. Das
+Dispatching für den aktiven Bildschirm ist zentralisiert in
+`main/page_input_runtime.cpp` (`resolve/focus/activate` und
+Tasten-Behandlung pro `ScreenId`).
 
-Future pages should keep page-local selected indexes as render projections of
-page-owned focus truth rather than inventing separate touch-only selection
-state. Composite page controls should plug into this same contract instead of
-adding a second touch interaction path.
+Künftige Seiten sollten seitenlokale ausgewählte Indizes als
+Render-Projektionen des seiteneigenen Fokus-Wahrheitswerts halten statt
+einen zweiten, nur-touch-basierten Auswahl-Status zu erfinden.
+Zusammengesetzte Seiten-Steuerelemente sollten sich in denselben
+Vertrag einklinken statt einen zweiten Touch-Interaktionspfad
+hinzuzufügen.
 
-Page-owned screens also own footer focus truth whenever their footer buttons are
-part of the same navigation model. Touch-down on `Settings` or `WiFi` footer
-targets is translated into the page coordinator's focus index first, and the
-footer is then repainted as a projection of that page-local state. The footer
-runtime keeps standalone focus ownership only on footer-owned surfaces such as
-`Home`.
+Seiteneigene Bildschirme besitzen auch den Fußzeilen-Fokus-Wahrheitswert,
+immer wenn ihre Fußzeilen-Buttons Teil desselben Navigationsmodells sind.
+Touch-Down auf `Settings`- oder `WiFi`-Fußzeilen-Zielen wird zuerst in
+den Fokus-Index des Seiten-Coordinators übersetzt, dann wird die
+Fußzeile als Projektion dieses seitenlokalen Status neu gezeichnet. Die
+Fußzeilen-Runtime behält eigenständigen Fokus-Besitz nur bei
+fußzeileneigenen Surfaces wie `Home`.
 
-Shared button-navigation rules are:
+Gemeinsame Tasten-Navigations-Regeln sind:
 
-- navigation timing is not page-owned
-- navigation `press down` and gated hold-repeat behavior route through the
-  shared input runtime first
-- shared hold-repeat uses an explicit first-repeat gate before interval-based
-  repeats so the timing stays stable even if raw repeat callbacks jitter
-- on the active WiFi network list, hold-repeat uses page jumps sized to the
-  currently visible row capacity, while press-down still advances by one row
-- stale queued navigation callbacks should be superseded by the newest callback
-  for the same button lane
-- page modules own `MoveFocus(...)`, activate semantics, and retained page-state
-  construction only
+- Navigations-Timing ist nicht seiteneigen
+- Navigations-`press down` und gategatetes Halte-Wiederholen-Verhalten
+  laufen zuerst über die gemeinsame Eingabe-Runtime
+- gemeinsames Halte-Wiederholen nutzt ein explizites
+  Erst-Wiederholen-Gate vor intervallbasierten Wiederholungen, damit das
+  Timing stabil bleibt, auch wenn rohe Wiederholungs-Callbacks ruckeln
+- auf der aktiven WLAN-Netzwerkliste nutzt Halte-Wiederholen Seiten-
+  Sprünge, dimensioniert nach der aktuell sichtbaren Zeilen-Kapazität,
+  während press-down weiterhin um eine Zeile vorrückt
+- veraltete, wartende Navigations-Callbacks sollten durch den neuesten
+  Callback für dieselbe Tasten-Spur ersetzt werden
+- Seiten-Module besitzen nur `MoveFocus(...)`, Aktivierungs-Semantik und
+  den Aufbau von persistentem Seiten-Status
 
-The current app-wide touch lifecycle is:
+Der aktuelle app-weite Touch-Lebenszyklus ist:
 
-- touch-down resolves the highest-precedence target and focuses it immediately
-- touch-move may retarget focus while the contact stays active
-- touch-up activates only the armed target from that contact
-- touch-up with no armed target cancels activation without inventing a second
-  selection state
+- Touch-Down löst das höchstpriore Ziel auf und fokussiert es sofort
+- Touch-Move kann den Fokus umlenken, solange der Kontakt aktiv bleibt
+- Touch-Up aktiviert nur das aus diesem Kontakt bewaffnete Ziel
+- Touch-Up ohne bewaffnetes Ziel bricht die Aktivierung ab, ohne einen
+  zweiten Auswahl-Status zu erfinden
 
-The current app-wide interaction feedback lifecycle is:
+Der aktuelle app-weite Interaktions-Feedback-Lebenszyklus ist:
 
-- page, footer, overlay, and input-focus helpers may decide that an interaction
-  should produce product feedback, but they should emit only neutral
-  app-owned feedback cues
-- shared interaction contracts such as `main/app_interaction_result.h` should
-  use app-owned cue enums rather than depending on `feedback_service` or
-  `system_sound_service` types directly
-- retained overlay state may queue a pending neutral feedback cue when modal or
-  toast presentation changes, but it should not play sound feedback directly
-- `main/app_shell.cpp` is the single place that maps neutral app-owned feedback
-  cues onto `feedback_service` events and requests actual playback
+- Seiten-, Fußzeilen-, Overlay- und Eingabe-Fokus-Helfer dürfen
+  entscheiden, dass eine Interaktion Produkt-Feedback erzeugen soll,
+  sollten aber nur neutrale, App-eigene Feedback-Cues auslösen
+- gemeinsame Interaktions-Verträge wie `main/app_interaction_result.h`
+  sollten app-eigene Cue-Enums nutzen statt direkt von
+  `feedback_service`- oder `system_sound_service`-Typen abzuhängen
+- persistenter Overlay-Status darf einen anstehenden neutralen
+  Feedback-Cue einreihen, wenn sich die Modal- oder Toast-Präsentation
+  ändert, sollte aber nicht direkt Sound-Feedback abspielen
+- `main/app_shell.cpp` ist die einzige Stelle, die neutrale, app-eigene
+  Feedback-Cues auf `feedback_service`-Ereignisse abbildet und die
+  tatsächliche Wiedergabe anfordert
 
-This keeps interaction ownership local while preventing feedback policy from
-leaking into reusable runtime helpers or shared interaction contracts.
+Das hält den Interaktions-Besitz lokal, während es verhindert, dass
+Feedback-Policy in wiederverwendbare Runtime-Helfer oder gemeinsame
+Interaktions-Verträge einsickert.
 
-### Time configuration page
+### Zeit-Einstellungs-Seite
 
-The time configuration page is the first screen ported end-to-end through the
-full page pattern, and is the reference example for adding a page. It is reached
-from the global footer `Time` button and is composed across five layers:
+Die Zeit-Einstellungs-Seite ist der erste Bildschirm, der End-zu-Ende
+durch das vollständige Seiten-Muster portiert wurde, und ist das
+Referenz-Beispiel für das Hinzufügen einer Seite. Sie wird über den
+globalen Fußzeilen-`Time`-Button erreicht und ist über fünf Schichten
+zusammengesetzt:
 
-- **View renderer** (`components/epaper_ui/time_page.*`): a stateless
-  `DrawTimePage` plus `TimePageState`, bounds, and hit-test. Like the other page
-  renderers it lives in `epaper_ui` (not `main/`) because `display_service` — a
-  component — draws it and cannot depend on `main`. It composes the page's
-  primitives: `select_input` (timezone), `time_input` (hour / minute / month /
-  day / year), and `button` (AM-PM and Sync & Save). `text_input` is the shared
-  field primitive those build on, and which `password_input` now wraps.
-- **Coordinator** (`main/time_page_coordinator.*`): owns the editable field
-  values, the navigation model plus roving focus, loads state from
-  `timezone_service`, and builds `TimePageState` and the save patch. A
-  `user_edited_` guard stops background clock events from clobbering in-progress
-  edits; `MarkSaved()` clears it after a save so a later sync reloads the page.
-- **Interactions** (`main/time_page_interactions.*`): map the focused control to
-  a neutral activate intent (open timezone modal, edit a numeric field, toggle
-  AM/PM, save, or footer navigation) with no side effects.
-- **Runtime** (`main/time_page_runtime.*`): the mutex-guarded orchestrator —
-  focus movement, touch resolve/focus/activate, footer projection, the overlay
-  editors, and the save flow. State is pushed to `display_service` and refreshes
-  are scheduled through `ui_refresh_runtime` (`SurfaceKey::kTimePage`).
-- **Integration**: `display_service` gains `ScreenId::kTime`, `SetTimePageState`,
-  and an `ApplyTime` / `DrawTimeUnderlay` path; `page_navigation` gains the
-  `kTime` scope, the control roles, and `BuildTimePageNavigationModel`;
-  `page_input_runtime` routes the screen; and `app_shell` exposes
-  `ShowTimeScreen` plus the footer `Time` entry.
+- **View-Renderer** (`components/epaper_ui/time_page.*`): ein
+  zustandsloses `DrawTimePage` plus `TimePageState`, Grenzen und
+  Hit-Test. Wie die anderen Seiten-Renderer lebt er in `epaper_ui`
+  (nicht `main/`), weil `display_service` — eine Komponente — ihn
+  zeichnet und nicht von `main` abhängen kann. Er komponiert die
+  Primitiven der Seite: `select_input` (Zeitzone), `time_input`
+  (Stunde/Minute/Monat/Tag/Jahr) und `button` (AM-PM und
+  Synchronisieren & Speichern). `text_input` ist die gemeinsame
+  Feld-Primitive, auf der diese aufbauen und die `password_input`
+  jetzt umschließt.
+- **Coordinator** (`main/time_page_coordinator.*`): besitzt die
+  editierbaren Feldwerte, das Navigationsmodell plus umlaufenden Fokus,
+  lädt Status aus `timezone_service` und baut `TimePageState` und den
+  Speicher-Patch. Ein `user_edited_`-Guard verhindert, dass
+  Hintergrund-Uhr-Ereignisse laufende Bearbeitungen überschreiben;
+  `MarkSaved()` löscht ihn nach einem Speichern, damit ein späterer Sync
+  die Seite neu lädt.
+- **Interactions** (`main/time_page_interactions.*`): bilden das
+  fokussierte Steuerelement auf einen neutralen Aktivierungs-Intent ab
+  (Zeitzonen-Modal öffnen, ein numerisches Feld bearbeiten, AM/PM
+  umschalten, speichern oder Fußzeilen-Navigation), ohne Nebenwirkungen.
+- **Runtime** (`main/time_page_runtime.*`): der mutex-gesicherte
+  Orchestrator — Fokus-Bewegung, Touch-resolve-/focus-/activate,
+  Fußzeilen-Projektion, die Overlay-Editoren und der Speichern-Ablauf.
+  Status wird an `display_service` geschoben, und Refreshes werden über
+  `ui_refresh_runtime` (`SurfaceKey::kTimePage`) geplant.
+- **Integration**: `display_service` erhält `ScreenId::kTime`,
+  `SetTimePageState` und einen `ApplyTime`-/`DrawTimeUnderlay`-Pfad;
+  `page_navigation` erhält den `kTime`-Scope, die Steuerelement-Rollen
+  und `BuildTimePageNavigationModel`; `page_input_runtime` routet den
+  Bildschirm; und `app_shell` stellt `ShowTimeScreen` plus den
+  Fußzeilen-`Time`-Eintrag bereit.
 
-Field editing happens in overlays, so it inherits the overlay refresh rule
-above:
+Feld-Bearbeitung passiert in Overlays, sie erbt also die
+Overlay-Refresh-Regel von oben:
 
-- The timezone control opens a scrollable `select_modal` over
-  `timezone_service::ListTimezones()`; the chosen index is committed through the
-  runtime's select-modal submit hook.
-- Each numeric field opens the keyboard in its `kNumbers` layout — a standalone
-  dial-pad (`1`-`9`, then `Bksp | 0 | Done`); the typed value is committed on
-  submit.
+- Das Zeitzonen-Steuerelement öffnet ein scrollbares `select_modal`
+  über `timezone_service::ListTimezones()`; der gewählte Index wird
+  über den Auswahl-Modal-Absenden-Hook der Runtime übernommen.
+- Jedes numerische Feld öffnet die Tastatur in ihrem `kNumbers`-Layout
+  — ein eigenständiges Wähltastenfeld (`1`-`9`, dann `Bksp | 0 |
+  Fertig`); der eingetippte Wert wird beim Absenden übernommen.
 
-The save / sync flow:
+Der Speicher-/Sync-Ablauf:
 
-- `BuildSettingsPatch` converts the fields (12h + AM/PM to 24h, `YYYY-MM-DD` and
-  `HH:MM`) and `Save()` calls `timezone_service::ApplySettingsPatch`, then shows
-  a result toast. The patch's internal `Notify` drives `HandleTimezoneEvent`,
-  which already re-syncs the page, so `Save()` does not also run a redundant
-  full sync.
-- `ApplySettingsPatch` never runs the blocking SNTP path on the caller's task.
-  When the network is up it queues the NTP sync on the dedicated `timezone_sync`
-  worker (`QueueSync`); the result returns asynchronously via the SNTP callback
-  -> `Notify` -> event. Running SNTP inline overflowed the small touch-task
-  stack.
-- The clock also re-syncs on every Wi-Fi reconnect: `SetNetworkConnected` queues
-  a sync on the disconnected -> connected transition whenever the clock is
-  enabled and a timezone is set (default Eastern). The transition guard keeps
-  repeated "connected" events from spamming NTP.
+- `BuildSettingsPatch` wandelt die Felder um (12h + AM/PM zu 24h,
+  `YYYY-MM-DD` und `HH:MM`), und `Save()` ruft
+  `timezone_service::ApplySettingsPatch`, zeigt dann einen
+  Ergebnis-Toast. Das interne `Notify` des Patches treibt
+  `HandleTimezoneEvent`, das die Seite bereits neu synchronisiert, also
+  läuft `Save()` keinen redundanten vollständigen Sync mehr.
+- `ApplySettingsPatch` führt den blockierenden SNTP-Pfad nie auf dem
+  Task des Aufrufers aus. Wenn das Netzwerk steht, reiht es den
+  NTP-Sync auf dem dedizierten `timezone_sync`-Worker ein
+  (`QueueSync`); das Ergebnis kommt asynchron über den SNTP-Callback
+  -> `Notify` -> Ereignis zurück. SNTP inline auszuführen ließ den
+  kleinen Touch-Task-Stack überlaufen.
+- Die Uhr synchronisiert sich auch bei jeder WLAN-Neuverbindung neu:
+  `SetNetworkConnected` reiht einen Sync beim Übergang von getrennt
+  nach verbunden ein, immer wenn die Uhr aktiviert und eine Zeitzone
+  gesetzt ist (Standard Eastern). Der Übergangs-Guard verhindert, dass
+  wiederholte "verbunden"-Ereignisse NTP zuspammen.
 
-The `location` field in the underlying `timezone_service` settings is
-intentionally not surfaced on this page. It is metadata only (kept in NVS and
-the web portal) and has no effect on timekeeping, which is driven solely by the
-timezone selection plus NTP.
+Das `location`-Feld in den zugrundeliegenden `timezone_service`-
+Einstellungen wird bewusst nicht auf dieser Seite angezeigt. Es ist nur
+Metadaten (in NVS und im Web-Portal gehalten) und hat keine Wirkung auf
+die Zeithaltung, die allein von der Zeitzonen-Auswahl plus NTP
+gesteuert wird.
 
-## Recording Flow
+## Aufnahme-Ablauf
 
-`recording_session_service` owns the whole press-and-hold take, from the first
-cue to the tag menu. The phase machine is:
+`recording_session_service` besitzt die gesamte Drücken-und-Halten-
+Aufnahme, vom ersten Cue bis zum Tag-Menü. Die Phasen-Maschine ist:
 
 ```text
 kIdle -> kArmed -> kStartCue -> kRecording -> kStopCue -> kPlayingBack
       -> kAwaitingTagSelection -> kSaving -> kTranscribing -> kComplete
 ```
 
-- **kArmed** — `BOOT` press-down arms the recorder.
-- **kStartCue** — the hold threshold fires, capture starts, and the start cue
-  (`SoundCue::kSpeaking`) plays. Capture deliberately starts *before* the cue:
-  waiting for the cue to finish would swallow the speaker's first word, so the
-  cue overlaps the opening moments of the take.
-- **kRecording** — entered when the start cue completes. If `BOOT` is released
-  while still in `kStartCue`, the finish is deferred rather than dropped
-  (`s_finish_pending_after_start_cue`); without that, a hold barely longer than
-  the cue would never stop.
-- **kStopCue** — release finishes capture and plays the stop cue
-  (`SoundCue::kInterrupt`). Playback waits for the cue to complete rather than
-  overlapping it, since both share the one codec output.
-- **kPlayingBack** — the take is replayed to the user from the PSRAM chunks, via
-  `playback_service::PlayClip`, on a short-lived worker task. Playback blocks for
-  the length of the clip, so it cannot run on the cue-callback task.
-- **kAwaitingTagSelection** — the tag menu opens. **The clip is still only in
-  PSRAM at this point.** That is the reason playback comes first: the user hears
-  the take, and the menu's `Discard` option throws away a bad one without it ever
-  reaching the SD card. Saving happens in `kSaving`, after a tag is chosen.
+- **kArmed** — `BOOT`-Press-Down bewaffnet den Recorder.
+- **kStartCue** — die Halte-Schwelle löst aus, die Aufnahme startet, und
+  der Start-Cue (`SoundCue::kSpeaking`) spielt. Die Aufnahme startet
+  bewusst *vor* dem Cue: auf das Ende des Cues zu warten würde das
+  erste Wort des Sprechers verschlucken, deshalb überlappt der Cue mit
+  den ersten Momenten der Aufnahme.
+- **kRecording** — betreten, wenn der Start-Cue fertig ist. Wird `BOOT`
+  losgelassen, während noch `kStartCue` läuft, wird das Beenden
+  zurückgestellt statt verworfen (`s_finish_pending_after_start_cue`);
+  ohne das würde ein Halten, das kaum länger als der Cue dauert, nie
+  stoppen.
+- **kStopCue** — Loslassen beendet die Aufnahme und spielt den
+  Stop-Cue (`SoundCue::kInterrupt`). Die Wiedergabe wartet, bis der Cue
+  fertig ist, statt zu überlappen, da beide dieselbe eine
+  Codec-Ausgabe teilen.
+- **kPlayingBack** — die Aufnahme wird dem Nutzer aus den PSRAM-Chunks
+  vorgespielt, über `playback_service::PlayClip`, auf einem
+  kurzlebigen Worker-Task. Die Wiedergabe blockiert für die Länge des
+  Clips, kann also nicht auf dem Cue-Callback-Task laufen.
+- **kAwaitingTagSelection** — das Tag-Menü öffnet sich. **Der Clip liegt
+  an diesem Punkt noch nur im PSRAM.** Das ist der Grund, warum die
+  Wiedergabe zuerst kommt: der Nutzer hört die Aufnahme, und die
+  `Verwerfen`-Option im Menü wirft eine schlechte Aufnahme weg, ohne
+  dass sie je die SD-Karte erreicht. Das Speichern passiert in
+  `kSaving`, nachdem ein Tag gewählt wurde.
 
-Every route out of `kStopCue` converges on `AdvanceToTagSelection` — playback
-finished, playback could not start, or the stop cue itself failed — so a missing
-or broken cue degrades to "no replay" rather than stranding the session.
+Jeder Ausgang aus `kStopCue` läuft auf `AdvanceToTagSelection` zusammen —
+Wiedergabe fertig, Wiedergabe konnte nicht starten, oder der Stop-Cue
+selbst schlug fehl — sodass ein fehlender oder kaputter Cue zu "keine
+Wiedergabe" degradiert, statt die Session steckenzulassen.
 
-Cue callbacks carry a token that is bumped on every queued cue and on
-`ResetToIdleLocked`, so a result arriving after a cancel is dropped instead of
-driving a stale transition.
+Cue-Callbacks tragen ein Token, das bei jedem eingereihten Cue und bei
+`ResetToIdleLocked` erhöht wird, sodass ein Ergebnis, das nach einem
+Abbruch ankommt, verworfen wird statt einen veralteten Übergang
+auszulösen.
 
-Auto-sleep is blocked while `playback_service::IsPlaying()`, since neither the
-replay nor the Details page's play action touches recording state and the
-inactivity timer would otherwise keep counting through the clip.
+Auto-Sleep ist blockiert, während `playback_service::IsPlaying()` wahr
+ist, da weder die Wiederholung noch die Play-Aktion der Details-Seite
+den Aufnahme-Status berühren und der Inaktivitäts-Timer sonst
+während des Clips weiterzählen würde.
 
-## Task Mapping
+## Task-Zuordnung
 
-App-owned FreeRTOS tasks use the shared mapping in
-`components/task_config/include/followup_task_config.h`. The app is optimized
-around a simple split:
+App-eigene FreeRTOS-Tasks nutzen die gemeinsame Zuordnung in
+`components/task_config/include/followup_task_config.h`. Die App ist um
+eine einfache Aufteilung herum optimiert:
 
-- CPU0 is the system/network side. ESP-IDF already runs the main task,
-  `esp_timer`, and Wi-Fi driver work there in the current `sdkconfig`, so app
-  Wi-Fi/time coordination stays close to that side.
-- CPU1 is the product hardware/UI side. Touch, audio capture, storage work,
-  sound feedback, and sleep-driven display transitions are kept away from CPU0
-  as the app scales.
+- CPU0 ist die System-/Netzwerk-Seite. ESP-IDF lässt dort im aktuellen
+  `sdkconfig` bereits den Main-Task, `esp_timer` und die WLAN-Treiber-
+  Arbeit laufen, App-WLAN-/Zeit-Koordination bleibt also nah an dieser
+  Seite.
+- CPU1 ist die Produkt-Hardware-/UI-Seite. Touch, Audio-Aufnahme,
+  Speicher-Arbeit, Sound-Feedback und Sleep-getriebene Display-Übergänge
+  werden von CPU0 ferngehalten, während die App wächst.
 
-On single-core builds, the shared task config maps the app core back to CPU0.
+Bei Single-Core-Builds bildet die gemeinsame Task-Konfiguration den
+App-Core zurück auf CPU0 ab.
 
-| Task | Owner | Priority | Core | Responsibility |
+| Task | Besitzer | Priorität | Core | Verantwortung |
 | --- | --- | ---: | --- | --- |
-| `record_capture` | `recording_service` | 5 | CPU1 | Timing-sensitive microphone capture, pre-roll, and clip buffering. |
-| `axp2101_irq` | `axp2101` | 2 | CPU1 | PMIC interrupt servicing, including power-key short/long press. |
-| `app_sleep` | `device_sleep_runtime` | 4 | CPU1 | Display sleep, light-sleep entry/exit, and wake recovery actions. |
-| `app_shutdown` | `app_shell` | 4 | CPU1 | Deferred PMIC power-off after the shutdown modal is confirmed. |
-| `sleep_motion` | `device_sleep_runtime` | 3 | CPU1 | 200 ms IMU polling and motion/stillness classification. |
-| `wifi_transition` | `wifi_service` | 3 | CPU0 | Wi-Fi station/AP/stop/disconnect transitions. |
-| `wifi_callbacks` | `wifi_service` | 3 | CPU0 | App-facing Wi-Fi event delivery outside ESP event callbacks. |
-| `storage_service` | `storage_service` | 2 | CPU1 | Long-running SD operations such as format. |
-| `timezone_sync` | `timezone_service` | 2 | CPU0 | SNTP sync, system-time update, and RTC writeback. |
-| `clip_playback` | `recording_session_service` | 2 | CPU1 | Short-lived worker that replays a just-recorded clip. |
+| `record_capture` | `recording_service` | 5 | CPU1 | Timing-sensitive Mikrofon-Aufnahme, Pre-Roll und Clip-Pufferung. |
+| `axp2101_irq` | `axp2101` | 2 | CPU1 | PMIC-Interrupt-Bedienung, inklusive Power-Taste kurz/lang. |
+| `app_sleep` | `device_sleep_runtime` | 4 | CPU1 | Display-Sleep, Light-Sleep-Ein-/Ausstieg und Aufwach-Wiederherstellungs-Aktionen. |
+| `app_shutdown` | `app_shell` | 4 | CPU1 | Zurückgestellte PMIC-Abschaltung, nachdem das Shutdown-Modal bestätigt wurde. |
+| `sleep_motion` | `device_sleep_runtime` | 3 | CPU1 | 200-ms-IMU-Abfrage und Bewegungs-/Stillstands-Klassifikation. |
+| `wifi_transition` | `wifi_service` | 3 | CPU0 | WLAN-Station-/AP-/Stop-/Trenn-Übergänge. |
+| `wifi_callbacks` | `wifi_service` | 3 | CPU0 | App-seitige WLAN-Ereignis-Zustellung außerhalb der ESP-Event-Callbacks. |
+| `storage_service` | `storage_service` | 2 | CPU1 | Lang laufende SD-Operationen wie Formatieren. |
+| `timezone_sync` | `timezone_service` | 2 | CPU0 | SNTP-Sync, System-Zeit-Update und RTC-Rückschreiben. |
+| `clip_playback` | `recording_session_service` | 2 | CPU1 | Kurzlebiger Worker, der einen gerade aufgenommenen Clip abspielt. |
 
-The mapping intentionally keeps long-running SD work below input and audio
-capture. Future tasks should be added to `task_config` first, with a short
-ownership rationale, rather than using local priority/core literals.
+Die Zuordnung hält lang laufende SD-Arbeit bewusst unter Eingabe und
+Audio-Aufnahme. Künftige Tasks sollten zuerst in `task_config`
+hinzugefügt werden, mit einer kurzen Besitz-Begründung, statt lokale
+Prioritäts-/Core-Literale zu nutzen.
 
-Driver-specific wiring should stay out of `main/`; app startup should call
-service-level APIs instead. Add product-specific sequencing in `app_shell`, not
-inside reusable components.
+Treiber-spezifische Verdrahtung sollte aus `main/` herausgehalten
+werden; der App-Start sollte stattdessen Dienst-Ebene-APIs aufrufen.
+Produkt-spezifische Sequenzierung gehört in `app_shell`, nicht in
+wiederverwendbare Komponenten.
 
-Wi-Fi and time services follow the same boundary:
+WLAN- und Zeit-Dienste folgen derselben Grenze:
 
-- `wifi_service` owns `esp_netif`, the default ESP event-loop registration,
-  `esp_wifi` mode changes, station/AP configuration, NVS credential storage,
-  network scans, and the HTTP backend server used during AP setup.
-- `timezone_service` owns timezone catalog/aliases, persisted timezone settings,
-  SNTP setup, system-time updates, PCF85063 RTC read/write through
-  `power_service`, and backend HTTP routes for time settings.
-- `app_shell` wires the two services together by forwarding Wi-Fi connectivity
-  events into `timezone_service::SetNetworkConnected(...)`.
+- `wifi_service` besitzt `esp_netif`, die Registrierung der
+  Standard-ESP-Event-Loop, `esp_wifi`-Moduswechsel,
+  Stations-/AP-Konfiguration, NVS-Zugangsdaten-Speicherung,
+  Netzwerk-Scans und den HTTP-Backend-Server, der während der
+  AP-Einrichtung genutzt wird.
+- `timezone_service` besitzt Zeitzonen-Katalog/-Aliase, persistierte
+  Zeitzonen-Einstellungen, SNTP-Einrichtung, System-Zeit-Updates,
+  PCF85063-RTC-Lesen/Schreiben über `power_service` und
+  Backend-HTTP-Routen für Zeit-Einstellungen.
+- `app_shell` verdrahtet die beiden Dienste zusammen, indem es
+  WLAN-Verbindungs-Ereignisse an
+  `timezone_service::SetNetworkConnected(...)` weiterleitet.
 
-Runtime-persisted settings live in service-owned NVS namespaces:
+Runtime-persistierte Einstellungen leben in dienst-eigenen
+NVS-Namespaces:
 
 - `wifi`: `ssid`, `password`
 - `timezone`: `enabled`, `tz_name`, `location`, `time_src`, `ntp_sync`,
   `ntp_epoch`
 
-The build-time Wi-Fi/time defaults live under `Folloup Settings`:
+Die Build-Zeit-WLAN-/Zeit-Standardwerte leben unter `Folloup Settings`:
 
 - `CONFIG_FOLLOWUP_WIFI_AP_PREFIX`
 - `CONFIG_FOLLOWUP_WIFI_STA_SSID`
@@ -814,14 +954,16 @@ The build-time Wi-Fi/time defaults live under `Folloup Settings`:
 - `CONFIG_FOLLOWUP_TIME_SYNC_DEFAULT_ENABLED`
 - `CONFIG_FOLLOWUP_DEFAULT_TIMEZONE_NAME`
 
-Saved NVS Wi-Fi credentials take precedence over built-in sdkconfig
-credentials. If neither exists, or if `CONFIG_FOLLOWUP_WIFI_START_IN_AP_MODE`
-is enabled, `wifi_service` enters open AP setup mode and serves backend routes
-at the SoftAP URL, normally `http://192.168.4.1`. The current backend
-intentionally exposes JSON/form endpoints only; it does not embed the old
-portal UI and does not add DNS captive-portal redirection.
+Gespeicherte NVS-WLAN-Zugangsdaten haben Vorrang vor eingebauten
+sdkconfig-Zugangsdaten. Existiert keines von beiden, oder ist
+`CONFIG_FOLLOWUP_WIFI_START_IN_AP_MODE` aktiviert, geht `wifi_service`
+in den offenen AP-Einrichtungsmodus und stellt Backend-Routen unter der
+SoftAP-URL bereit, normalerweise `http://192.168.4.1`. Das aktuelle
+Backend stellt absichtlich nur JSON-/Formular-Endpunkte bereit; es
+bettet die alte Portal-UI nicht ein und fügt keine DNS-Captive-Portal-
+Umleitung hinzu.
 
-Current Wi-Fi backend routes:
+Aktuelle WLAN-Backend-Routen:
 
 - `GET /`
 - `GET /api/status`
@@ -829,652 +971,770 @@ Current Wi-Fi backend routes:
 - `POST /api/configure`
 - `POST /api/disconnect`
 
-Current time backend routes registered on the same HTTP server:
+Aktuelle Zeit-Backend-Routen, registriert auf demselben HTTP-Server:
 
 - `GET /api/settings/time`
 - `PATCH /api/settings/time`
 - `GET /api/runtime/time`
 - `GET /api/timezone/list`
 
-Auto-sleep is split across a policy component and a product runtime helper:
-`device_sleep_service` owns sleep state, timers, timeout validation, blocker
-state, and transition events, but it does not touch display, GPIO, or ESP sleep
-hardware. `main/device_sleep_runtime.cpp` owns product-specific auto-sleep
-runtime behavior: IMU inactivity polling, the event worker task, display sleep
-commands, ESP light-sleep entry, wake handling, and app-level blocker
-aggregation. `app_shell` should only provide settings, provide app-owned
-signals such as shutdown-pending state, start the runtime, and forward user
-activity. See `docs/auto-sleep.md` for the stable feature behavior and the
-deferred FIFO/shared-interrupt plan.
+Auto-Sleep ist aufgeteilt auf eine Policy-Komponente und einen
+Produkt-Runtime-Helfer: `device_sleep_service` besitzt Sleep-Status,
+Timer, Timeout-Validierung, Blocker-Status und Übergangs-Ereignisse,
+fasst aber weder Display, GPIO noch ESP-Sleep-Hardware an.
+`main/device_sleep_runtime.cpp` besitzt produkt-spezifisches
+Auto-Sleep-Runtime-Verhalten: IMU-Inaktivitäts-Abfrage, den
+Event-Worker-Task, Display-Sleep-Befehle, ESP-Light-Sleep-Eintritt,
+Aufwach-Behandlung und App-Ebene-Blocker-Aggregation. `app_shell` sollte
+nur Einstellungen bereitstellen, App-eigene Signale wie
+Shutdown-anstehend-Status liefern, die Runtime starten und Nutzer-
+Aktivität weiterleiten. Siehe `docs/auto-sleep.md` für das stabile
+Feature-Verhalten und den zurückgestellten
+FIFO-/geteilter-Interrupt-Plan.
 
-Current auto-sleep behavior:
+Aktuelles Auto-Sleep-Verhalten:
 
-- `main/device_sleep_runtime.cpp` polls `imu_service::ReadSample(...)` every
-  `200 ms` and converts acceleration deltas from `g` to `mg`.
-- Motion is detected when the axis-delta sum is at least `60 mg` or the largest
-  axis delta is at least `25 mg`.
-- Stillness is detected only after a continuous `2 s` window where the
-  axis-delta sum is at most `20 mg` and the largest axis delta is at most
-  `8 mg`.
-- Display sleep refreshes the e-paper panel to a blank screen and then puts the
-  panel to sleep.
-- ESP32-S3 light sleep waits for `ACTION` / `GPIO0` to be released, then arms
-  `ACTION` and the PMIC IRQ / `GPIO38` as active-low `gpio_wakeup_enable`
-  sources. It suspends button polling (light sleep's clock jump would otherwise
-  replay every missed tick on wake and destroy click classification), arms
-  wake-only `ACTION` event suppression so the wake press cannot start a
-  recording, refreshes the panel to a blank screen, puts the panel to sleep, and
-  enters `esp_light_sleep_start()`. There is no power latch to preserve: the
-  AXP2101 holds the rails across sleep.
-- The wake-causing power-button events are consumed as wake-only after light
-  sleep, so they do not trigger normal power-button behavior or leave
-  `shutdown_pending` set as an auto-sleep blocker.
-- After light-sleep wake, the display is restored to a blank screen with a
-  forced full refresh.
-- Inactivity is blocked while recording is active, armed, saving, or exporting;
-  while a clip is playing back;
-  while shutdown is pending; while an e-paper refresh is active; during
-  app-declared storage write activity; while AP setup mode is active; and while
-  SNTP time sync is in progress.
-- The current bench defaults are `10 s` for display sleep and `30 s` for light
-  sleep. Production defaults should be raised later when product behavior is no
-  longer being tuned on the bench.
+- `main/device_sleep_runtime.cpp` fragt `imu_service::ReadSample(...)`
+  alle `200 ms` ab und rechnet Beschleunigungs-Deltas von `g` in `mg`
+  um.
+- Bewegung wird erkannt, wenn die Achsen-Delta-Summe mindestens
+  `60 mg` beträgt oder das größte Achsen-Delta mindestens `25 mg`.
+- Stillstand wird erst nach einem durchgehenden `2 s`-Fenster erkannt,
+  in dem die Achsen-Delta-Summe höchstens `20 mg` und das größte
+  Achsen-Delta höchstens `8 mg` beträgt.
+- Display-Sleep aktualisiert das E-Paper-Panel auf einen leeren
+  Bildschirm und legt das Panel dann schlafen.
+- ESP32-S3-Light-Sleep wartet, bis `ACTION`/`GPIO0` losgelassen wird,
+  bewaffnet dann `ACTION` und den PMIC-IRQ/`GPIO38` als
+  active-low-`gpio_wakeup_enable`-Quellen. Es setzt das Tasten-Polling
+  aus (Light Sleeps Uhr-Sprung würde sonst beim Aufwachen jeden
+  verpassten Tick nachspielen und die Klick-Klassifikation zerstören),
+  bewaffnet aufwach-nur-`ACTION`-Ereignis-Unterdrückung, damit der
+  Aufwach-Druck keine Aufnahme starten kann, aktualisiert das Panel auf
+  einen leeren Bildschirm, legt das Panel schlafen und betritt
+  `esp_light_sleep_start()`. Es gibt keinen Power-Latch zu bewahren:
+  der AXP2101 hält die Rails über den Sleep hinweg.
+- Die aufwach-auslösenden Power-Taste-Ereignisse werden nach Light Sleep
+  als aufwach-nur konsumiert, sie lösen also kein normales
+  Power-Taste-Verhalten aus und setzen `shutdown_pending` nicht als
+  Auto-Sleep-Blocker.
+- Nach dem Light-Sleep-Aufwachen wird das Display mit einem erzwungenen
+  vollständigen Refresh auf einen leeren Bildschirm zurückgesetzt.
+- Inaktivität ist blockiert, während eine Aufnahme aktiv, bewaffnet,
+  wird gespeichert oder exportiert; während ein Clip abgespielt wird;
+  während ein Shutdown ansteht; während ein E-Paper-Refresh aktiv ist;
+  während app-deklarierter Speicher-Schreibaktivität; während der
+  AP-Einrichtungsmodus aktiv ist; und während der SNTP-Zeit-Sync läuft.
+- Die aktuellen Werkbank-Standardwerte sind `10 s` für Display-Sleep
+  und `30 s` für Light-Sleep. Produktions-Standardwerte sollten später
+  erhöht werden, wenn das Produktverhalten nicht mehr auf der Werkbank
+  eingestellt wird.
 
-SD-card formatting remains exposed through `storage_service`, but no demo
-button path currently invokes it. A future app UI should call the storage API
-through its own action/controller layer.
+SD-Karten-Formatierung bleibt über `storage_service` erreichbar, aber
+aktuell ruft kein Demo-Button-Pfad das auf. Eine künftige App-UI sollte
+die Speicher-API über ihre eigene Aktions-/Controller-Schicht aufrufen.
 
 ### `components/axp2101`
 
-This is the AXP2101 PMIC driver. On this board the PMIC is not optional: it feeds
-every rail, so a missing or unresponsive chip is unrecoverable by design and the
-constructor aborts.
+Das ist der AXP2101-PMIC-Treiber. Auf diesem Board ist der PMIC nicht
+optional: er speist jede Rail, ein fehlender oder nicht reagierender
+Chip ist also per Design nicht wiederherstellbar, und der Konstruktor
+bricht ab.
 
-Current scope:
+Aktueller Umfang:
 
-- own the DC1 / ALDO1-3 rails, the single-cell charger profile, and the
-  system power-down voltage
-- expose battery level, voltage, temperature, charge state, and VBUS presence
-- own the power-key timings: press-to-power-on, the IRQ level time that splits a
-  short press from a long one, and the hardware press-to-power-off hold
-- run a dedicated IRQ task that reads and clears the status register, then hands
-  a decoded `InterruptEvent` to a registered callback in task context
+- besitzt die DC1-/ALDO1-3-Rails, das Einzelzellen-Ladeprofil und die
+  System-Abschalt-Spannung
+- stellt Akku-Füllstand, Spannung, Temperatur, Ladezustand und
+  VBUS-Präsenz bereit
+- besitzt die Power-Taste-Timings: Druck-bis-Einschalten, die
+  IRQ-Pegel-Zeit, die einen kurzen von einem langen Druck trennt, und
+  den Hardware-Druck-bis-Ausschalten-Halte
+- führt einen dedizierten IRQ-Task aus, der das Status-Register liest
+  und löscht, dann ein dekodiertes `InterruptEvent` an einen
+  registrierten Callback im Task-Kontext übergibt
 
-The driver stays app-agnostic. What a power-key press *means* belongs to
-`main/power_key_runtime`, not here.
+Der Treiber bleibt app-unabhängig. Was ein Power-Taste-Druck
+*bedeutet*, gehört zu `main/power_key_runtime`, nicht hierher.
 
 ### `components/pcf85063`
 
-This is the PCF85063 RTC driver. It shares the sensor I2C bus with the PMIC and
-IMU.
+Das ist der PCF85063-RTC-Treiber. Er teilt sich den Sensor-I2C-Bus mit
+dem PMIC und dem IMU.
 
-Current scope:
+Aktueller Umfang:
 
-- read and write wall-clock time
-- back the timezone service's RTC writeback path
-- keep timezone policy and SNTP scheduling out of the driver
+- Wanduhrzeit lesen und schreiben
+- den RTC-Rückschreib-Pfad des Zeitzonen-Dienstes bedienen
+- Zeitzonen-Policy und SNTP-Terminierung aus dem Treiber heraushalten
 
 ### `components/board`
 
-This component centralizes Waveshare-specific hardware access. It is the only
-place that knows this board's pin mapping; generic drivers stay board-agnostic
-and are composed here.
+Diese Komponente zentralisiert Waveshare-spezifischen Hardware-Zugriff.
+Sie ist die einzige Stelle, die die Pin-Zuordnung dieses Boards kennt;
+generische Treiber bleiben board-unabhängig und werden hier komponiert.
 
-`waveshare_board_config.h` owns the pin map:
+`waveshare_board_config.h` besitzt die Pin-Zuordnung:
 
-- ACTION / BOOT button: `GPIO_NUM_0` (also the light-sleep wake button)
-- rocker up: `GPIO_NUM_4`
-- rocker middle / FN: `GPIO_NUM_5`
-- rocker down: `GPIO_NUM_6`
-- e-paper (SSD1677) on a dedicated SPI3 bus: BUSY `GPIO_NUM_3`, DC `GPIO_NUM_9`,
-  CS `GPIO_NUM_10`, SCK `GPIO_NUM_11`, MOSI `GPIO_NUM_12`, RST `GPIO_NUM_46`,
-  no MISO
-- MicroSD over the SDMMC controller, 4-bit: CLK `GPIO_NUM_16`, CMD `GPIO_NUM_17`,
-  D0 `GPIO_NUM_15`, D1 `GPIO_NUM_7`, D2 `GPIO_NUM_8`, D3 `GPIO_NUM_18`
-- shared sensor I2C: SDA `GPIO_NUM_41`, SCL `GPIO_NUM_42` — carries the AXP2101
-  PMIC (`0x34`), the QMI8658 IMU, the PCF85063 RTC, the ES8311 codec control
-  interface, and an SHTC3 that nothing drives
-- PMIC interrupt: `GPIO_NUM_38`
-- ES8311 audio over I2S0: MCLK `GPIO_NUM_13`, BCLK `GPIO_NUM_14`, WS
+- ACTION-/BOOT-Taste: `GPIO_NUM_0` (auch der Light-Sleep-Aufwach-Button)
+- Wipptaste hoch: `GPIO_NUM_4`
+- Wipptaste mitte/FN: `GPIO_NUM_5`
+- Wipptaste runter: `GPIO_NUM_6`
+- E-Paper (SSD1677) an einem eigenen SPI3-Bus: BUSY `GPIO_NUM_3`, DC
+  `GPIO_NUM_9`, CS `GPIO_NUM_10`, SCK `GPIO_NUM_11`, MOSI `GPIO_NUM_12`,
+  RST `GPIO_NUM_46`, kein MISO
+- MicroSD über den SDMMC-Controller, 4-Bit: CLK `GPIO_NUM_16`, CMD
+  `GPIO_NUM_17`, D0 `GPIO_NUM_15`, D1 `GPIO_NUM_7`, D2 `GPIO_NUM_8`, D3
+  `GPIO_NUM_18`
+- geteiltes Sensor-I2C: SDA `GPIO_NUM_41`, SCL `GPIO_NUM_42` — trägt
+  den AXP2101-PMIC (`0x34`), den QMI8658-IMU, die PCF85063-RTC, die
+  ES8311-Codec-Steuerschnittstelle und einen SHTC3, den nichts
+  ansteuert
+- PMIC-Interrupt: `GPIO_NUM_38`
+- ES8311-Audio über I2S0: MCLK `GPIO_NUM_13`, BCLK `GPIO_NUM_14`, WS
   `GPIO_NUM_47`, DIN `GPIO_NUM_21`, DOUT `GPIO_NUM_48`
-- NS4150B power-amp enable: `GPIO_NUM_39`
-- panel geometry: 800 x 480
+- NS4150B-Verstärker-Freigabe: `GPIO_NUM_39`
+- Panel-Geometrie: 800 x 480
 
-There is no power latch on this board and no shared SPI bus to arbitrate: the
-AXP2101 holds the rails, and the panel owns SPI3 outright. Both were significant
-sources of Sticky-era complexity that simply do not apply here.
+Auf diesem Board gibt es keinen Power-Latch und keinen geteilten
+SPI-Bus zu arbitrieren: der AXP2101 hält die Rails, und das Panel
+besitzt SPI3 allein. Beides waren bedeutende Quellen von
+Sticky-Ära-Komplexität, die hier schlicht nicht zutreffen.
 
-`waveshare_board.h/.cpp` owns:
+`waveshare_board.h/.cpp` besitzt:
 
-- `waveshare_board::EnablePowerHold()` — brings up the AXP2101 rails, charger,
-  and power-key behavior, and is the first thing `app_shell::Run()` calls
-- `waveshare_board::GetPmic()` — the shared `Axp2101` instance
-- `waveshare_board::GetAudioCodec()` — the shared `Es8311Codec` instance, created
-  on first use with output (and therefore the PA) enabled for its lifetime
-- `waveshare_board::EnsureSensorI2cBus(...)` — the one shared I2C master bus
+- `waveshare_board::EnablePowerHold()` — fährt die AXP2101-Rails, das
+  Ladegerät und das Power-Taste-Verhalten hoch, und ist das Erste, was
+  `app_shell::Run()` aufruft
+- `waveshare_board::GetPmic()` — die geteilte `Axp2101`-Instanz
+- `waveshare_board::GetAudioCodec()` — die geteilte `Es8311Codec`-
+  Instanz, beim ersten Gebrauch erzeugt, mit für ihre Lebensdauer
+  aktivierter Ausgabe (und damit dem PA)
+- `waveshare_board::EnsureSensorI2cBus(...)` — der eine geteilte
+  I2C-Master-Bus
 
-Audio runs full duplex at a single 16 kHz clock for both capture and playback,
-chosen to match the recording and Gemini pipeline so no resampling is needed
-anywhere in the path. Output volume is set to `WAVESHARE_AUDIO_OUTPUT_VOLUME`
-(full scale) before output is enabled — the NS4150B into a small MX1.25 speaker
-has no headroom to give away, and the codec's own default is well below what is
-audible in the hand.
+Audio läuft vollduplex auf einem einzigen 16-kHz-Takt für Aufnahme und
+Wiedergabe, gewählt passend zur Aufnahme- und Gemini-Pipeline, damit
+nirgends im Pfad ein Resampling nötig ist. Die Ausgabelautstärke wird
+auf `WAVESHARE_AUDIO_OUTPUT_VOLUME` (voller Pegel) gesetzt, bevor die
+Ausgabe aktiviert wird — der NS4150B in einen kleinen MX1.25-
+Lautsprecher hat keinen Headroom zu verschenken, und der Codec-eigene
+Standard liegt deutlich unter dem, was in der Hand hörbar ist.
+
 ### `components/power_service`
 
-This component is the app-facing power layer. It composes the `board` helpers
-with the AXP2101 PMIC and the PCF85063 RTC.
+Diese Komponente ist die App-seitige Strom-Schicht. Sie komponiert die
+`board`-Helfer mit dem AXP2101-PMIC und der PCF85063-RTC.
 
-Current responsibilities:
+Aktuelle Verantwortlichkeiten:
 
-- expose `power_service::EnablePowerHold()` so `main` can bring up the PMIC rails
-  as the first application action
-- expose `power_service::ReadStatus(...)`
-- log one diagnostic snapshot through `power_service::LogDebugStatus()`
+- stellt `power_service::EnablePowerHold()` bereit, damit `main` die
+  PMIC-Rails als erste Anwendungs-Aktion hochfahren kann
+- stellt `power_service::ReadStatus(...)` bereit
+- loggt einen diagnostischen Snapshot über
+  `power_service::LogDebugStatus()`
 
-The current diagnostic snapshot includes:
+Der aktuelle diagnostische Snapshot enthält:
 
-- service initialization state
-- battery level, voltage, and temperature from the PMIC fuel gauge
-- charge state and full-charge detection
-- VBUS presence and voltage
-- PCF85063 control/status-2 bits for alarm/timer flags and interrupt enables
+- Dienst-Initialisierungsstatus
+- Akku-Füllstand, -Spannung und -Temperatur vom PMIC-Fuel-Gauge
+- Ladezustand und Vollladung-Erkennung
+- VBUS-Präsenz und -Spannung
+- PCF85063-Control-/Status-2-Bits für Alarm-/Timer-Flags und
+  Interrupt-Freigaben
 
-The AXP2101 owns rails, charging, and battery telemetry, so there are no charger
-GPIOs to configure and no power-input ADC to sense -- both were Sticky-specific
-and have no counterpart here.
+Der AXP2101 besitzt Rails, Laden und Akku-Telemetrie, es gibt also
+keine Ladegerät-GPIOs zu konfigurieren und keinen Strom-Eingangs-ADC
+zu erfassen — beides war Sticky-spezifisch und hat hier kein
+Gegenstück.
 
-`power_service::RequestShutdown()` is the app-facing shutdown entry point,
-reached from the shutdown confirmation modal that a long `PWR` press opens. It
-first clears and disables PCF85063 alarm/timer interrupt sources, then calls
-`Axp2101::PowerOff()`, which cuts every rail. On battery the board goes dark
-there and never returns; while VBUS is present the PMIC keeps the rail fed, so
-the call can return with the board still powered -- the log says as much, and
-unplugging USB completes the power-down.
+`power_service::RequestShutdown()` ist der App-seitige Shutdown-
+Einstiegspunkt, erreicht über das Shutdown-Bestätigungs-Modal, das ein
+langer `PWR`-Druck öffnet. Er löscht und deaktiviert zuerst die
+PCF85063-Alarm-/Timer-Interrupt-Quellen, ruft dann
+`Axp2101::PowerOff()` auf, das jede Rail kappt. Auf Akku wird das Board
+dabei dunkel und kehrt nie zurück; solange VBUS anliegt, speist der
+PMIC die Rail weiter, der Aufruf kann also mit weiterhin
+eingeschaltetem Board zurückkehren — das Log sagt das auch so, und das
+Abziehen von USB schließt das Abschalten ab.
+
 ### `components/button_service`
 
-This C++ component owns app-facing button initialization and logging. It uses
-Espressif's managed `espressif/button` component for the underlying debounce and
-button-event state machine.
+Diese C++-Komponente besitzt die App-seitige Tasten-Initialisierung und
+das Logging. Sie nutzt Espressifs verwaltete `espressif/button`-
+Komponente für die zugrundeliegende Entprellung und die
+Tasten-Ereignis-Zustandsmaschine.
 
-Current scope:
+Aktueller Umfang:
 
-- `ACTION` / BOOT on `GPIO0`
-- `UP` on `GPIO5`
-- `DOWN` on `GPIO6`
-- active-low GPIO buttons with internal pulls enabled by the managed component
-- logs press down, press up, single click, double click, long press start, and
-  long press up
-- exposes a typed event callback API for app-level policy routing in
-  `app_shell`
+- `ACTION`/BOOT auf `GPIO0`
+- `HOCH` auf `GPIO5`
+- `RUNTER` auf `GPIO6`
+- active-low-GPIO-Tasten mit von der verwalteten Komponente aktivierten
+  internen Pull-Widerständen
+- loggt Press-Down, Press-Up, Einzelklick, Doppelklick, Lang-Druck-Start
+  und Lang-Druck-Up
+- stellt eine typisierte Ereignis-Callback-API für App-Ebene-Policy-
+  Routing in `app_shell` bereit
 
-Current app-shell usage on top of those low-level events is:
+Aktuelle App-Shell-Nutzung auf Basis dieser Low-Level-Ereignisse:
 
-- `UP` / `DOWN` press down: move roving focus (wraparound), one step per press.
-  A plain `UP` / `DOWN` single click (the release) is inert.
-- `BOOT` or rocker-middle `FN` single click: activate / submit the focused item
-- hold `DOWN` (long-press): app-wide "exit an entered control" gesture, handled
-  per screen (no-op at the app level; replaced the former `DOWN` double-click)
-- short `PWR` press: toggle the lock screen (an AXP2101 interrupt, not a GPIO button)
-- ~1s `PWR` hold: open the shutdown confirmation modal
-- hold `BOOT`: arm/start/finish the recording-session flow
-- select modal visible: `UP` and `DOWN` press down plus gated hold-repeat move
-  shared roving focus, and a primary-button click submits
-- shutdown modal visible: `UP` and `DOWN` press down plus gated hold-repeat
-  move shared roving focus, and a primary-button click activates the focused
-  action
+- `HOCH`/`RUNTER` Press-Down: bewegt umlaufenden Fokus (mit Umlauf), ein
+  Schritt pro Druck. Ein reiner `HOCH`/`RUNTER`-Einzelklick (das
+  Loslassen) ist wirkungslos.
+- `BOOT` oder Wipptaste-Mitte `FN` Einzelklick: aktiviert/sendet das
+  fokussierte Element ab
+- `RUNTER` halten (Lang-Druck): app-weite "ein betretenes
+  Steuerelement verlassen"-Geste, pro Bildschirm behandelt (auf
+  App-Ebene ein No-op; löst den früheren `RUNTER`-Doppelklick ab)
+- kurzer `PWR`-Druck: schaltet den Sperrbildschirm um (ein
+  AXP2101-Interrupt, keine GPIO-Taste)
+- ~1s-`PWR`-Halten: öffnet das Shutdown-Bestätigungs-Modal
+- `BOOT` halten: bewaffnet/startet/beendet den Aufnahme-Session-Ablauf
+- Auswahl-Modal sichtbar: `HOCH` und `RUNTER` bewegen beim Drücken plus
+  gategatetem Halte-Wiederholen den gemeinsamen umlaufenden Fokus, und
+  ein Primärtasten-Klick sendet ab
+- Shutdown-Modal sichtbar: `HOCH` und `RUNTER` bewegen beim Drücken
+  plus gategatetem Halte-Wiederholen den gemeinsamen umlaufenden
+  Fokus, und ein Primärtasten-Klick aktiviert die fokussierte Aktion
 
-The app shell does not own modal focus routing directly. It hands button events
-to `main/input_focus_runtime.cpp`, which gives overlay focus traps first chance
-to consume navigation movement, then defers submit/dismiss work to
-`main/overlay_runtime.cpp`. `overlay_runtime` keeps the modal above both the
-home screen and lock screen and only returns a `request_shutdown` intent after
-explicit confirmation.
+Die App-Shell besitzt das Modal-Fokus-Routing nicht direkt. Sie gibt
+Tasten-Ereignisse an `main/input_focus_runtime.cpp` weiter, das
+Overlay-Fokus-Fallen zuerst die Chance gibt, Navigations-Bewegung zu
+konsumieren, und dann Absenden-/Verwerfen-Arbeit an
+`main/overlay_runtime.cpp` delegiert. `overlay_runtime` hält das Modal
+über sowohl dem Home-Bildschirm als auch dem Sperrbildschirm und gibt
+erst nach expliziter Bestätigung einen `request_shutdown`-Intent
+zurück.
 
-The auto-sleep runtime arms `ACTION` / `GPIO0` and the PMIC IRQ / `GPIO38` as
-light-sleep GPIO wake sources. The managed button component still owns normal
-awake-state debounce and event generation; light-sleep wake setup stays in
-`main/device_sleep_runtime.cpp` so pre-sleep wake-only event suppression, button
-poller suspend/resume, and immediate display recovery remain part of the auto-sleep
-policy.
+Die Auto-Sleep-Runtime bewaffnet `ACTION`/`GPIO0` und den
+PMIC-IRQ/`GPIO38` als Light-Sleep-GPIO-Aufwach-Quellen. Die verwaltete
+Button-Komponente besitzt weiterhin die normale Wachzustand-Entprellung
+und Ereignis-Erzeugung; die Light-Sleep-Aufwach-Einrichtung bleibt in
+`main/device_sleep_runtime.cpp`, damit Vor-Sleep-Aufwach-nur-Ereignis-
+Unterdrückung, Tasten-Poller-Aussetzen/Fortsetzen und sofortige
+Display-Wiederherstellung Teil der Auto-Sleep-Policy bleiben.
 
 ### `components/audio_hal`
 
-This is the ES8311 codec layer. It replaces the Sticky's PDM-input-only path:
-this board has both a microphone and a speaker (ES8311 plus an NS4150B power
-amp), so the codec is full duplex.
+Das ist die ES8311-Codec-Schicht. Sie löst den nur-PDM-Eingang-Pfad des
+Sticky ab: dieses Board hat sowohl ein Mikrofon als auch einen
+Lautsprecher (ES8311 plus ein NS4150B-Leistungsverstärker), der Codec
+ist also vollduplex.
 
-Current scope:
+Aktueller Umfang:
 
-- configure I2S0 for full-duplex 16 kHz mono 16-bit PCM, matching the recording
-  and Gemini pipeline so nothing has to resample
-- own the NS4150B power-amp enable pin alongside codec output enable
-- expose `OutputData(...)` for playback and the capture side for recording
-- expose output volume control
+- konfiguriert I2S0 für vollduplex 16-kHz-Mono-16-Bit-PCM, passend zur
+  Aufnahme- und Gemini-Pipeline, damit nichts resampeln muss
+- besitzt den NS4150B-Leistungsverstärker-Freigabe-Pin neben der
+  Codec-Ausgabe-Freigabe
+- stellt `OutputData(...)` für die Wiedergabe und die Aufnahme-Seite
+  für die Aufnahme bereit
+- stellt Ausgabe-Lautstärkeregelung bereit
 
-The board keeps codec output (and therefore the PA) enabled for the codec's
-lifetime. Per-event PA toggling was rejected: cues and clip playback share the
-output, and toggling clipped whichever stream started second.
+Das Board hält die Codec-Ausgabe (und damit den PA) für die Lebensdauer
+des Codecs aktiviert. Pro-Ereignis-PA-Umschalten wurde verworfen: Cues
+und Clip-Wiedergabe teilen sich die Ausgabe, und Umschalten schnitt
+jeweils den Stream ab, der als Zweiter startete.
 
 ### `components/system_sound_service`
 
-This component owns the decoded sound-cue catalog and streams cues to the codec.
+Diese Komponente besitzt den dekodierten Sound-Cue-Katalog und streamt
+Cues an den Codec.
 
-Current scope:
+Aktueller Umfang:
 
-- decode and cache the built-in cue set
-- play a cue, optionally with a completion callback reporting whether the cue
-  completed, was debounced, superseded, interrupted, or failed
-- serialize cue playback so two cues cannot interleave on the output
+- dekodiert und cacht das eingebaute Cue-Set
+- spielt einen Cue ab, optional mit einem Abschluss-Callback, der
+  meldet, ob der Cue fertig wurde, entprellt, ersetzt, unterbrochen
+  oder fehlgeschlagen ist
+- serialisiert die Cue-Wiedergabe, damit sich zwei Cues nicht auf der
+  Ausgabe überlappen können
 
-The completion callback is what lets `recording_session_service` sequence the
-stop cue and the review playback without them overlapping.
+Der Abschluss-Callback ist das, was `recording_session_service` erlaubt,
+den Stop-Cue und die Review-Wiedergabe zu sequenzieren, ohne dass sie
+sich überlappen.
 
 ### `components/feedback_service`
 
-This C++ component owns app-facing haptic/audio feedback policy. It maps product
-events onto sound cues without exposing codec details to
-`app_shell`.
+Diese C++-Komponente besitzt die App-seitige haptische/akustische
+Feedback-Policy. Sie bildet Produkt-Ereignisse auf Sound-Cues ab, ohne
+Codec-Details gegenüber `app_shell` offenzulegen.
 
-Current scope:
+Aktueller Umfang:
 
-- initializes `system_sound_service` with the board's audio codec
-- maps startup, lock, unlock, button click, button double-click,
-  button long-press, shutdown, and error feedback onto sound cues
-- keeps app-level feedback names separate from low-level cue names
+- initialisiert `system_sound_service` mit dem Audio-Codec des Boards
+- bildet Start-, Sperr-, Entsperr-, Tasten-Klick-, Tasten-Doppelklick-,
+  Tasten-Lang-Druck-, Shutdown- und Fehler-Feedback auf Sound-Cues ab
+- hält App-Ebene-Feedback-Namen getrennt von Low-Level-Cue-Namen
 
-`feedback_service` is intentionally an app-shell dependency, not a runtime-helper
-dependency. App-owned helpers under `main/` such as `overlay_runtime`,
-`input_focus_runtime`, `footer_runtime`, and future page runtimes should not
-call `feedback_service` directly. They should emit neutral app-owned feedback
-cues and let `app_shell` map those cues onto `feedback_service` events.
+`feedback_service` ist bewusst eine App-Shell-Abhängigkeit, keine
+Runtime-Helfer-Abhängigkeit. App-eigene Helfer unter `main/` wie
+`overlay_runtime`, `input_focus_runtime`, `footer_runtime` und künftige
+Seiten-Runtimes sollten `feedback_service` nicht direkt aufrufen. Sie
+sollten neutrale, App-eigene Feedback-Cues auslösen und `app_shell`
+diese Cues auf `feedback_service`-Ereignisse abbilden lassen.
 
-`app_shell` may request feedback events for button single-click, button
-double-click, non-power long-press-start, lock, unlock, touch contact, modal
-open, startup, shutdown, and other product-level interaction outcomes. It
-should not know about LEDC timer numbers, PWM duty values, GPIO setup, or exact
-sound-cue catalog composition.
+`app_shell` darf Feedback-Ereignisse für Tasten-Einzelklick, Tasten-
+Doppelklick, Nicht-Strom-Lang-Druck-Start, Sperren, Entsperren,
+Touch-Kontakt, Modal-Öffnen, Start, Shutdown und andere Produkt-Ebene-
+Interaktions-Ergebnisse anfordern. Es sollte nichts über LEDC-Timer-
+Nummern, PWM-Duty-Werte, GPIO-Einrichtung oder die genaue Sound-Cue-
+Katalog-Zusammensetzung wissen.
 
 ### `components/sd_card`
 
-This is the SDSPI/FATFS MicroSD wrapper ported from:
+Das ist der von hier portierte SDSPI-/FATFS-MicroSD-Wrapper:
 
 ```text
 /Users/tieuvong/Desktop/folloup/sticky_port/Device_Peripheral_Demo/components/sd_card
 ```
 
-The component is mostly board-agnostic. It receives an `SdCardPins` struct and
-mount point from its caller, then owns:
+Die Komponente ist größtenteils board-unabhängig. Sie erhält eine
+`SdCardPins`-Struktur und einen Mount-Punkt von ihrem Aufrufer und
+besitzt dann:
 
-- SD power-enable GPIO configuration
-- card-detect GPIO configuration
-- SDSPI bus/device setup, unless the caller marks the SPI bus as externally
-  owned
-- FATFS mount/unmount at the requested mount point
-- storage statistics
-- directory listing
-- small file read/write/append/truncate helpers
+- SD-Power-Freigabe-GPIO-Konfiguration
+- Karten-Erkennungs-GPIO-Konfiguration
+- SDSPI-Bus-/Geräte-Einrichtung, außer der Aufrufer markiert den
+  SPI-Bus als extern besessen
+- FATFS-Mount/Unmount am angeforderten Mount-Punkt
+- Speicher-Statistiken
+- Verzeichnis-Auflistung
+- kleine Datei-Lese-/Schreib-/Anhänge-/Trunkier-Helfer
 
-Do not make this component depend on `board`; pass pins in from the service or
-board layer. On Sticky, `storage_service` asks the board layer to initialize the
-shared SPI bus first and passes `external_spi_bus=true`, so the SD wrapper only
-adds its SDSPI device to the existing bus.
+Diese Komponente nicht von `board` abhängig machen; Pins vom Dienst
+oder der Board-Schicht hereinreichen. Auf Sticky bittet
+`storage_service` die Board-Schicht, zuerst den geteilten SPI-Bus zu
+initialisieren, und übergibt `external_spi_bus=true`, sodass der
+SD-Wrapper sein SDSPI-Gerät nur zum bestehenden Bus hinzufügt.
 
 ### `components/storage_service`
 
-This is the app-facing storage layer. It composes `board` pin definitions with
-the `sd_card` wrapper and owns app SD-card mount and format state.
+Das ist die App-seitige Speicher-Schicht. Sie komponiert `board`-Pin-
+Definitionen mit dem `sd_card`-Wrapper und besitzt den App-SD-Karten-
+Mount- und Format-Status.
 
-Current scope:
+Aktueller Umfang:
 
-- use the schematic page 5 MicroSD pin map
-- check `SD_DETECT`
-- mount `/sdcard` during boot when a card is present
-- keep the card mounted during normal runtime after successful boot-time init
-- format the SD card on request, set the `FOLLOUP` volume label, and recreate
-  the source-app directory layout:
+- nutzt die schematische Seite-5-MicroSD-Pin-Zuordnung
+- prüft `SD_DETECT`
+- mountet `/sdcard` während des Boots, wenn eine Karte steckt
+- hält die Karte während des normalen Betriebs nach erfolgreicher
+  Boot-Zeit-Initialisierung gemountet
+- formatiert die SD-Karte auf Anfrage, setzt das `FOLLOUP`-Volume-Label
+  und erstellt das Quell-App-Verzeichnis-Layout neu:
   `/recordings`, `/todos`, `/summaries`, `/files`, `/trash`,
-  `/trash/recordings`, and `/trash/todos`
-- publish coarse format lifecycle state only: started, succeeded, or failed
-- avoid progress-checkpoint UI churn during format; the current product flow
-  shows a single "Formatting in progress. Please wait..." modal until the
-  operation completes with success or error
-- log mount status, total/free bytes, and a small root directory preview
-- write/read `/sdcard/SDPROBE.TXT` once as a bring-up probe
+  `/trash/recordings` und `/trash/todos`
+- veröffentlicht nur groben Format-Lebenszyklus-Status: gestartet,
+  erfolgreich oder fehlgeschlagen
+- vermeidet Fortschritts-Checkpoint-UI-Unruhe während des Formatierens;
+  der aktuelle Produkt-Ablauf zeigt ein einziges "Formatiere. Bitte
+  warten..."-Modal, bis die Operation mit Erfolg oder Fehler
+  abgeschlossen ist
+- loggt Mount-Status, Gesamt-/Freie Bytes und eine kleine
+  Root-Verzeichnis-Vorschau
+- schreibt/liest `/sdcard/SDPROBE.TXT` einmal als Hochfahr-Probe
 
-An absent SD card is not a fatal app startup error. Mount failures are logged
-and returned to AppShell as non-fatal service initialization failures.
+Eine fehlende SD-Karte ist kein fataler App-Startfehler. Mount-
+Fehlschläge werden geloggt und als nicht-fatale Dienst-Initialisierungs-
+Fehlschläge an AppShell zurückgegeben.
 
-MicroSD shares SPI lines with the e-paper path:
+MicroSD teilt sich SPI-Leitungen mit dem E-Paper-Pfad:
 
 - `SD_CLK/SCK` / `EP_SCK`: `GPIO13`
 - `SD_CMD/MOSI` / `EP_SDI`: `GPIO14`
 - `SD_D0/MISO`: `GPIO12`
-On this board the SD card uses the SDMMC controller and the panel owns SPI3, so
-there is no shared bus to arbitrate and no bus guard to acquire. The Sticky's
-shared-SPI ordering rules do not apply here.
 
-During runtime SD format on Sticky, the storage path should minimize shared-SPI
-display activity. The current product policy is to show the formatting overlay
-once when format begins and then leave the SD worker undisturbed until the
-success or error modal is shown at the end. Do not reintroduce intermediate
-format-progress overlay refreshes unless a hardware-validated need outweighs
-the added bus contention risk.
+Auf diesem Board nutzt die SD-Karte den SDMMC-Controller und das Panel
+besitzt SPI3, es gibt also keinen geteilten Bus zu arbitrieren und
+keinen Bus-Guard zu erwerben. Die geteilte-SPI-Reihenfolge-Regeln des
+Sticky gelten hier nicht.
 
-Hardware validation on Sticky showed an extra board-specific constraint: when an
-SD card is inserted, the card must be initialized on the shared SPI bus before
-the e-paper panel starts using that bus, and the card should remain mounted
-afterward. Tearing the card back down after boot caused the panel to log a
-refresh without visibly updating the screen. Treat "SD first, then display, and
-keep SD mounted" as a required startup policy on this hardware revision.
+Während des Runtime-SD-Formatierens auf Sticky sollte der Speicher-Pfad
+geteilte-SPI-Display-Aktivität minimieren. Die aktuelle Produkt-Policy
+ist, das Formatierungs-Overlay einmal beim Formatierungsbeginn zu
+zeigen und dann den SD-Worker ungestört zu lassen, bis am Ende das
+Erfolgs- oder Fehler-Modal gezeigt wird. Zwischenzeitliche Format-
+Fortschritts-Overlay-Refreshes nicht wieder einführen, außer ein
+hardware-validierter Bedarf überwiegt das zusätzliche
+Bus-Kontentions-Risiko.
+
+Die Hardware-Validierung auf Sticky zeigte eine zusätzliche
+board-spezifische Einschränkung: wenn eine SD-Karte steckt, muss die
+Karte auf dem geteilten SPI-Bus initialisiert werden, bevor das
+E-Paper-Panel diesen Bus zu nutzen beginnt, und die Karte sollte danach
+gemountet bleiben. Die Karte nach dem Boot wieder abzubauen ließ das
+Panel einen Refresh loggen, ohne den Bildschirm sichtbar zu
+aktualisieren. "Erst SD, dann Display, und SD gemountet halten" als
+notwendige Start-Policy auf dieser Hardware-Revision behandeln.
 
 ### `components/playback_service`
 
-This component streams a clip to the codec. It is deliberately dumb: no policy,
-no task ownership, no state beyond "am I playing".
+Diese Komponente streamt einen Clip an den Codec. Sie ist bewusst dumm:
+keine Policy, kein Task-Besitz, kein Status außer "spiele ich gerade
+ab".
 
-Current scope:
+Aktueller Umfang:
 
-- `PlayFile(path)` streams a 16 kHz mono 16-bit PCM WAV from SD
-- `PlayClip(clip)` streams the PSRAM chunks `recording_service` already holds,
-  with no SD round-trip
-- `IsPlaying()` / `Stop()` for callers that need to interrupt
+- `PlayFile(path)` streamt eine 16-kHz-Mono-16-Bit-PCM-WAV von SD
+- `PlayClip(clip)` streamt die PSRAM-Chunks, die `recording_service`
+  schon hält, ohne SD-Umweg
+- `IsPlaying()`/`Stop()` für Aufrufer, die unterbrechen müssen
 
-Both entry points block for the length of the clip, so callers run them on a
-short-lived worker task. `PlayClip` exists for the review step after recording:
-at that point the take has deliberately not been written to SD yet, so a clip the
-user discards never touches the card.
+Beide Einstiegspunkte blockieren für die Länge des Clips, Aufrufer
+führen sie also auf einem kurzlebigen Worker-Task aus. `PlayClip`
+existiert für den Review-Schritt nach der Aufnahme: an dem Punkt wurde
+die Aufnahme bewusst noch nicht auf SD geschrieben, ein vom Nutzer
+verworfener Clip berührt die Karte also nie.
 
 ### `components/recording_service`
 
-This is the app-facing voice-input recording layer. It composes the `audio_hal`
-codec capture side with app policy for pre-roll, recording state, clip
-ownership, input-level telemetry, and WAV file output.
+Das ist die App-seitige Sprach-Eingabe-Aufnahme-Schicht. Sie komponiert
+die `audio_hal`-Codec-Aufnahmeseite mit App-Policy für Pre-Roll,
+Aufnahme-Status, Clip-Besitz, Eingangspegel-Telemetrie und
+WAV-Datei-Ausgabe.
 
-Current scope:
+Aktueller Umfang:
 
-- create a dedicated capture task that reads short PCM chunks from the codec
-- keep a one-second PSRAM-backed pre-roll ring buffer while armed
-- support starting a recording with or without pre-roll
-- store the active clip in PSRAM-backed chunks with a 10-second max duration
-- track a simple input-level percentage for UI/debug/VAD preparation
-- expose `Arm()`, `Start()`, `Finish()`, `Cancel()`, `DiscardClip()`, and
-  `GetRecordedClip()`
-- save the latest clip as a mono 16-bit PCM WAV file on MicroSD
+- erzeugt einen dedizierten Aufnahme-Task, der kurze PCM-Chunks vom
+  Codec liest
+- hält, solange bewaffnet, einen einsekündigen PSRAM-gestützten
+  Pre-Roll-Ringpuffer
+- unterstützt den Start einer Aufnahme mit oder ohne Pre-Roll
+- speichert den aktiven Clip in PSRAM-gestützten Chunks mit maximal
+  10 Sekunden Dauer
+- verfolgt einen einfachen Eingangspegel-Prozentsatz für UI-/Debug-/
+  VAD-Vorbereitung
+- stellt `Arm()`, `Start()`, `Finish()`, `Cancel()`, `DiscardClip()` und
+  `GetRecordedClip()` bereit
+- speichert den letzten Clip als Mono-16-Bit-PCM-WAV-Datei auf der
+  MicroSD
 
-The service does not implement playback. It owns the clip and hands it out via
-`GetRecordedClip()`; `playback_service` is what streams one to the codec. That
-split is deliberate — the recording layer should not grow an output path, and
-`playback_service` should not know how a clip was produced.
+Der Dienst implementiert keine Wiedergabe. Er besitzt den Clip und gibt
+ihn über `GetRecordedClip()` heraus; `playback_service` ist das, was
+einen an den Codec streamt. Diese Trennung ist bewusst — die
+Aufnahme-Schicht sollte keinen Ausgabe-Pfad bekommen, und
+`playback_service` sollte nicht wissen, wie ein Clip entstand.
 
-Future voice-product work should build VAD, upload/transcription, and display
-status on top of this service rather than pushing those policies down into
-`audio_hal`.
+Künftige Sprach-Produkt-Arbeit sollte VAD, Upload/Transkription und
+Anzeige-Status auf diesem Dienst aufbauen, statt diese Policies nach
+`audio_hal` hinunterzudrücken.
 
 ### `components/epaper_panel`
 
-This is the raw mono SSD1677 e-paper panel driver ported from:
+Das ist der rohe Mono-SSD1677-E-Paper-Panel-Treiber, portiert von:
 
 ```text
 /Users/tieuvong/Development/followup/components/board_drivers/epaper_panel
 ```
 
-The driver should stay board-agnostic. It receives an `EpaperPanelConfig` from
-its caller and owns:
+Der Treiber sollte board-unabhängig bleiben. Er erhält eine
+`EpaperPanelConfig` von seinem Aufrufer und besitzt:
 
-- e-paper reset, busy, data/command, and chip-select GPIO control
-- the SSD1677 command/data write path
-- the mono framebuffer
-- the retained previous framebuffer (a shadow of what is on the glass) used by the
-  partial-refresh differential
-- full base refresh
-- change-detected whole-screen partial refresh (diff the framebuffer against the shadow,
-  drive only the changed pixels)
-- panel sleep
-- refresh timing metrics
+- E-Paper-Reset-, Busy-, Daten-/Befehls- und Chip-Select-GPIO-Steuerung
+- den SSD1677-Befehls-/Daten-Schreibpfad
+- den Mono-Framebuffer
+- den zurückgehaltenen vorherigen Framebuffer (ein Schatten dessen, was
+  auf dem Glas steht), genutzt vom Partial-Refresh-Differential
+- vollständigen Basis-Refresh
+- änderungs-erkannten Ganzbildschirm-Partial-Refresh (Framebuffer gegen
+  den Schatten diffen, nur die geänderten Pixel ansteuern)
+- Panel-Sleep
+- Refresh-Timing-Metriken
 
-Current scope is intentionally mono-only. Do not port gray4 support unless a
-future product requirement explicitly asks for it.
+Der aktuelle Umfang ist bewusst nur mono. Gray4-Unterstützung nicht
+portieren, außer eine künftige Produkt-Anforderung verlangt das
+ausdrücklich.
 
-The first display update must use `RefreshFullBase()` so the SSD1677 current
-(`0x24`) and previous (`0x26`) RAM planes are seeded. Per-interaction updates call
-`RefreshChangedRegion()`, which diffs the freshly rendered framebuffer against the
-retained shadow and, only if something changed, drives a whole-screen partial via
-`RefreshPartialFullScreen()`. The differential waveform physically moves only the
-pixels that differ, so a whole-screen partial still updates just the changed element
-with no flash. If partial refresh is requested before a base image exists, after
-sleep/timeout, or after the partial-refresh limit, the driver falls back to
+Das erste Display-Update muss `RefreshFullBase()` nutzen, damit die
+aktuelle (`0x24`) und vorherige (`0x26`) RAM-Ebene des SSD1677 vorbelegt
+wird. Pro-Interaktions-Updates rufen `RefreshChangedRegion()` auf, das
+den frisch gerenderten Framebuffer gegen den zurückgehaltenen Schatten
+diffed und, nur wenn sich etwas geändert hat, einen
+Ganzbildschirm-Partial über `RefreshPartialFullScreen()` ansteuert. Das
+Differential-Waveform bewegt physisch nur die Pixel, die sich
+unterscheiden, ein Ganzbildschirm-Partial aktualisiert also weiterhin
+nur das geänderte Element, ohne Blitzen. Wird ein Partial-Refresh
+angefordert, bevor ein Basisbild existiert, nach Sleep/Timeout oder
+nach dem Partial-Refresh-Limit, fällt der Treiber zurück auf
 `RefreshFullBase()`.
 
-> **Windowed / region partial refresh is NOT supported on this SSD1677 (GDEM0397T81)
-> panel.** The master activation drives the *whole* panel from the `0x24` plane — the
-> RAM window registers (`0x44/0x45`) scope only where writes land, not where the panel
-> is driven, and there is no register to limit the drive to a window. So a windowed
-> write leaves stale RAM outside it that gets re-energized on the next activation
-> (previously-focused elements "relight"). This was proven three ways: empirically,
-> against the datasheet, and with a from-scratch isolation test. Only full-buffer writes
-> are coherent, so every partial rewrites both RAM planes in full. `RefreshPartialRegion()`
-> remains internally but is only ever called with full-panel bounds. The driver also
-> applies a Y gate-line mapping fix (`window_y = height-1-raw_y`) and removes the
-> per-partial hardware reset (the datasheet resets only at power-on).
+> **Fenster-/Regions-Partial-Refresh wird auf diesem SSD1677
+> (GDEM0397T81) Panel NICHT unterstützt.** Die Master-Aktivierung
+> steuert das *gesamte* Panel von der `0x24`-Ebene an — die
+> RAM-Fenster-Register (`0x44/0x45`) scopen nur, wohin Schreibvorgänge
+> landen, nicht, wohin das Panel angesteuert wird, und es gibt kein
+> Register, um die Ansteuerung auf ein Fenster zu begrenzen. Ein
+> Fenster-Schreibvorgang lässt also veraltetes RAM außerhalb davon
+> zurück, das bei der nächsten Aktivierung erneut mit Energie versorgt
+> wird (zuvor fokussierte Elemente "leuchten wieder auf"). Das wurde
+> auf drei Wegen bewiesen: empirisch, gegen das Datenblatt und mit
+> einem eigens gebauten Isolations-Test. Nur Voll-Puffer-Schreibvorgänge
+> sind kohärent, jeder Partial schreibt also beide RAM-Ebenen
+> vollständig neu. `RefreshPartialRegion()` bleibt intern erhalten,
+> wird aber nur je mit Ganzpanel-Grenzen aufgerufen. Der Treiber wendet
+> außerdem eine Y-Gate-Leitungs-Zuordnungs-Korrektur an
+> (`window_y = height-1-raw_y`) und entfernt den Pro-Partial-Hardware-
+> Reset (das Datenblatt setzt nur beim Einschalten zurück).
 
-The driver can initialize its own SPI bus, which is what this board does: the
-panel is given `external_spi_bus=false` and manages `SPI3_HOST` itself, write-only
-with no MISO.
+Der Treiber kann seinen eigenen SPI-Bus initialisieren, was dieses
+Board so macht: dem Panel wird `external_spi_bus=false` übergeben, und
+es verwaltet `SPI3_HOST` selbst, nur-schreibend ohne MISO.
 
-Not yet ported from Folloup:
+Noch nicht aus Folloup portiert:
 
-- wake API and display wake policy
-- fast refresh/base path
-- logical-to-raw display view abstraction
+- Aufwach-API und Display-Aufwach-Policy
+- Fast-Refresh-/Basis-Pfad
+- logisch-zu-roh-Display-View-Abstraktion
 
-(A retained view dirty-region / windowed partial-refresh policy is intentionally **not**
-pursued: the SSD1677 panel cannot drive a sub-window, so region partial refresh is not
-viable here — see the driver note above.)
+(Eine zurückgehaltene View-Dirty-Region-/Fenster-Partial-Refresh-Policy
+wird absichtlich **nicht** verfolgt: das SSD1677-Panel kann kein
+Unterfenster ansteuern, Regions-Partial-Refresh ist hier also nicht
+machbar — siehe die Treiber-Anmerkung oben.)
 
 ### `components/display_service`
 
-This is the app-facing display layer. It composes `board` pin definitions and
-power helpers with the `epaper_panel` raw driver.
+Das ist die App-seitige Display-Schicht. Sie komponiert `board`-Pin-
+Definitionen und Strom-Helfer mit dem rohen `epaper_panel`-Treiber.
 
-Current scope:
+Aktueller Umfang:
 
-- initialize the raw panel on its dedicated SPI3 bus (the panel is fed by the
-  AXP2101 rails, so there is no GPIO power-enable to assert)
-- initialize the raw SSD1677 panel driver
-- render the startup splash with `RefreshFullBase()`
-- own the current portrait framebuffer surface and its refresh policy
-- render the current active screen (the dashboard home, onboarding, any feature
-  page, or the lock screen) together with the appropriate UI chrome
-- enter panel sleep without a special transitional text screen
-- restore the current screen with a forced full refresh after display wake or
-  light-sleep recovery
-- log panel refresh metrics and expose refresh-in-progress state for
-  auto-sleep blocking
+- initialisiert das rohe Panel auf seinem eigenen SPI3-Bus (das Panel
+  wird von den AXP2101-Rails gespeist, es gibt also kein
+  GPIO-Power-Enable zu setzen)
+- initialisiert den rohen SSD1677-Panel-Treiber
+- rendert den Start-Splash mit `RefreshFullBase()`
+- besitzt die aktuelle Portrait-Framebuffer-Surface und deren
+  Refresh-Policy
+- rendert den aktuellen aktiven Bildschirm (das Dashboard, Onboarding,
+  eine Feature-Seite oder den Sperrbildschirm) zusammen mit dem
+  passenden UI-Chrome
+- betritt Panel-Sleep ohne einen speziellen Übergangs-Textbildschirm
+- stellt den aktuellen Bildschirm mit einem erzwungenen vollständigen
+  Refresh nach Display-Aufwachen oder Light-Sleep-Wiederherstellung
+  wieder her
+- loggt Panel-Refresh-Metriken und stellt Refresh-läuft-Status für
+  Auto-Sleep-Blockierung bereit
 
-Current UI state:
+Aktueller UI-Status:
 
-- `display_service` owns the `ScreenId` screen model: the dashboard home,
-  onboarding, the feature pages (vibe check, summarize, notes, todos, follow-up,
-  details, settings, wifi, time), and a real lock screen
-- the status bar is now rendered through `epaper_ui`
-- the global footer is rendered through `epaper_ui` and fed by
-  `main/footer_runtime.cpp`
-- the lock screen uses its own `epaper_ui` renderer and a dedicated runtime
-  helper in `main/lock_screen_runtime.cpp`
-- overlays are composited on top of the active screen in `DrawCurrentOverlays`
-  (z-order keyboard → toast → select modal → card modal → sticky note); the
-  `RenderSnapshot` carries each overlay's state (`card_modal`, `select_modal`,
-  `keyboard`, `toast`, `sticky_note`)
-- overlay presentation has two app-facing refresh paths:
-  - show/hide or footprint changes rebuild the underlay before redrawing the
-    overlay
-  - same-visibility overlay churn such as roving-focus updates or sticky-note
-    scrolling may reuse the cached underlay snapshot
-- sleep and shutdown indicators are driven through `status_bar_runtime`
-  immediately before display sleep, light sleep, and deep-sleep shutdown
-  transitions
+- `display_service` besitzt das `ScreenId`-Bildschirm-Modell: das
+  Dashboard, Onboarding, die Feature-Seiten (Vibe Check, Zusammenfassen,
+  Notizen, Todos, Follow-up, Details, Einstellungen, WLAN, Zeit) und
+  einen echten Sperrbildschirm
+- die Statusleiste wird jetzt über `epaper_ui` gerendert
+- die globale Fußzeile wird über `epaper_ui` gerendert und von
+  `main/footer_runtime.cpp` gespeist
+- der Sperrbildschirm nutzt seinen eigenen `epaper_ui`-Renderer und
+  einen dedizierten Runtime-Helfer in `main/lock_screen_runtime.cpp`
+- Overlays werden über dem aktiven Bildschirm in `DrawCurrentOverlays`
+  zusammengesetzt (Z-Reihenfolge Tastatur → Toast → Auswahl-Modal →
+  Karten-Modal → Sticky Note); der `RenderSnapshot` trägt den Status
+  jedes Overlays (`card_modal`, `select_modal`, `keyboard`, `toast`,
+  `sticky_note`)
+- die Overlay-Präsentation hat zwei App-seitige Refresh-Pfade:
+  - Anzeigen/Verbergen oder Fußabdruck-Änderungen bauen das Underlay
+    neu, bevor das Overlay neu gezeichnet wird
+  - gleiche-Sichtbarkeit-Overlay-Unruhe wie umlaufende Fokus-Updates
+    oder Sticky-Note-Scrollen darf den gecachten Underlay-Snapshot
+    wiederverwenden
+- Sleep- und Shutdown-Indikatoren werden unmittelbar vor
+  Display-Sleep-, Light-Sleep- und Deep-Sleep-Shutdown-Übergängen über
+  `status_bar_runtime` gesteuert
 
-Current decoupled refresh rule:
+Aktuelle entkoppelte Refresh-Regel:
 
-- mutate runtime state first in the owning runtime helper
-- schedule keyed UI presentation work through `main/ui_refresh_runtime.cpp`
-- let `ui_refresh_runtime` coalesce stale intermediate updates and keep the
-  latest state for each keyed surface while the panel is busy
-- carry the refresh mode through that queue as a `display_service::RefreshRequest`
-  (partial vs full); partials are change-detected whole-screen, not windowed
-- keep page-owned focus refresh on that same queue instead of bouncing through
-  an extra app-shell UI dispatcher layer
-- keep `display_service` as the sole owner of framebuffer mutation and panel
-  refresh execution
+- zuerst Runtime-Status im besitzenden Runtime-Helfer mutieren
+- geplante, keyed UI-Präsentations-Arbeit über
+  `main/ui_refresh_runtime.cpp` einreihen
+- `ui_refresh_runtime` veraltete Zwischen-Updates zusammenfassen lassen
+  und den neuesten Status für jede geketete Surface behalten, während
+  das Panel beschäftigt ist
+- den Refresh-Modus durch diese Queue als `display_service::
+  RefreshRequest` (partial vs. voll) tragen; Partials sind
+  änderungs-erkannt-ganzbildschirm, nicht gefenstert
+- seiteneigenen Fokus-Refresh auf derselben Queue halten statt über
+  eine zusätzliche App-Shell-UI-Dispatcher-Schicht zu springen
+- `display_service` als alleinigen Besitzer von Framebuffer-Mutation
+  und Panel-Refresh-Ausführung halten
 
-The current keyed surfaces are:
+Die aktuellen geketeten Surfaces sind:
 
-- overlay
-- lock screen
-- status bar
-- footer
-- one per page: dashboard, onboarding, vibe check, summarize, notes, todos,
-  follow-up, details, settings, WiFi, time
+- Overlay
+- Sperrbildschirm
+- Statusleiste
+- Fußzeile
+- eine pro Seite: Dashboard, Onboarding, Vibe Check, Zusammenfassen,
+  Notizen, Todos, Follow-up, Details, Einstellungen, WLAN, Zeit
 
-Current refresh categories are:
+Aktuelle Refresh-Kategorien sind:
 
-- whole-screen partial refresh: the default for every in-screen update (focus roving,
-  state churn, overlay reuse). The driver diffs the rendered frame against the shadow
-  and the differential waveform moves only the changed pixels — there is no
-  windowed/region variant because the panel cannot drive a sub-window (see the driver
-  note above)
-- full base refresh: used for explicit full refresh requests, wake recovery, the
-  periodic ghost-clear cadence, and other panel-reset cases
+- Ganzbildschirm-Partial-Refresh: der Standard für jedes Update
+  innerhalb des Bildschirms (Fokus-Umlauf, Status-Unruhe, Overlay-
+  Wiederverwendung). Der Treiber diffed den gerenderten Frame gegen den
+  Schatten, und das Differential-Waveform bewegt nur die geänderten
+  Pixel — es gibt keine gefensterte/Regions-Variante, weil das Panel
+  kein Unterfenster ansteuern kann (siehe die Treiber-Anmerkung oben)
+- vollständiger Basis-Refresh: genutzt für explizite
+  Vollständig-Refresh-Anfragen, Aufwach-Wiederherstellung, den
+  periodischen Geist-Löschen-Takt und andere Panel-Reset-Fälle
 
-The current focus path is:
+Der aktuelle Fokus-Pfad ist:
 
-- page input mutates page-owned focus truth first
-- the page runtime flags only whether the visible footer projection actually changed
-  (it no longer computes per-interaction dirty bounds — that machinery was removed once
-  region refresh proved unviable)
-- `ui_refresh_runtime` coalesces the latest `RefreshRequest` for that page
-- when footer projection changed, the queued page apply updates page state and
-  footer state together once before the refresh reaches the panel queue
-- `display_service` re-renders the active screen and lets the driver diff it against
-  the shadow, driving a whole-screen partial of only the changed pixels (or skipping
-  entirely when nothing changed)
-- overlays (keyboard, modals) refresh through the overlay path: while typing, only the
-  cached underlay is reused and the overlay redrawn — the page underneath is **not**
-  re-rendered until the overlay closes
-- page-entry transitions still stay synchronous in `app_shell` rather than
-  going through the latest-wins queue, because the app shell must preserve
-  deterministic ordering for touch-provider setup, footer layout, runtime state
-  sync, and screen switch
+- Seiten-Eingabe mutiert zuerst den seiteneigenen Fokus-Wahrheitswert
+- die Seiten-Runtime markiert nur, ob sich die sichtbare Fußzeilen-
+  Projektion tatsächlich geändert hat (sie berechnet keine
+  pro-Interaktion-Dirty-Grenzen mehr — diese Maschinerie wurde
+  entfernt, sobald sich Regions-Refresh als nicht machbar erwies)
+- `ui_refresh_runtime` fasst die neueste `RefreshRequest` für diese
+  Seite zusammen
+- wenn sich die Fußzeilen-Projektion geändert hat, aktualisiert der
+  eingereihte Seiten-Apply Seiten- und Fußzeilen-Status einmal
+  zusammen, bevor der Refresh die Panel-Queue erreicht
+- `display_service` rendert den aktiven Bildschirm neu und lässt den
+  Treiber ihn gegen den Schatten diffen, wodurch nur ein
+  Ganzbildschirm-Partial der geänderten Pixel angesteuert wird (oder
+  komplett übersprungen wird, wenn sich nichts geändert hat)
+- Overlays (Tastatur, Modale) refreshen über den Overlay-Pfad: während
+  des Tippens wird nur das gecachte Underlay wiederverwendet und das
+  Overlay neu gezeichnet — die darunterliegende Seite wird **nicht**
+  neu gerendert, bis das Overlay schließt
+- Seiten-Eintritts-Übergänge bleiben weiterhin synchron in `app_shell`
+  statt über die latest-wins-Queue zu laufen, weil die App-Shell
+  deterministische Reihenfolge für Touch-Provider-Einrichtung,
+  Fußzeilen-Layout, Runtime-Status-Sync und Bildschirmwechsel bewahren
+  muss
 
-The temporary demo-selection machinery has been removed; `display_service` owns a
-`ScreenId`-based screen model. The home screen renders the real dashboard
-(`DrawHomeUnderlay` → `epaper_ui::DrawDashboardPage`), whose focusable menu opens
-the feature pages.
+Die temporäre Demo-Auswahl-Maschinerie wurde entfernt; `display_service`
+besitzt ein `ScreenId`-basiertes Bildschirm-Modell. Der Home-Bildschirm
+rendert das echte Dashboard (`DrawHomeUnderlay` →
+`epaper_ui::DrawDashboardPage`), dessen fokussierbares Menü die
+Feature-Seiten öffnet.
 
-Because the SSD1677 path shares `SPI2_HOST` with MicroSD, `display_service`
-depends on `storage_service` having already performed SD bring-up when a card is
-inserted. The display path should not reorder itself ahead of storage during
-boot on this board.
+Weil der SSD1677-Pfad sich `SPI2_HOST` mit MicroSD teilt, hängt
+`display_service` davon ab, dass `storage_service` das SD-Hochfahren
+bereits durchgeführt hat, wenn eine Karte steckt. Der Display-Pfad
+sollte sich auf diesem Board beim Booten nicht vor den Speicher
+schieben.
 
-`display_service` owns app-facing display policy. Driver-specific wiring and
-SSD1677 commands must stay out of `main`. Raw board pin ownership stays in
-`board`, and low-level SSD1677 command sequencing stays in `epaper_panel`.
+`display_service` besitzt App-seitige Display-Policy. Treiber-
+spezifische Verdrahtung und SSD1677-Befehle müssen aus `main`
+herausgehalten werden. Roher Board-Pin-Besitz bleibt in `board`, und
+Low-Level-SSD1677-Befehls-Sequenzierung bleibt in `epaper_panel`.
 
-Port validation notes still pending on hardware:
+Noch ausstehende Port-Validierungs-Anmerkungen auf Hardware:
 
-- rapid select-modal roving should continue to log
-  `policy=reuse_underlay_snapshot` and must not leave stale highlight pixels
-- modal and toast show/hide transitions should rebuild cleanly without ghosting
-- the footer mic icon should stay active through recording, saving, and
-  transcribing states
-- overlay behavior should remain correct across display sleep and light-sleep
-  wake
-- touch-down focus should be visible before release-based activation for select
-  modal rows, shutdown buttons, and footer items
-- overlay, footer, and future page precedence logs should match the touched
-  surface during on-device validation
+- schnelles Auswahl-Modal-Umlaufen sollte weiterhin
+  `policy=reuse_underlay_snapshot` loggen und darf keine veralteten
+  Highlight-Pixel hinterlassen
+- Modal- und Toast-Anzeige-/Verbergen-Übergänge sollten sauber ohne
+  Geistern neu aufbauen
+- das Fußzeilen-Mikrofon-Icon sollte während Aufnehmen, Speichern und
+  Transkribieren aktiv bleiben
+- Overlay-Verhalten sollte über Display-Sleep und Light-Sleep-
+  Aufwachen hinweg korrekt bleiben
+- Touch-Down-Fokus sollte vor der loslassen-basierten Aktivierung für
+  Auswahl-Modal-Zeilen, Shutdown-Buttons und Fußzeilen-Elemente
+  sichtbar sein
+- Overlay-, Fußzeilen- und künftige Seiten-Prioritäts-Logs sollten
+  während der Validierung am Gerät zur berührten Surface passen
 
 ### `components/qmi8658`
 
-This is the QMI8658 6-axis IMU driver (3-axis accelerometer plus 3-axis
-gyroscope), on the shared sensor I2C bus.
+Das ist der QMI8658-6-Achsen-IMU-Treiber (3-Achsen-Beschleunigungs-
+messer plus 3-Achsen-Gyroskop), am geteilten Sensor-I2C-Bus.
 
-Current scope:
+Aktueller Umfang:
 
-- bring-up and configuration
-- read accelerometer samples used by `device_sleep_service` for motion wake
-- keep sleep policy and thresholds out of the driver
+- Hochfahren und Konfiguration
+- liest Beschleunigungsmesser-Samples, genutzt von
+  `device_sleep_service` für Bewegungs-Aufwachen
+- hält Sleep-Policy und Schwellwerte aus dem Treiber heraus
 
 ### `components/imu_service`
 
-This is the app-facing IMU layer. It composes `board` I2C access with the
-generic QMI8658 driver.
+Das ist die App-seitige IMU-Schicht. Sie komponiert `board`-I2C-Zugriff
+mit dem generischen QMI8658-Treiber.
 
-Current scope:
+Aktueller Umfang:
 
-- add the QMI8658 on the shared sensor I2C bus
-- configure the accelerometer and read samples
-- expose samples to `device_sleep_runtime`, which owns motion/still
-  classification and the inactivity thresholds
+- fügt den QMI8658 am geteilten Sensor-I2C-Bus hinzu
+- konfiguriert den Beschleunigungsmesser und liest Samples
+- stellt Samples für `device_sleep_runtime` bereit, das die
+  Bewegungs-/Stillstands-Klassifikation und die Inaktivitäts-
+  Schwellwerte besitzt
 
-The IMU shares the sensor I2C bus with the PMIC and RTC. Auto-sleep
-intentionally polls rather than attaching an interrupt, so there is no shared
-interrupt line to coordinate.
+Der IMU teilt sich den Sensor-I2C-Bus mit dem PMIC und der RTC.
+Auto-Sleep pollt bewusst, statt einen Interrupt anzuhängen, es gibt also
+keine geteilte Interrupt-Leitung zu koordinieren.
 
-## Hardware Notes
+## Hardware-Anmerkungen
 
-- Main controller: `ESP32-S3R8`, dual-core Xtensa LX7 up to 240 MHz.
-- External flash: 16 MB. PSRAM: 8 MB.
-- Shared sensor I2C on `GPIO41` (SDA) / `GPIO42` (SCL), carrying:
-  - AXP2101 PMIC at `0x34`, interrupt on `GPIO38`
-  - PCF85063 RTC at `0x51`
-  - QMI8658 IMU
-  - ES8311 codec control interface
-  - SHTC3 temperature/humidity, present but not driven by any component
-- Neither I2C pin is a strapping pin, so the bus can be created during early
-  startup without affecting boot mode.
-- Buttons are all active-low to GND: `ACTION`/BOOT on `GPIO0`, rocker up on
-  `GPIO4`, rocker middle/`FN` on `GPIO5`, rocker down on `GPIO6`. `GPIO0` is the
-  boot/download strap, so it must read high at reset and is only ever pulled low
-  by a press.
-- The `PWR` key is not a GPIO. It is wired to the AXP2101 and surfaces as
-  interrupts: a short-press IRQ, a long-press IRQ once held past `IrqLevelTime`,
-  and a hardware rail cut at a sustained 6 s hold.
-- MicroSD uses the ESP32-S3 SDMMC controller in 4-bit mode: `CLK` on `GPIO16`,
-  `CMD` on `GPIO17`, `D0` on `GPIO15`, `D1` on `GPIO7`, `D2` on `GPIO8`, `D3` on
-  `GPIO18`. There is no card-detect or power-enable pin.
-- The SSD1677 e-paper panel owns a dedicated `SPI3_HOST`, write-only with no
-  MISO: `BUSY` on `GPIO3`, `DC` on `GPIO9`, `CS` on `GPIO10`, `SCK` on `GPIO11`,
-  `MOSI` on `GPIO12`, `RST` on `GPIO46`. The panel is fed by the AXP2101 rails,
-  so there is no GPIO power-enable.
-- Because the panel does not share a bus with MicroSD, none of the Sticky's
-  shared-SPI serialization applies here: there is no bus guard, and no ordering
-  requirement between mounting SD and bringing up the display.
-- The e-paper panel is 800 x 480 raw landscape pixels. `display_service` draws
-  portrait content by mapping logical 480 x 800 coordinates into the raw
-  framebuffer. Note that portrait `x` maps onto the panel's gate line
-  (`raw_y = height - 1 - x`), which is why a large fill with a gate-periodic
-  dither pattern produces visible banding on a partial refresh.
-- ES8311 audio streams over I2S0 at 16 kHz full duplex: `MCLK` on `GPIO13`,
-  `BCLK` on `GPIO14`, `WS` on `GPIO47`, `DIN` on `GPIO21`, `DOUT` on `GPIO48`.
-  The NS4150B power-amp enable is on `GPIO39`.
-- There is no power latch, no charger-enable GPIO, and no ADC power-input sense.
-  The AXP2101 owns rails, charging, and battery telemetry over I2C.
+- Hauptcontroller: `ESP32-S3R8`, Dual-Core Xtensa LX7 bis 240 MHz.
+- Externer Flash: 16 MB. PSRAM: 8 MB.
+- Geteiltes Sensor-I2C an `GPIO41` (SDA)/`GPIO42` (SCL), trägt:
+  - AXP2101-PMIC an `0x34`, Interrupt an `GPIO38`
+  - PCF85063-RTC an `0x51`
+  - QMI8658-IMU
+  - ES8311-Codec-Steuerschnittstelle
+  - SHTC3-Temperatur-/Feuchtigkeit, vorhanden, aber von keiner
+    Komponente angesteuert
+- Keiner der beiden I2C-Pins ist ein Strapping-Pin, der Bus kann also
+  während des frühen Starts erzeugt werden, ohne den Boot-Modus zu
+  beeinflussen.
+- Tasten sind alle active-low gegen GND: `ACTION`/BOOT auf `GPIO0`,
+  Wipptaste hoch auf `GPIO4`, Wipptaste mitte/`FN` auf `GPIO5`,
+  Wipptaste runter auf `GPIO6`. `GPIO0` ist der Boot-/Download-Strap,
+  muss beim Reset also high lesen und wird nur je von einem Druck low
+  gezogen.
+- Die `PWR`-Taste ist kein GPIO. Sie ist an den AXP2101 verdrahtet und
+  erscheint als Interrupts: ein Kurz-Druck-IRQ, ein Lang-Druck-IRQ,
+  sobald über `IrqLevelTime` gehalten, und ein Hardware-Rail-Schnitt
+  bei anhaltendem 6s-Halten.
+- MicroSD nutzt den ESP32-S3-SDMMC-Controller im 4-Bit-Modus: `CLK` auf
+  `GPIO16`, `CMD` auf `GPIO17`, `D0` auf `GPIO15`, `D1` auf `GPIO7`,
+  `D2` auf `GPIO8`, `D3` auf `GPIO18`. Es gibt keinen Karten-Erkennungs-
+  oder Power-Enable-Pin.
+- Das SSD1677-E-Paper-Panel besitzt einen eigenen `SPI3_HOST`,
+  nur-schreibend ohne MISO: `BUSY` auf `GPIO3`, `DC` auf `GPIO9`, `CS`
+  auf `GPIO10`, `SCK` auf `GPIO11`, `MOSI` auf `GPIO12`, `RST` auf
+  `GPIO46`. Das Panel wird von den AXP2101-Rails gespeist, es gibt
+  also kein GPIO-Power-Enable.
+- Weil sich das Panel keinen Bus mit MicroSD teilt, gilt hier nichts
+  von der geteilten-SPI-Serialisierung des Sticky: es gibt keinen
+  Bus-Guard und keine Reihenfolge-Anforderung zwischen SD mounten und
+  Display hochfahren.
+- Das E-Paper-Panel hat 800 x 480 rohe Querformat-Pixel.
+  `display_service` zeichnet Hochformat-Inhalt, indem es logische
+  480 x 800-Koordinaten auf den rohen Framebuffer abbildet. Zu
+  beachten: Hochformat-`x` bildet auf die Gate-Leitung des Panels ab
+  (`raw_y = height - 1 - x`), weshalb eine große Füllung mit einem
+  gate-periodischen Dither-Muster bei einem Partial-Refresh sichtbare
+  Streifenbildung erzeugt.
+- ES8311-Audio streamt über I2S0 bei 16 kHz vollduplex: `MCLK` auf
+  `GPIO13`, `BCLK` auf `GPIO14`, `WS` auf `GPIO47`, `DIN` auf `GPIO21`,
+  `DOUT` auf `GPIO48`. Die NS4150B-Verstärker-Freigabe liegt auf
+  `GPIO39`.
+- Es gibt keinen Power-Latch, kein Ladegerät-Freigabe-GPIO und keine
+  ADC-Strom-Eingangs-Erfassung. Der AXP2101 besitzt Rails, Laden und
+  Akku-Telemetrie über I2C.
 
-## Configuration
+## Konfiguration
 
-Configuration is file-based and should stay reproducible:
+Konfiguration ist dateibasiert und sollte reproduzierbar bleiben:
 
-- `sdkconfig.defaults` captures the intended project defaults.
-- `sdkconfig` captures the resolved ESP-IDF configuration.
-- `partitions.csv` defines the OTA partition table.
+- `sdkconfig.defaults` hält die beabsichtigten Projekt-Standardwerte.
+- `sdkconfig` hält die aufgelöste ESP-IDF-Konfiguration.
+- `partitions.csv` definiert die OTA-Partitionstabelle.
 
-Project-specific Kconfig options live under `Folloup Settings`. Auto-sleep
-currently exposes reproducible build-time defaults for display sleep and light
-sleep timeout seconds; `0` disables the corresponding stage, and a nonzero light
-sleep timeout must be greater than or equal to the display sleep timeout.
+Projekt-spezifische Kconfig-Optionen liegen unter `Folloup Settings`.
+Auto-Sleep stellt aktuell reproduzierbare Build-Zeit-Standardwerte für
+Display-Sleep- und Light-Sleep-Timeout-Sekunden bereit; `0` deaktiviert
+die entsprechende Stufe, und ein von null verschiedener Light-Sleep-
+Timeout muss größer oder gleich dem Display-Sleep-Timeout sein.
 
-The partition table currently contains:
+Die Partitionstabelle enthält aktuell:
 
 - `nvs`
 - `otadata`
@@ -1482,13 +1742,14 @@ The partition table currently contains:
 - `ota_0`
 - `ota_1`
 
-Rollback is enabled with `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`. Because
-rollback is enabled, the application must keep the OTA validation hook in
-`app_main()` or equivalent early startup code.
+Rollback ist aktiviert mit
+`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`. Weil Rollback aktiviert ist,
+muss die Anwendung den OTA-Validierungs-Hook in `app_main()` oder
+gleichwertigem frühen Startcode behalten.
 
-## Dependency Direction
+## Abhängigkeits-Richtung
 
-Use this dependency direction:
+Diese Abhängigkeits-Richtung nutzen:
 
 ```text
 app / integration code
@@ -1523,12 +1784,14 @@ app / integration code
        -> qmi8658 -> ESP-IDF I2C driver
 ```
 
-Avoid making `axp2101`, `pcf85063`, `sd_card`, `epaper_panel`, `qmi8658`, or
-`audio_hal` depend on `board`; that would make generic drivers board-specific.
-`board` composes them with Waveshare pin mapping, and app-facing services reach
-the hardware through `board` accessors such as `GetPmic()` and
+Vermeiden, `axp2101`, `pcf85063`, `sd_card`, `epaper_panel`, `qmi8658`
+oder `audio_hal` von `board` abhängig zu machen; das würde generische
+Treiber board-spezifisch machen. `board` komponiert sie mit der
+Waveshare-Pin-Zuordnung, und App-seitige Dienste erreichen die
+Hardware über `board`-Zugriffsmethoden wie `GetPmic()` und
 `GetAudioCodec()`.
 
-`playback_service` depends on `recording_service` only for the `RecordedClip`
-type it streams. The reverse edge must not exist: `recording_service` owns
-capture and clip ownership, and does not gain an output path.
+`playback_service` hängt von `recording_service` nur wegen des
+`RecordedClip`-Typs ab, den es streamt. Die umgekehrte Kante darf nicht
+existieren: `recording_service` besitzt Aufnahme und Clip-Besitz und
+bekommt keinen Ausgabe-Pfad.
