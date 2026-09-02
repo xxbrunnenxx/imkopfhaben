@@ -950,8 +950,11 @@ HttpResponse PostWavClip(const std::string& transcribe_url,
     config.url = transcribe_url.c_str();
     config.method = HTTP_METHOD_POST;
     config.timeout_ms = kTranscribeTimeoutMs;
-    config.event_handler = &HttpEventHandler;
-    config.user_data = &response;
+    // No event_handler here, unlike PerformGet/PerformJsonPost: this function reads the
+    // response body manually below (it also has to write the request body manually, in
+    // chunks, since it streams a WAV clip rather than sending one string). Wiring an
+    // HTTP_EVENT_ON_DATA handler on top of that manual read loop would double-append every
+    // response byte -- the event fires during esp_http_client_read() too, not just _perform().
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (client == nullptr) {
