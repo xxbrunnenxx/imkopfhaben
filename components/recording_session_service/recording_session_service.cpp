@@ -8,6 +8,7 @@
 #include <string>
 
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "followup_task_config.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -34,6 +35,12 @@ constexpr const char* kSavedWithoutTranscriptStatus =
 constexpr const char* kDiscardedStatus = "Recording discarded";
 constexpr uint32_t kMinTranscriptionDurationMs = 500;
 constexpr uint32_t kFallbackAudioSampleRateHz = 24000;
+// Prototype-level offline queue: no battery-aware backoff, just a flat interval. Covers the
+// "device was carried around, deliver once back near Kraken" case from a plain periodic sweep,
+// plus an immediate follow-on sweep after every successful save (see HandleTranscriptionEvent)
+// so the backlog drains quickly once connectivity is confirmed, instead of waiting out the
+// full interval.
+constexpr uint64_t kTranscriptionRetryIntervalUs = 10ULL * 60ULL * 1000000ULL;
 constexpr size_t kSignalWindowSamples = 240;
 constexpr int32_t kSpeechPeakThreshold = 700;
 constexpr size_t kMinSpeechWindows = 3;
@@ -65,6 +72,35 @@ uint32_t s_cue_token = 0;
 std::atomic<bool> s_playback_worker_active{false};
 // Set when BOOT is released before the start cue finishes; consumed by HandleStartCueResult.
 bool s_finish_pending_after_start_cue = false;
+esp_timer_handle_t s_retry_timer = nullptr;
+
+// Finds the first archived recording still missing a transcript and re-runs it through the
+// same load-clip -> transcribe -> save-transcript pipeline as the manual "retry" buttons
+// (BeginArchivedTranscription, already used by details_page_runtime/vibe_check_page_runtime).
+// One attempt per call, not a full sweep: BeginTranscription only ever runs one request at a
+// time anyway, and this keeps a down/unreachable server from being hammered in a tight loop --
+// the periodic timer and the post-success hook below call in again for the next entry.
+void TryRetryOldestUnsentRecording()
+{
+    if (local_ai_service::GetEffectiveTranscribeUrl().empty()) {
+        return;  // nothing configured to retry against
+    }
+    if (transcription_service::GetSnapshot().request_in_flight) {
+        return;  // a recording or another retry is already running
+    }
+    for (const auto& entry : recording_archive_service::ListRecordings()) {
+        if (!entry.metadata.has_transcript) {
+            ESP_LOGI(kTag, "Retrying queued transcription: id=%s", entry.recording_id.c_str());
+            BeginArchivedTranscription(entry.recording_id);
+            return;
+        }
+    }
+}
+
+void OnRetryTimer(void* /*arg*/)
+{
+    TryRetryOldestUnsentRecording();
+}
 
 uint32_t ResolveClipDurationMs(const recording_service::RecordedClip& clip, uint32_t duration_ms)
 {
@@ -388,6 +424,26 @@ esp_err_t Init()
     s_snapshot.initialized = recording_service::IsInitialized();
     s_snapshot.max_recording_ms = recording_service::GetUiState().max_recording_ms;
     ResetToIdleLocked();
+
+    if (s_retry_timer == nullptr) {
+        esp_timer_create_args_t timer_args = {};
+        timer_args.callback = &OnRetryTimer;
+        timer_args.dispatch_method = ESP_TIMER_TASK;
+        timer_args.name = "transcribe_retry";
+        timer_args.skip_unhandled_events = true;
+
+        const esp_err_t timer_err = esp_timer_create(&timer_args, &s_retry_timer);
+        if (timer_err == ESP_OK) {
+            const esp_err_t start_err =
+                esp_timer_start_periodic(s_retry_timer, kTranscriptionRetryIntervalUs);
+            if (start_err != ESP_OK) {
+                ESP_LOGW(kTag, "Retry timer start failed: %s", esp_err_to_name(start_err));
+            }
+        } else {
+            ESP_LOGW(kTag, "Retry timer create failed: %s", esp_err_to_name(timer_err));
+        }
+    }
+
     return ESP_OK;
 }
 
@@ -845,24 +901,33 @@ void HandleTranscriptionEvent(const transcription_service::Event& event)
                  save_result.transcript_path.empty() ? "<none>" : save_result.transcript_path.c_str(),
                  save_result.metadata_path.empty() ? "<none>" : save_result.metadata_path.c_str(),
                  save_result.error_code.empty() ? "<none>" : save_result.error_code.c_str());
-        std::lock_guard<std::mutex> lock(s_mutex);
-        s_snapshot.transcript_saved = save_result.transcript_saved;
-        s_snapshot.last_saved_transcript_path = save_result.transcript_path;
-        s_snapshot.last_transcript = transcript_text;
-        s_snapshot.phase = Phase::kComplete;
-        s_snapshot.request_in_flight = false;
-        s_snapshot.last_status_message = save_result.transcript_saved
-                                             ? "Transcript saved to SD"
-                                             : kSavedWithoutTranscriptStatus;
-        if (save_result.transcript_saved) {
-            s_snapshot.last_error_code = save_result.error_code;
-            s_snapshot.last_error_message = save_result.error_message;
-        } else {
-            s_snapshot.last_error_code = event.snapshot.last_error_code;
-            s_snapshot.last_error_message = event.snapshot.last_error_message;
+        {
+            std::lock_guard<std::mutex> lock(s_mutex);
+            s_snapshot.transcript_saved = save_result.transcript_saved;
+            s_snapshot.last_saved_transcript_path = save_result.transcript_path;
+            s_snapshot.last_transcript = transcript_text;
+            s_snapshot.phase = Phase::kComplete;
+            s_snapshot.request_in_flight = false;
+            s_snapshot.last_status_message = save_result.transcript_saved
+                                                 ? "Transcript saved to SD"
+                                                 : kSavedWithoutTranscriptStatus;
+            if (save_result.transcript_saved) {
+                s_snapshot.last_error_code = save_result.error_code;
+                s_snapshot.last_error_message = save_result.error_message;
+            } else {
+                s_snapshot.last_error_code = event.snapshot.last_error_code;
+                s_snapshot.last_error_message = event.snapshot.last_error_message;
+            }
+            s_pending_recording_id.clear();
+            NotifyLocked();
         }
-        s_pending_recording_id.clear();
-        NotifyLocked();
+        // Outside the lock -- BeginArchivedTranscription (called from here) takes s_mutex
+        // itself. A successful save is our signal that the endpoint is reachable right now, so
+        // immediately try the next queued recording instead of waiting out the full timer
+        // interval; a failed save leaves it for the periodic retry (see kTranscriptionRetryIntervalUs).
+        if (save_result.transcript_saved) {
+            TryRetryOldestUnsentRecording();
+        }
         return;
     }
 

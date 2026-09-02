@@ -321,13 +321,30 @@ proves the code is structurally sound, not that it works on the device.
     every removed entry, now running far more often under the ~40x-smaller
     local token budget; `GenerateSummary()` re-fetches `base_url`/
     `model_name` from a snapshot it already holds.
-- **Idea, not decided (2026-09-02): offline-queue for failed transcription
+- **Built (2026-09-02): prototype-level retry for failed transcription
   uploads, so the device can be carried around and the notes get delivered
   once back in range of Kraken/LM Studio.** Same intent as `imkopfhaben`'s
-  `notiz_warteschlange/` (retry loop for a temporarily unreachable server),
-  but not directly portable -- that one lives on a Linux filesystem in
-  Python; this board would need its own component built around the TF
-  card slot (store the WAV + metadata on failure, retry on next successful
-  connection, clean up after a confirmed delivery). Explicitly not scoped
-  as a quick patch -- owner wants it filed here only, decided and built
-  later, once the board itself has proven out the current baseline.
+  `notiz_warteschlange/`, but turned out to need almost no new plumbing --
+  every recording is already saved to SD before transcription is even
+  attempted (`recording_archive_service::SaveClip`), every entry already
+  carries a `has_transcript` flag, and a full load-clip -> transcribe ->
+  save-transcript retry path already existed for the manual "retry"
+  buttons on the details/vibe-check pages (`BeginArchivedTranscription`).
+  The only new code is in `recording_session_service.cpp`:
+  `TryRetryOldestUnsentRecording()` walks `ListRecordings()`, finds the
+  first entry with `has_transcript == false`, and re-runs it through that
+  same existing pipeline (one attempt at a time -- `BeginTranscription`
+  only ever runs one request anyway, and re-attempting a single entry
+  keeps a down server from being hammered in a tight loop). Two triggers,
+  both explicitly flat/unthrottled -- no battery-aware backoff, matching
+  the owner's "functional prototype, not production" scope: a plain
+  10-minute `esp_timer` (`kTranscriptionRetryIntervalUs`), and an
+  immediate follow-on check right after any transcription successfully
+  saves (chains through the backlog quickly once connectivity is
+  confirmed, without waiting out the full interval). Compiles clean,
+  including a fresh `idf.py fullclean && idf.py build` after adding
+  `esp_timer` to the component's `CMakeLists.txt REQUIRES` (it built even
+  without that on the earlier incremental build, via a transitive include
+  path -- fixed to an explicit dependency instead of relying on that).
+  **Not live-tested** (no board yet) -- code-level only, same caveat as
+  everything else in this doc until real hardware arrives.
