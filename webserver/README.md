@@ -1,51 +1,54 @@
-# Followup Setup Portal
+# Followup-Einrichtungsportal
 
-Web UI for provisioning a Followup device over its Wi-Fi access point. The portal
-is built with TypeScript + Vite and **embedded into the firmware** (see
-[Build & Deploy](#build--deploy-to-firmware)) — it is served by the
-`wifi_service` component's HTTP server while the device is in AP mode.
+Web-UI zur Einrichtung eines Followup-Geräts über dessen WLAN-Access-Point.
+Das Portal ist mit TypeScript + Vite gebaut und **in die Firmware
+eingebettet** (siehe [Build & Einspielen](#build--einspielen-in-die-firmware))
+— es wird vom HTTP-Server der `wifi_service`-Komponente ausgeliefert,
+solange sich das Gerät im AP-Modus befindet.
 
-It is adapted from the byte90 captive portal, stripped down to the three things
-Followup provisions:
+Es ist vom byte90-Captive-Portal abgeleitet, heruntergebrochen auf die
+drei Dinge, die Followup einrichtet:
 
-- **Wi-Fi** — scan, connect, disconnect, and live status
-- **Local AI server** — set / reset the base URL (no key, it's a LAN address)
-- **Time & timezone** — pick a timezone, or set date/time manually
+- **WLAN** — scannen, verbinden, trennen, Live-Status
+- **Lokaler KI-Server** — Basis-URL setzen/zurücksetzen (kein Schlüssel,
+  es ist eine LAN-Adresse)
+- **Zeit & Zeitzone** — Zeitzone wählen oder Datum/Uhrzeit manuell setzen
 
-The frontend is organized around:
+Das Frontend gliedert sich in:
 
-- autonomous Web Components in `src/components/`
-- feature controllers in `src/portal/`
-- a thin `src/main.ts` bootstrap/orchestration layer
+- eigenständige Web Components in `src/components/`
+- Feature-Controller in `src/portal/`
+- eine schlanke `src/main.ts`-Bootstrap-/Orchestrierungs-Schicht
 
-## API Endpoints Used By The Portal
+## Vom Portal genutzte API-Endpunkte
 
-These are served by the Followup firmware (`wifi_service`, `timezone_service`,
-`local_ai_service`) while the device is in access-point mode.
+Diese werden von der Followup-Firmware (`wifi_service`, `timezone_service`,
+`local_ai_service`) ausgeliefert, solange sich das Gerät im
+Access-Point-Modus befindet.
 
-WiFi (`wifi_service`)
+WLAN (`wifi_service`)
 
 - `GET /api/scan`
 - `GET /api/status`
 - `POST /api/configure`
 - `POST /api/disconnect`
 
-Time / timezone (`timezone_service`)
+Zeit / Zeitzone (`timezone_service`)
 
 - `GET /api/timezone/list`
 - `GET /api/settings/time`
 - `PATCH /api/settings/time`
 - `GET /api/runtime/time`
 
-Local AI (`local_ai_service`)
+Lokale KI (`local_ai_service`)
 
 - `GET /api/settings/local_ai`
 - `PATCH /api/settings/local_ai`
 - `POST /api/settings/local_ai/reset`
 
-## Local Development
+## Lokale Entwicklung
 
-From repo root:
+Vom Repo-Root aus:
 
 ```bash
 cd webserver
@@ -53,16 +56,17 @@ npm install
 npm run dev
 ```
 
-Vite serves the app at `http://localhost:5173/`. The portal makes absolute
-`/api/...` calls, so a dev server alone has no backend — point your machine at a
-Followup device's AP (or proxy `/api` to one) to exercise the flows against real
-firmware.
+Vite liefert die App unter `http://localhost:5173/` aus. Das Portal macht
+absolute `/api/...`-Aufrufe, ein reiner Dev-Server hat also kein Backend —
+das eigene Gerät auf den AP eines Followup-Geräts richten (oder `/api`
+dorthin proxen), um die Abläufe gegen echte Firmware zu prüfen.
 
-## Build & Deploy To Firmware
+## Build & Einspielen in die Firmware
 
-The firmware embeds a small, fixed set of files (`index.html`, `index.js`,
-`index.css`) via `EMBED_FILES` in `components/wifi_service/CMakeLists.txt`. To
-refresh the portal after any frontend change:
+Die Firmware bettet eine kleine, feste Menge an Dateien (`index.html`,
+`index.js`, `index.css`) über `EMBED_FILES` in
+`components/wifi_service/CMakeLists.txt` ein. Um das Portal nach jeder
+Frontend-Änderung zu aktualisieren:
 
 ```bash
 cd webserver
@@ -70,49 +74,51 @@ npm run build
 cp dist/index.html dist/index.js dist/index.css ../components/wifi_service/portal/
 ```
 
-Then rebuild the firmware. `wifi_service` serves them at `/`, `/index.js`, and
-`/index.css`.
+Danach die Firmware neu bauen. `wifi_service` liefert sie unter `/`,
+`/index.js` und `/index.css` aus.
 
-`webserver/` is the source of truth. The copies under
-`components/wifi_service/portal/` are the tracked, embedded build output — refresh
-them with the command above rather than hand-editing.
+`webserver/` ist die Quelle der Wahrheit. Die Kopien unter
+`components/wifi_service/portal/` sind der versionierte, eingebettete
+Build-Output — mit dem obigen Befehl aktualisieren, nicht von Hand
+bearbeiten.
 
-## Project Structure
+## Projektstruktur
 
 ```text
 webserver/
-  index.html              # portal markup (WiFi / Local AI / Time cards)
-  src/assets/             # inline SVGs (?raw) incl. followup_logo.svg
-  src/components/         # autonomous Web Components
-  src/portal/             # feature controllers, API helpers, DOM wiring, types
+  index.html              # Portal-Markup (WLAN-/Lokale-KI-/Zeit-Karten)
+  src/assets/             # Inline-SVGs (?raw), inkl. followup_logo.svg
+  src/components/         # eigenständige Web Components
+  src/portal/             # Feature-Controller, API-Helfer, DOM-Verdrahtung, Typen
   src/gradualBlur.ts
-  src/main.ts             # bootstrap and orchestration
-  src/portal.css          # global page/layout styles
-  dist/                   # build output (generated, gitignored)
-components/wifi_service/portal/   # embedded build output served by the firmware
+  src/main.ts             # Bootstrap und Orchestrierung
+  src/portal.css          # globale Seiten-/Layout-Stile
+  dist/                   # Build-Output (generiert, gitignored)
+components/wifi_service/portal/   # eingebetteter Build-Output, von der Firmware ausgeliefert
 ```
 
-## Portal Source Layout
+## Portal-Quellstruktur
 
 - `src/components/`
-  Shared Web Components such as `Button`, `Input`, `Select`, `Card`, `Toast`,
-  `NetworkStatus`, `NetworkList`, and `BottomSheet`.
+  Gemeinsam genutzte Web Components wie `Button`, `Input`, `Select`,
+  `Card`, `Toast`, `NetworkStatus`, `NetworkList` und `BottomSheet`.
 
 - `src/portal/`
-  Portal-specific application logic split by responsibility:
-  - `api.ts` — typed API fetch helpers
-  - `wifi.ts` — WiFi scan/connect/disconnect flow
-  - `time.ts` — timezone + manual date/time
-  - `providerKeys.ts` — Local AI server URL save/reset, OpenAI API key save/clear
-  - `dom.ts` — element lookups
-  - `events.ts` — DOM event bindings
-  - `uiState.ts` — button/input enabled/disabled state
-  - `duration.ts`, `uiHelpers.ts` — shared helpers
-  - `constants.ts`, `types.ts` — shared constants and TypeScript types
+  Portal-spezifische Anwendungslogik, aufgeteilt nach Zuständigkeit:
+  - `api.ts` — typisierte API-Fetch-Helfer
+  - `wifi.ts` — WLAN-Scan-/Verbinden-/Trennen-Ablauf
+  - `time.ts` — Zeitzone + manuelles Datum/Uhrzeit
+  - `providerKeys.ts` — Speichern/Zurücksetzen der lokalen-KI-Server-URL,
+    Speichern/Löschen des OpenAI-API-Schlüssels
+  - `dom.ts` — Element-Lookups
+  - `events.ts` — DOM-Event-Bindungen
+  - `uiState.ts` — Aktiviert-/Deaktiviert-Zustand von Buttons/Eingaben
+  - `duration.ts`, `uiHelpers.ts` — gemeinsame Helfer
+  - `constants.ts`, `types.ts` — gemeinsame Konstanten und TypeScript-Typen
 
-## Scripts
+## Skripte
 
-- `npm run dev` — start the Vite dev server
-- `npm run build` — type-check (`tsc`) and build production assets into `dist/`
-- `npm run preview` — preview the production build
-- `npm run lint` — run ESLint
+- `npm run dev` — Vite-Dev-Server starten
+- `npm run build` — Typprüfung (`tsc`) und Produktions-Assets nach `dist/` bauen
+- `npm run preview` — Produktions-Build in der Vorschau ansehen
+- `npm run lint` — ESLint ausführen
