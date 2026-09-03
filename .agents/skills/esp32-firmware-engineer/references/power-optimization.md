@@ -1,98 +1,98 @@
-# ESP32 Power Optimization (ESP-IDF)
+# ESP32-Power-Optimierung (ESP-IDF)
 
-Use this reference for ESP32 low-power modes, wakeup design, dynamic power management, and battery-aware behavior in ESP-IDF projects.
+Diese Referenz für ESP32-Low-Power-Modi, Wakeup-Design, dynamisches Power-Management und akku-bewusstes Verhalten in ESP-IDF-Projekten nutzen.
 
-## Start With Power Budget and Wakeup Model
+## Erst mit Power-Budget und Wakeup-Modell beginnen
 
-- Define target average current, active duty cycle, wakeup sources, and latency requirements first.
-- Power tuning without a measurement plan usually produces misleading results.
-- Identify whether the product is:
-  - always-connected mains-powered
-  - battery-powered periodic sensor
-  - bursty wireless device
-  - low-latency interactive device
+- Zuerst Ziel-Durchschnittsstrom, Active-Duty-Cycle, Wakeup-Quellen und Latenz-Anforderungen definieren.
+- Power-Tuning ohne Messplan liefert meist irreführende Ergebnisse.
+- Identifizieren, ob das Produkt ist:
+  - dauerhaft verbunden, netzbetrieben
+  - akkubetriebener periodischer Sensor
+  - schubweises Funkgerät
+  - latenzarmes interaktives Gerät
 
-## ESP32 Sleep Modes (Practical)
+## ESP32-Sleep-Modi (praktisch)
 
-- Active mode: CPU/peripherals/radios running.
-- Modem sleep: CPU active, radio duty-cycled/power-save behavior (Wi-Fi/BLE use case dependent).
-- Light sleep: CPU paused with faster wake than deep sleep; RAM retained (chip/config dependent).
-- Deep sleep: lowest-power common mode; most runtime state lost except RTC-retained data/configured wake sources.
+- Active-Modus: CPU/Peripherie/Funkmodule laufen.
+- Modem-Sleep: CPU aktiv, Funkmodul im Duty-Cycle-/Power-Save-Verhalten (abhängig vom WLAN-/BLE-Anwendungsfall).
+- Light-Sleep: CPU pausiert mit schnellerem Aufwachen als Deep-Sleep; RAM bleibt erhalten (chip-/konfigurationsabhängig).
+- Deep-Sleep: niedrigster gängiger Power-Modus; die meisten Laufzeitzustände gehen verloren, außer RTC-gehaltene Daten/konfigurierte Wake-Quellen.
 
-Choose based on:
-- required wake latency
-- state retention needs
-- radio reconnect cost
-- sampling interval
+Auswahl basierend auf:
+- benötigter Wake-Latenz
+- Anforderungen an Zustandserhalt
+- Funk-Reconnect-Kosten
+- Abtastintervall
 
-## Wakeup Sources (ESP-IDF)
+## Wakeup-Quellen (ESP-IDF)
 
-- Timer wakeup: `esp_sleep_enable_timer_wakeup(...)`
-- GPIO/EXT wakeup (chip-specific APIs and limitations differ by target)
-- ULP / coprocessor wakeup on supported chips
-- Touch / UART wakeup on supported targets and configurations
+- Timer-Wakeup: `esp_sleep_enable_timer_wakeup(...)`
+- GPIO-/EXT-Wakeup (chip-spezifische APIs und Einschränkungen unterscheiden sich je Ziel)
+- ULP-/Coprozessor-Wakeup auf unterstützten Chips
+- Touch-/UART-Wakeup auf unterstützten Zielen und Konfigurationen
 
-Always verify target-specific wakeup support for your exact chip (`esp32`, `esp32s3`, `esp32c3`, etc.).
+Immer zielspezifische Wakeup-Unterstützung für den exakten Chip prüfen (`esp32`, `esp32s3`, `esp32c3` usw.).
 
-## Dynamic Frequency Scaling and PM Locks
+## Dynamic Frequency Scaling und PM-Locks
 
-- Prefer ESP-IDF power management APIs over manual clock manipulation.
-- Use `esp_pm_configure(...)` for DFS/light-sleep policies where supported.
-- Use PM locks (`esp_pm_lock_*`) only around operations that truly require a minimum frequency or no light sleep.
-- Release locks promptly; leaked PM locks are a common reason “power save doesn’t work.”
+- ESP-IDF-Power-Management-APIs gegenüber manueller Takt-Manipulation bevorzugen.
+- `esp_pm_configure(...)` für DFS-/Light-Sleep-Policies verwenden, wo unterstützt.
+- PM-Locks (`esp_pm_lock_*`) nur um Operationen herum verwenden, die wirklich eine Mindestfrequenz oder kein Light-Sleep benötigen.
+- Locks prompt freigeben; ausgelaufene PM-Locks sind ein häufiger Grund, warum "Power Save nicht funktioniert".
 
-## Wi-Fi / BLE Power Strategy
+## WLAN-/BLE-Power-Strategie
 
-- Radio behavior often dominates power consumption.
-- Optimize at the system level:
-  - batching network activity
-  - reducing reconnect churn
-  - using appropriate Wi-Fi power-save mode
-  - minimizing unnecessary scans/advertising activity
-- Validate power impact of retry loops and error handling; “recover faster” can cost much more energy.
+- Funkverhalten dominiert oft den Stromverbrauch.
+- Auf Systemebene optimieren:
+  - Netzwerkaktivität bündeln
+  - Reconnect-Churn reduzieren
+  - passenden WLAN-Power-Save-Modus nutzen
+  - unnötige Scans/Advertising-Aktivität minimieren
+- Power-Auswirkung von Retry-Schleifen und Fehlerbehandlung validieren; "schneller erholen" kann deutlich mehr Energie kosten.
 
-## Peripheral Power Management
+## Peripherie-Power-Management
 
-- Deinit or stop unused peripherals/drivers when idle (ADC, SPI devices, sensors, UARTs if safe).
-- Gate external sensors/rails with load switches when hardware allows.
-- Avoid periodic polling when interrupt/event-based wakeup is feasible.
-- Use DMA/queued transfers to reduce CPU wake time for bulk I/O.
+- Ungenutzte Peripherie/Treiber im Leerlauf deinitialisieren oder stoppen (ADC, SPI-Geräte, Sensoren, UARTs, falls sicher).
+- Externe Sensoren/Versorgungsschienen mit Load-Switches abschalten, wo Hardware es erlaubt.
+- Periodisches Polling vermeiden, wenn Interrupt-/Event-basiertes Wakeup machbar ist.
+- DMA-/gequeute Transfers nutzen, um die CPU-Wachzeit bei Bulk-I/O zu reduzieren.
 
-## GPIO Leakage and Deep Sleep Considerations
+## GPIO-Leckage und Deep-Sleep-Überlegungen
 
-- Configure unused pins to known safe states for your board design (high-Z, pull, or driven level depending leakage path).
-- Check board-specific leakage via external pull-ups, level shifters, sensors, and transistor networks.
-- Use RTC IO hold/isolation features where appropriate and supported.
-- Beware strapping pins and boot requirements when changing default pin states.
+- Ungenutzte Pins auf bekannte, für das Board-Design sichere Zustände konfigurieren (High-Z, Pull, oder getriebener Pegel, je nach Leckage-Pfad).
+- Board-spezifische Leckage über externe Pull-ups, Level-Shifter, Sensoren und Transistor-Netzwerke prüfen.
+- RTC-IO-Hold-/Isolation-Funktionen nutzen, wo passend und unterstützt.
+- Auf Strapping-Pins und Boot-Anforderungen achten, wenn Standard-Pin-Zustände geändert werden.
 
-## Battery Monitoring and Adaptive Behavior
+## Akku-Überwachung und adaptives Verhalten
 
-- Use calibrated ADC measurements (ESP-IDF ADC calibration APIs) when voltage accuracy matters.
-- Sample battery at controlled times (load state affects voltage).
-- Define thresholds with hysteresis to avoid oscillation.
-- Adapt workload:
-  - sample less often
-  - reduce radio activity
-  - defer non-critical features
+- Kalibrierte ADC-Messungen (ESP-IDF-ADC-Kalibrierungs-APIs) verwenden, wenn Spannungsgenauigkeit wichtig ist.
+- Akku zu kontrollierten Zeitpunkten abtasten (Lastzustand beeinflusst die Spannung).
+- Schwellenwerte mit Hysterese definieren, um Oszillation zu vermeiden.
+- Arbeitslast anpassen:
+  - seltener abtasten
+  - Funkaktivität reduzieren
+  - nicht-kritische Funktionen aufschieben
 
-## Measurement and Verification
+## Messung und Verifikation
 
-- Measure current with appropriate tools (power analyzer/current meter), not only software estimates.
-- Compare:
-  - idle active
-  - light sleep
-  - deep sleep
-  - radio TX/RX peaks
-  - reconnect storms / failure conditions
-- Record exact firmware config (`sdkconfig`, target, board revision) with measurements.
+- Strom mit geeigneten Werkzeugen messen (Power-Analyzer/Strommessgerät), nicht nur mit Software-Schätzungen.
+- Vergleichen:
+  - Idle Active
+  - Light-Sleep
+  - Deep-Sleep
+  - Funk-TX/RX-Spitzen
+  - Reconnect-Stürme/Fehlerbedingungen
+- Exakte Firmware-Konfiguration (`sdkconfig`, Ziel, Board-Revision) mit den Messungen festhalten.
 
-## Review Checklist (Merged and ESP32-Adapted)
+## Review-Checkliste (zusammengeführt und ESP32-adaptiert)
 
-- Sleep mode chosen based on latency + retention + reconnect cost.
-- Wakeup sources and chip-specific limitations verified.
-- PM locks acquired only when needed and released correctly.
-- Wireless retry/connect logic reviewed for energy impact.
-- Peripheral/sensor idle states and external rail control considered.
-- GPIO leakage paths and strapping pin states reviewed.
-- Battery thresholds use hysteresis and calibrated ADC path when needed.
-- Power claims backed by measurement, not estimates alone.
+- Sleep-Modus basierend auf Latenz + Zustandserhalt + Reconnect-Kosten gewählt.
+- Wakeup-Quellen und chip-spezifische Einschränkungen geprüft.
+- PM-Locks nur bei Bedarf erworben und korrekt freigegeben.
+- Funk-Retry-/Connect-Logik auf Energieauswirkung geprüft.
+- Peripherie-/Sensor-Idle-Zustände und externe Versorgungsschienen-Steuerung berücksichtigt.
+- GPIO-Leckage-Pfade und Strapping-Pin-Zustände geprüft.
+- Akku-Schwellenwerte nutzen bei Bedarf Hysterese und kalibrierten ADC-Pfad.
+- Power-Behauptungen durch Messung belegt, nicht nur durch Schätzungen.

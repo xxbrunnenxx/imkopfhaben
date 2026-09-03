@@ -1,89 +1,89 @@
-# ESP32 Communication Protocols (ESP-IDF)
+# ESP32-Kommunikationsprotokolle (ESP-IDF)
 
-Use this reference for ESP32 peripheral communication patterns in ESP-IDF: I2C, SPI, UART, and TWAI (CAN).
+Diese Referenz für ESP32-Peripherie-Kommunikationsmuster in ESP-IDF nutzen: I2C, SPI, UART und TWAI (CAN).
 
-## Scope and Version Notes
+## Umfang und Versionshinweise
 
-- ESP-IDF has both legacy and newer driver APIs in some subsystems (notably I2C/ADC across versions).
-- Prefer the project's existing API style unless you are explicitly migrating.
-- Always confirm target chip and pin map before coding (ESP32 vs ESP32-S3/C3/C6 feature differences, pin capabilities, strapping pins).
+- ESP-IDF hat in manchen Subsystemen sowohl Legacy- als auch neuere Treiber-APIs (insbesondere I2C/ADC über Versionen hinweg).
+- Den bestehenden API-Stil des Projekts bevorzugen, außer bei einer ausdrücklichen Migration.
+- Vor dem Codieren immer Ziel-Chip und Pin-Map bestätigen (ESP32 vs. ESP32-S3/C3/C6-Funktionsunterschiede, Pin-Fähigkeiten, Strapping-Pins).
 
-## I2C (Master) Patterns
+## I2C-(Master-)Muster
 
-- Confirm external pull-ups, bus voltage compatibility, and bus speed before debugging software.
-- Always use transaction timeouts; never wait forever on a busy bus.
-- Handle bus recovery/reset on repeated timeout conditions (device lockups are common).
-- Serialize access with a mutex or a dedicated bus-owner task.
-- Log address, register, timeout, and error code for field diagnostics.
+- Externe Pull-ups, Bus-Spannungskompatibilität und Bus-Geschwindigkeit prüfen, bevor Software debuggt wird.
+- Immer Transaktions-Timeouts verwenden; nie unbegrenzt auf einen belegten Bus warten.
+- Bus-Recovery/-Reset bei wiederholten Timeout-Bedingungen behandeln (Geräte-Lockups sind häufig).
+- Zugriff mit einem Mutex oder einem dedizierten Bus-Owner-Task serialisieren.
+- Adresse, Register, Timeout und Fehlercode für Feld-Diagnose loggen.
 
-Common ESP-IDF patterns:
-- Legacy API: `i2c_param_config()`, `i2c_driver_install()`, command links.
-- Newer API (IDF v5+): bus/device handles with explicit device configuration and transfer timeout.
+Übliche ESP-IDF-Muster:
+- Legacy-API: `i2c_param_config()`, `i2c_driver_install()`, Command Links.
+- Neuere API (IDF v5+): Bus-/Device-Handles mit expliziter Geräte-Konfiguration und Transfer-Timeout.
 
-## SPI (Master) Patterns
+## SPI-(Master-)Muster
 
-- Use `spi_bus_initialize()` and `spi_bus_add_device()` and keep device config (mode, clock, CS, queue depth) explicit.
-- For DMA transfers, allocate buffers with DMA-capable memory (`MALLOC_CAP_DMA`) when required.
-- Be explicit about transaction ownership if multiple tasks share the bus.
-- Validate max clock against wiring length, signal integrity, and device timing, not just the data sheet headline.
-- Prefer queued transactions for throughput; prefer synchronous transmit for simple control paths.
+- `spi_bus_initialize()` und `spi_bus_add_device()` verwenden und die Geräte-Konfiguration (Modus, Takt, CS, Queue-Tiefe) explizit halten.
+- Für DMA-Transfers bei Bedarf Puffer mit DMA-fähigem Speicher (`MALLOC_CAP_DMA`) allokieren.
+- Bei mehreren Tasks, die sich den Bus teilen, die Transaktions-Eigentümerschaft explizit klären.
+- Maximaltakt gegen Kabellänge, Signalintegrität und Geräte-Timing prüfen, nicht nur gegen die Datenblatt-Überschrift.
+- Queued Transactions für Durchsatz bevorzugen; synchrones Senden für einfache Steuerpfade bevorzugen.
 
-Review cues:
-- Are TX/RX buffers valid for the duration of the transaction?
-- Is CS behavior correct for multi-part register operations?
-- Are DMA-capable buffers used where needed?
+Review-Hinweise:
+- Sind TX/RX-Puffer für die Dauer der Transaktion gültig?
+- Ist das CS-Verhalten bei mehrteiligen Register-Operationen korrekt?
+- Werden DMA-fähige Puffer verwendet, wo nötig?
 
-## UART Patterns
+## UART-Muster
 
-- Prefer ESP-IDF UART driver (`uart_driver_install`) with the driver ring buffer/event queue before writing a custom ISR buffer.
-- Use a dedicated parser task for framed protocols.
-- Bound parser work and handle malformed frames/noise.
-- If using an ISR callback path, keep it minimal and IRAM-safe as needed.
+- Den ESP-IDF-UART-Treiber (`uart_driver_install`) mit dem treibereigenen Ringpuffer/Event-Queue bevorzugen, bevor ein eigener ISR-Puffer geschrieben wird.
+- Für gerahmte Protokolle einen dedizierten Parser-Task verwenden.
+- Parser-Arbeit begrenzen und fehlerhafte Frames/Rauschen behandeln.
+- Bei einem ISR-Callback-Pfad diesen minimal und bei Bedarf IRAM-sicher halten.
 
-Typical architecture:
-- UART driver ISR/ring buffer -> parser task -> application queue/state machine
+Typische Architektur:
+- UART-Treiber-ISR/Ringpuffer -> Parser-Task -> Anwendungs-Queue/Zustandsautomat
 
-## TWAI (CAN) Patterns
+## TWAI-(CAN-)Muster
 
-- On ESP32-class chips with TWAI support, use the TWAI driver (`twai_driver_install`, start/stop/transmit/receive, alerts).
-- Validate transceiver wiring and termination first; software often gets blamed for bus electrical issues.
-- Use alerts and error counters to distinguish bus-off/warning states from application bugs.
-- Implement recovery logic for bus-off instead of retrying transmit forever.
+- Auf ESP32-Chips mit TWAI-Unterstützung den TWAI-Treiber verwenden (`twai_driver_install`, Start/Stop/Transmit/Receive, Alerts).
+- Zuerst Transceiver-Verkabelung und -Terminierung prüfen; Software wird oft fälschlich für elektrische Bus-Probleme verantwortlich gemacht.
+- Alerts und Fehlerzähler nutzen, um Bus-off/Warning-Zustände von Anwendungsfehlern zu unterscheiden.
+- Recovery-Logik für Bus-off implementieren, statt Transmit endlos zu wiederholen.
 
-## RMT / Special Protocol Note
+## RMT-/Sonderprotokoll-Hinweis
 
-- For timing-sensitive one-wire / IR / pulse protocols, prefer RMT over bit-banging in tasks.
-- RMT often reduces jitter and CPU load compared with software timing loops.
+- Für zeitkritische One-Wire-/IR-/Puls-Protokolle RMT statt Bit-Banging in Tasks bevorzugen.
+- RMT reduziert Jitter und CPU-Last oft im Vergleich zu Software-Timing-Schleifen.
 
-## Shared Communication Bus Design
+## Design eines gemeinsam genutzten Kommunikationsbusses
 
-- Prefer a bus manager task when:
-  - Multiple tasks issue transactions
-  - Ordering matters (sensor init + reads + calibration writes)
-  - Retries/recovery must be centralized
-- Use a mutex only when transactions are short and ownership is simple.
+- Einen Bus-Manager-Task bevorzugen, wenn:
+  - Mehrere Tasks Transaktionen ausgeben
+  - Reihenfolge wichtig ist (Sensor-Init + Reads + Kalibrierungs-Writes)
+  - Retries/Recovery zentralisiert sein müssen
+- Ein Mutex nur verwenden, wenn Transaktionen kurz sind und die Eigentümerschaft einfach ist.
 
-## Error Handling and Recovery (Merged and ESP32-Adapted)
+## Fehlerbehandlung und Recovery (zusammengeführt und ESP32-adaptiert)
 
-- Always use timeouts to prevent deadlocks/stalls.
-- Propagate and log `esp_err_t` (plus protocol-level status if available).
-- Implement retry with backoff for transient faults; avoid tight retry loops.
-- Distinguish hardware faults (wiring/pull-up/power) from protocol framing/software faults.
-- Validate received payloads (CRC/checksum/length/state machine transitions).
+- Immer Timeouts verwenden, um Deadlocks/Stalls zu verhindern.
+- `esp_err_t` (plus protokollspezifischen Status, falls verfügbar) weitergeben und loggen.
+- Retry mit Backoff für transiente Fehler implementieren; enge Retry-Schleifen vermeiden.
+- Hardware-Fehler (Verkabelung/Pull-up/Strom) von Protokoll-Framing-/Software-Fehlern unterscheiden.
+- Empfangene Payloads validieren (CRC/Checksumme/Länge/Zustandsautomat-Übergänge).
 
-## Hardware and Pin Constraints (ESP32-Specific)
+## Hardware- und Pin-Einschränkungen (ESP32-spezifisch)
 
-- Check GPIO matrix routing limits and peripheral pin capability for the selected chip.
-- Watch strapping pins and boot mode interactions.
-- Confirm voltage levels (3.3V logic, open-drain pull-ups for I2C, transceiver requirements for TWAI/RS-485).
-- Confirm bus speed/timing against cable length and pull-up strength.
+- GPIO-Matrix-Routing-Grenzen und Peripherie-Pin-Fähigkeit für den gewählten Chip prüfen.
+- Strapping-Pins und Boot-Modus-Interaktionen beachten.
+- Spannungspegel bestätigen (3,3V-Logik, Open-Drain-Pull-ups für I2C, Transceiver-Anforderungen für TWAI/RS-485).
+- Bus-Geschwindigkeit/-Timing gegen Kabellänge und Pull-up-Stärke prüfen.
 
-## Review Checklist
+## Review-Checkliste
 
-- Timeouts present on all protocol operations.
-- Shared bus access serialized correctly (mutex or owner task).
-- ISR-safe APIs used in ISR paths only.
-- DMA-capable buffers used when needed.
-- Protocol parsing validates length/state/CRC.
-- Logs include enough context (bus, device addr/id, op, error, timeout).
-- Recovery path exists for bus lockups / device reset / bus-off.
+- Timeouts bei allen Protokoll-Operationen vorhanden.
+- Gemeinsamer Bus-Zugriff korrekt serialisiert (Mutex oder Owner-Task).
+- ISR-sichere APIs nur in ISR-Pfaden verwendet.
+- DMA-fähige Puffer verwendet, wo nötig.
+- Protokoll-Parsing validiert Länge/Zustand/CRC.
+- Logs enthalten genug Kontext (Bus, Geräte-Adresse/-ID, Operation, Fehler, Timeout).
+- Recovery-Pfad existiert für Bus-Lockups/Geräte-Reset/Bus-off.

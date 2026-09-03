@@ -1,95 +1,95 @@
-# ESP32 Memory and Size Optimization (ESP-IDF)
+# ESP32-Speicher- und Größen-Optimierung (ESP-IDF)
 
-Use this reference for RAM/flash/code-size optimization and memory-safety decisions in ESP-IDF projects.
+Diese Referenz für RAM-/Flash-/Code-Größen-Optimierung und Speichersicherheits-Entscheidungen in ESP-IDF-Projekten nutzen.
 
-## ESP32 Memory Model (Practical View)
+## ESP32-Speichermodell (praktische Sicht)
 
-- Internal RAM is limited and shared with stacks, drivers, and protocol stacks.
-- Some features (Wi-Fi/BLE, networking, TLS) increase internal RAM pressure significantly.
-- PSRAM may be available on some modules/targets, but not all memory is equal:
-  - Latency differs from internal RAM
-  - DMA compatibility is constrained
-  - Some ISR/critical paths should stay in internal memory
-- Use ESP-IDF heap capabilities APIs when memory class matters (`heap_caps_*`).
-- Performance depends on memory placement and bus mode, not only free bytes; internal RAM, PSRAM, and flash-backed code/data have different latency/throughput behavior.
+- Interner RAM ist begrenzt und wird mit Stacks, Treibern und Protokoll-Stacks geteilt.
+- Manche Funktionen (WLAN/BLE, Netzwerk, TLS) erhöhen den internen RAM-Druck erheblich.
+- PSRAM ist auf manchen Modulen/Zielen verfügbar, aber nicht aller Speicher ist gleich:
+  - Latenz unterscheidet sich vom internen RAM
+  - DMA-Kompatibilität ist eingeschränkt
+  - Manche ISR-/kritischen Pfade sollten im internen Speicher bleiben
+- ESP-IDF-Heap-Capabilities-APIs verwenden, wenn die Speicherklasse wichtig ist (`heap_caps_*`).
+- Performance hängt von Speicherplatzierung und Bus-Modus ab, nicht nur von freien Bytes; interner RAM, PSRAM und Flash-basierter Code/Daten haben unterschiedliches Latenz-/Durchsatz-Verhalten.
 
-## Allocation Policy (What to Prefer)
+## Allokationsrichtlinie (was zu bevorzugen ist)
 
-- Prefer static allocation for long-lived buffers and core control structures.
-- Reuse work buffers in non-overlapping paths.
-- Avoid heap allocation in hot paths and callback-heavy paths.
-- Never allocate from ISR context.
-- Use fixed-size pools when bounded dynamic behavior is needed.
+- Statische Allokation für langlebige Puffer und Kern-Kontrollstrukturen bevorzugen.
+- Arbeitspuffer in nicht überlappenden Pfaden wiederverwenden.
+- Heap-Allokation in Hot Paths und Callback-lastigen Pfaden vermeiden.
+- Nie aus ISR-Kontext allokieren.
+- Feste Pools verwenden, wenn begrenztes dynamisches Verhalten benötigt wird.
 
-## DMA / Capability-Aware Allocation
+## DMA-/Capability-bewusste Allokation
 
-- Allocate DMA buffers with capability flags (for example `MALLOC_CAP_DMA`) when required by SPI/I2S/peripheral drivers.
-- Verify buffer lifetime across async transactions (queued SPI/UART/etc.).
-- Do not assume PSRAM buffers are valid for every DMA path.
+- DMA-Puffer bei Bedarf durch SPI-/I2S-/Peripherie-Treiber mit Capability-Flags allokieren (z. B. `MALLOC_CAP_DMA`).
+- Puffer-Lebensdauer über asynchrone Transaktionen hinweg prüfen (gequeutes SPI/UART/etc.).
+- Nicht annehmen, dass PSRAM-Puffer für jeden DMA-Pfad gültig sind.
 
-## Stack Sizing and Monitoring
+## Stack-Dimensionierung und Überwachung
 
-- Start with conservative task stacks for parsing/logging/network code, then measure and tighten.
-- Monitor stack high-water marks (`uxTaskGetStackHighWaterMark()` / `uxTaskGetStackHighWaterMark2()` depending config/API availability).
-- Watch for hidden stack growth from:
-  - Large local arrays
-  - Deep call chains
-  - Logging and format strings
-  - JSON/TLS/protocol parsers
+- Mit konservativen Task-Stacks für Parsing-/Logging-/Netzwerk-Code beginnen, dann messen und straffen.
+- Stack-High-Water-Marks überwachen (`uxTaskGetStackHighWaterMark()` / `uxTaskGetStackHighWaterMark2()`, je nach Konfiguration/API-Verfügbarkeit).
+- Auf verstecktes Stack-Wachstum achten durch:
+  - Große lokale Arrays
+  - Tiefe Aufrufketten
+  - Logging und Format-Strings
+  - JSON-/TLS-/Protokoll-Parser
 
-## Heap Monitoring and Fragmentation Awareness
+## Heap-Überwachung und Fragmentierungs-Bewusstsein
 
-- Track:
+- Verfolgen:
   - `heap_caps_get_free_size(...)`
   - `heap_caps_get_minimum_free_size(...)`
-  - Largest free block if fragmentation is suspected
-- Measure before/after feature init and under steady-state runtime.
-- Repeated alloc/free of variable-sized buffers is a common fragmentation source.
+  - größter freier Block bei Fragmentierungsverdacht
+- Vor/nach Feature-Init und im eingeschwungenen Laufzeitzustand messen.
+- Wiederholtes Alloc/Free variabel großer Puffer ist eine häufige Fragmentierungsquelle.
 
-## Code Size Optimization (ESP-IDF Workflow)
+## Code-Größen-Optimierung (ESP-IDF-Workflow)
 
-- Use `idf.py size` and `idf.py size-components` to identify growth.
-- Inspect the linker map (`build/<app>.map`) when component-level output is not enough.
-- Prefer `const` data for read-only tables and strings.
-- Keep component dependencies minimal; unused components can pull in surprising code.
-- Review logging levels and format-heavy debug code in release builds.
-- If code execution speed matters, check whether hot code/data placement and flash/PSRAM configuration (`sdkconfig`) are limiting throughput.
+- `idf.py size` und `idf.py size-components` nutzen, um Wachstum zu identifizieren.
+- Linker-Map (`build/<app>.map`) inspizieren, wenn Komponenten-Level-Output nicht reicht.
+- `const`-Daten für Nur-Lese-Tabellen und Strings bevorzugen.
+- Komponenten-Abhängigkeiten minimal halten; ungenutzte Komponenten können überraschenden Code mitziehen.
+- Logging-Levels und formatlastigen Debug-Code in Release-Builds überprüfen.
+- Falls Ausführungsgeschwindigkeit wichtig ist, prüfen, ob Hot-Code-/Daten-Platzierung und Flash-/PSRAM-Konfiguration (`sdkconfig`) den Durchsatz begrenzen.
 
-Common levers (project-dependent):
-- `sdkconfig` optimization level (`CONFIG_COMPILER_OPTIMIZATION_*`)
-- Link-time optimization (if enabled/supported in project/toolchain setup)
-- Reducing enabled features/components/protocols
+Übliche Stellschrauben (projektabhängig):
+- `sdkconfig`-Optimierungsstufe (`CONFIG_COMPILER_OPTIMIZATION_*`)
+- Link-Time-Optimierung (falls im Projekt-/Toolchain-Setup aktiviert/unterstützt)
+- Reduzierung aktivierter Features/Komponenten/Protokolle
 
-## Data Structure and Buffer Patterns
+## Datenstruktur- und Puffer-Muster
 
-- Use the smallest type that matches protocol range and alignment requirements.
-- Pack structures only when layout compatibility is required (protocol/on-flash format); avoid unnecessary packed structs in hot code due to alignment penalties.
-- Prefer ring buffers/stream buffers for byte streams.
-- Use explicit ownership comments for buffers that cross task boundaries.
+- Den kleinsten Typ verwenden, der zu Protokollbereich und Alignment-Anforderungen passt.
+- Strukturen nur packen, wenn Layout-Kompatibilität erforderlich ist (Protokoll-/Flash-Format); unnötige gepackte Structs in Hot Code wegen Alignment-Strafen vermeiden.
+- Ringpuffer/Stream-Puffer für Byte-Streams bevorzugen.
+- Explizite Ownership-Kommentare für Puffer verwenden, die Task-Grenzen überschreiten.
 
-## Flash / NVS / Partition Considerations
+## Flash-/NVS-/Partitions-Überlegungen
 
-- Use NVS for small persistent config/state instead of ad hoc raw flash writes.
-- For write-heavy application data, design a wear-aware strategy (NVS, filesystem, or custom log structure with rotation).
-- Keep partition table and OTA slot size in mind when code size grows.
-- Validate that large assets/tables belong in firmware at all; they may fit better in filesystem or external storage.
+- NVS für kleine persistente Konfiguration/Zustand statt Ad-hoc-Rohschreibzugriffen auf Flash verwenden.
+- Für schreiblastige Anwendungsdaten eine verschleiß-bewusste Strategie entwerfen (NVS, Dateisystem, oder eigene Log-Struktur mit Rotation).
+- Partitionstabelle und OTA-Slot-Größe im Blick behalten, wenn die Code-Größe wächst.
+- Prüfen, ob große Assets/Tabellen überhaupt in die Firmware gehören; sie passen unter Umständen besser ins Dateisystem oder externen Speicher.
 
-## Compile-Time Guards
+## Compile-Time-Guards
 
-- Use `_Static_assert` / `static_assert` for:
-  - protocol struct sizes
-  - array lengths
-  - queue payload sizes
-  - compile-time configuration assumptions
+- `_Static_assert` / `static_assert` verwenden für:
+  - Protokoll-Struct-Größen
+  - Array-Längen
+  - Queue-Payload-Größen
+  - Compile-Zeit-Konfigurationsannahmen
 
-## Review Checklist (Merged and ESP32-Adapted)
+## Review-Checkliste (zusammengeführt und ESP32-adaptiert)
 
-- Static/reused buffers preferred over ad hoc heap allocations.
-- No heap allocation in ISR or time-critical paths.
-- DMA buffers use capability-aware allocation when required.
-- Task stacks sized from measurements; high-water marks checked.
-- Heap minimum free and fragmentation indicators monitored in tests.
-- `const` used for read-only data.
-- Code-size growth checked with `idf.py size` / component breakdown.
-- Partition/OTA/NVS implications considered for flash usage changes.
-- RAM/flash/PSRAM configuration and placement choices reviewed for performance-critical paths.
+- Statische/wiederverwendete Puffer gegenüber Ad-hoc-Heap-Allokationen bevorzugt.
+- Keine Heap-Allokation in ISR- oder zeitkritischen Pfaden.
+- DMA-Puffer nutzen bei Bedarf Capability-bewusste Allokation.
+- Task-Stacks aus Messungen dimensioniert; High-Water-Marks geprüft.
+- Heap-Minimum-frei und Fragmentierungs-Indikatoren in Tests überwacht.
+- `const` für Nur-Lese-Daten verwendet.
+- Code-Größen-Wachstum mit `idf.py size`/Komponenten-Aufschlüsselung geprüft.
+- Partitions-/OTA-/NVS-Implikationen bei Flash-Nutzungsänderungen berücksichtigt.
+- RAM-/Flash-/PSRAM-Konfiguration und Platzierungsentscheidungen für performance-kritische Pfade überprüft.

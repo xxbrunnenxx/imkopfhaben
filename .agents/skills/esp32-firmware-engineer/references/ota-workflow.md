@@ -1,8 +1,8 @@
-# OTA Workflow Reference
+# OTA-Workflow-Referenz
 
-## Partition Layout Requirements
+## Anforderungen an das Partitions-Layout
 
-### Minimal 2-OTA Layout (4MB flash)
+### Minimales 2-OTA-Layout (4 MB Flash)
 ```csv
 # Name,   Type, SubType, Offset,   Size,  Flags
 nvs,      data, nvs,     0x9000,   0x6000,
@@ -12,7 +12,7 @@ ota_0,    app,  ota_0,   0x20000,  0x180000,
 ota_1,    app,  ota_1,   0x1a0000, 0x180000,
 ```
 
-### Factory + 2-OTA (preferred for rollback)
+### Factory + 2-OTA (für Rollback bevorzugt)
 ```csv
 nvs,      data, nvs,     0x9000,   0x6000,
 otadata,  data, ota,     0xf000,   0x2000,
@@ -22,16 +22,16 @@ ota_0,    app,  ota_0,   0x120000, 0x180000,
 ota_1,    app,  ota_1,   0x2a0000, 0x180000,
 ```
 
-### Key Rules
-- `otadata` partition is mandatory — without it the bootloader cannot track active OTA slot.
-- `ota_0` and `ota_1` must be the same size.
-- Size each OTA slot from the actual binary size reported by `idf.py size` with margin (≥20%).
-- Never use the `factory` subtype for an OTA slot; reserve it for the recovery/golden image.
-- Set `CONFIG_PARTITION_TABLE_CUSTOM=y` and point `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME` at your CSV.
+### Grundregeln
+- Die `otadata`-Partition ist zwingend erforderlich — ohne sie kann der Bootloader den aktiven OTA-Slot nicht nachverfolgen.
+- `ota_0` und `ota_1` müssen gleich groß sein.
+- Jeden OTA-Slot anhand der tatsächlichen Binärgröße aus `idf.py size` dimensionieren, mit Sicherheitsmarge (≥20 %).
+- Den Subtyp `factory` niemals für einen OTA-Slot verwenden; er ist für das Recovery-/Golden-Image reserviert.
+- `CONFIG_PARTITION_TABLE_CUSTOM=y` setzen und `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME` auf die eigene CSV-Datei zeigen lassen.
 
-## OTA Update API Flow
+## OTA-Update-API-Ablauf
 
-### Basic In-App OTA Sequence
+### Grundlegende In-App-OTA-Sequenz
 ```c
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
@@ -78,7 +78,7 @@ esp_err_t perform_ota(const uint8_t *data, size_t total_size)
 }
 ```
 
-### HTTPS OTA (Recommended for Network Updates)
+### HTTPS-OTA (empfohlen für Netzwerk-Updates)
 ```c
 #include "esp_https_ota.h"
 
@@ -108,7 +108,7 @@ void ota_task(void *arg)
 }
 ```
 
-### Streaming HTTPS OTA (Chunk-by-Chunk, for Progress Reporting)
+### Streaming-HTTPS-OTA (Chunk-für-Chunk, für Fortschrittsanzeige)
 ```c
 esp_https_ota_handle_t ota_handle;
 esp_err_t err = esp_https_ota_begin(&ota_cfg, &ota_handle);
@@ -129,22 +129,22 @@ if (esp_https_ota_is_complete_data_received(ota_handle)) {
 }
 ```
 
-## Rollback and Anti-Rollback
+## Rollback und Anti-Rollback
 
-### Enabling App Rollback
+### App-Rollback aktivieren
 ```
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
 ```
 
-With rollback enabled, after `esp_ota_set_boot_partition()` + reboot, the new image boots in
-`ESP_OTA_IMG_PENDING_VERIFY` state. The app **must** call:
+Mit aktiviertem Rollback bootet das neue Image nach `esp_ota_set_boot_partition()` + Neustart im
+Zustand `ESP_OTA_IMG_PENDING_VERIFY`. Die App **muss** aufrufen:
 ```c
 esp_ota_mark_app_valid_cancel_rollback();
 ```
-before any watchdog or reboot triggers. If it does not, the bootloader rolls back to the previous
-slot on the next boot.
+bevor irgendein Watchdog oder Neustart auslöst. Tut sie das nicht, fällt der Bootloader beim
+nächsten Boot auf den vorherigen Slot zurück.
 
-### Rollback Decision Pattern
+### Rollback-Entscheidungsmuster
 ```c
 void app_main(void)
 {
@@ -167,28 +167,28 @@ void app_main(void)
 }
 ```
 
-### Anti-Rollback (Security Counter)
-Prevents downgrading to a vulnerable firmware version.
+### Anti-Rollback (Sicherheits-Zähler)
+Verhindert das Downgrade auf eine verwundbare Firmware-Version.
 ```
 CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y
 CONFIG_BOOTLOADER_APP_SEC_VER=1         # increment with each security-relevant release
 CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_SCHEME=COUNTER  # or DIGEST
 ```
-- Increment `CONFIG_BOOTLOADER_APP_SEC_VER` only for security fixes — cannot be decremented.
-- The bootloader reads the security version from eFuse and refuses to boot any image with a lower version.
+- `CONFIG_BOOTLOADER_APP_SEC_VER` nur bei sicherheitsrelevanten Fixes erhöhen — kann nicht verringert werden.
+- Der Bootloader liest die Sicherheitsversion aus dem eFuse und verweigert das Booten jedes Images mit einer niedrigeren Version.
 
-## Key sdkconfig Options
+## Wichtige sdkconfig-Optionen
 
-| Option | Purpose |
+| Option | Zweck |
 |---|---|
-| `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` | Enable automatic rollback if app does not self-validate |
-| `CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` | Reject firmware with lower security version counter |
-| `CONFIG_BOOTLOADER_APP_SEC_VER` | Security version counter value baked into this build |
-| `CONFIG_OTA_ALLOW_HTTP` | Allow plain HTTP for OTA (dev only — never in production) |
-| `CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` | Custom decryption callback for encrypted OTA images |
-| `CONFIG_PARTITION_TABLE_CUSTOM` | Use project-specific partition CSV |
+| `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` | Automatischen Rollback aktivieren, falls die App sich nicht selbst validiert |
+| `CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` | Firmware mit niedrigerem Sicherheitsversions-Zähler ablehnen |
+| `CONFIG_BOOTLOADER_APP_SEC_VER` | In diesem Build fest hinterlegter Wert des Sicherheitsversions-Zählers |
+| `CONFIG_OTA_ALLOW_HTTP` | Reines HTTP für OTA erlauben (nur für Entwicklung — niemals in Produktion) |
+| `CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` | Eigener Entschlüsselungs-Callback für verschlüsselte OTA-Images |
+| `CONFIG_PARTITION_TABLE_CUSTOM` | Projektspezifische Partitions-CSV verwenden |
 
-## Diagnostic Commands for OTA State
+## Diagnose-Befehle für den OTA-Zustand
 
 ```c
 // Log running, boot, and next-update partitions
@@ -212,20 +212,20 @@ if (esp_ota_get_state_partition(running, &state) == ESP_OK) {
 }
 ```
 
-## Common Failure Modes
+## Häufige Fehlerbilder
 
-| Symptom | Likely Cause |
+| Symptom | Wahrscheinliche Ursache |
 |---|---|
-| Bootloader always boots `ota_0` | `otadata` partition was erased or never written; run `idf.py erase-flash` and re-flash |
-| Rollback on every boot | App never calls `esp_ota_mark_app_valid_cancel_rollback()` |
-| `esp_ota_end` returns `ESP_ERR_OTA_VALIDATE_FAILED` | Image hash check failed — data corruption during transfer |
-| HTTPS OTA fails with `ESP_ERR_HTTP_CONNECT` | Server cert not embedded or `cert_pem` pointer wrong |
-| OTA slot too small | Binary grew past slot size — recalculate with `idf.py size` and widen CSV |
-| `esp_ota_begin` fails with `ESP_ERR_INVALID_SIZE` | `image_size` parameter too small; use `OTA_WITH_SEQUENTIAL_WRITES` |
+| Bootloader bootet immer `ota_0` | `otadata`-Partition wurde gelöscht oder nie beschrieben; `idf.py erase-flash` ausführen und neu flashen |
+| Rollback bei jedem Boot | App ruft nie `esp_ota_mark_app_valid_cancel_rollback()` auf |
+| `esp_ota_end` liefert `ESP_ERR_OTA_VALIDATE_FAILED` | Image-Hash-Prüfung fehlgeschlagen — Datenkorruption bei der Übertragung |
+| HTTPS-OTA scheitert mit `ESP_ERR_HTTP_CONNECT` | Server-Zertifikat nicht eingebettet oder `cert_pem`-Pointer falsch |
+| OTA-Slot zu klein | Binärdatei ist über die Slot-Größe hinausgewachsen — mit `idf.py size` neu berechnen und CSV verbreitern |
+| `esp_ota_begin` scheitert mit `ESP_ERR_INVALID_SIZE` | Parameter `image_size` zu klein; `OTA_WITH_SEQUENTIAL_WRITES` verwenden |
 
-## OTA and Secure Boot
+## OTA und Secure Boot
 
-- Secure Boot verifies the image signature on boot; OTA images must be signed with the same key.
-- Use `idf.py secure-target sign-data` or the build system's `--sign-key` path to sign the binary before serving it.
-- With flash encryption enabled, the OTA partition is automatically encrypted on write — the plaintext binary URL is correct; the ESP32 encrypts in-place.
-- Do not disable `CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC` or `CONFIG_SECURE_BOOT_ALLOW_JTAG` in development then forget to re-enable restrictions for production builds.
+- Secure Boot prüft die Signatur des Images beim Booten; OTA-Images müssen mit demselben Schlüssel signiert sein.
+- `idf.py secure-target sign-data` oder den `--sign-key`-Pfad des Build-Systems nutzen, um die Binärdatei vor dem Ausliefern zu signieren.
+- Bei aktivierter Flash-Verschlüsselung wird die OTA-Partition beim Schreiben automatisch verschlüsselt — die Klartext-Binär-URL ist korrekt; der ESP32 verschlüsselt an Ort und Stelle.
+- `CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC` oder `CONFIG_SECURE_BOOT_ALLOW_JTAG` nicht in der Entwicklung deaktivieren und dann vergessen, die Einschränkungen für Produktions-Builds wieder zu aktivieren.

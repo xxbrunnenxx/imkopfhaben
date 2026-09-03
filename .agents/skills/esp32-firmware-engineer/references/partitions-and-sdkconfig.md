@@ -1,66 +1,66 @@
-# ESP32 Partitions and sdkconfig (ESP-IDF)
+# ESP32-Partitionen und sdkconfig (ESP-IDF)
 
-Use this reference when changing flash layout, OTA support, or project configuration.
+Diese Referenz nutzen beim Ändern von Flash-Layout, OTA-Unterstützung oder Projekt-Konfiguration.
 
-## Core Rules
+## Kernregeln
 
-- Treat `sdkconfig` and partition CSV as first-class project artifacts.
-- Prefer editing config files (`sdkconfig`, `sdkconfig.defaults`, Kconfig fragments where used) over interactive `menuconfig` instructions for reproducibility.
-- Do not propose partition changes until flash size and OTA requirement are confirmed.
-- Use the available flash capacity intentionally; avoid unexplained empty regions.
+- `sdkconfig` und Partitions-CSV als vollwertige Projekt-Artefakte behandeln.
+- Bearbeiten der Konfigurationsdateien (`sdkconfig`, `sdkconfig.defaults`, Kconfig-Fragmente, wo genutzt) gegenüber interaktiven `menuconfig`-Anweisungen bevorzugen, für Reproduzierbarkeit.
+- Keine Partitionsänderungen vorschlagen, bevor Flash-Größe und OTA-Anforderung bestätigt sind.
+- Verfügbare Flash-Kapazität bewusst nutzen; unerklärte leere Regionen vermeiden.
 
-## What to Confirm Before Partition Changes
+## Was vor Partitionsänderungen zu bestätigen ist
 
-- Exact flash size (for example 4MB, 8MB, 16MB)
-- OTA requirement (single app vs dual-slot OTA, rollback needs)
-- NVS size needs (Wi-Fi creds, app config, calibration data)
-- Filesystem/data partition needs (SPIFFS/LittleFS/FATFS if used)
-- Core dump partition requirement (if enabled)
-- Factory app partition requirement (some products need it; many do not)
+- Exakte Flash-Größe (zum Beispiel 4 MB, 8 MB, 16 MB)
+- OTA-Anforderung (einzelne App vs. Dual-Slot-OTA, Rollback-Bedarf)
+- NVS-Größenbedarf (WLAN-Zugangsdaten, App-Konfiguration, Kalibrierungsdaten)
+- Dateisystem-/Daten-Partitionsbedarf (SPIFFS/LittleFS/FATFS, falls genutzt)
+- Core-Dump-Partitionsanforderung (falls aktiviert)
+- Factory-App-Partitionsanforderung (manche Produkte brauchen sie; viele nicht)
 
-## Partition Strategy Guidelines
+## Partitionsstrategie-Leitlinien
 
-### No OTA Required
+### Keine OTA erforderlich
 
-- Prefer a larger app partition plus appropriately sized NVS/data partitions.
-- Avoid reserving OTA slots unless they are actually needed.
+- Eine größere App-Partition plus angemessen dimensionierte NVS-/Daten-Partitionen bevorzugen.
+- OTA-Slots nicht reservieren, außer sie werden tatsächlich gebraucht.
 
-### OTA Required
+### OTA erforderlich
 
-- Use OTA-compatible layout (typically `otadata` + two OTA app slots).
-- Size OTA slots based on current binary size plus growth headroom.
-- Ensure partition choices align with `sdkconfig` OTA and bootloader settings.
-- If rollback is used, ensure configuration and partitioning support it.
+- OTA-kompatibles Layout nutzen (typischerweise `otadata` + zwei OTA-App-Slots).
+- OTA-Slots basierend auf aktueller Binary-Größe plus Wachstums-Spielraum dimensionieren.
+- Sicherstellen, dass Partitionswahl mit `sdkconfig`-OTA- und Bootloader-Einstellungen übereinstimmt.
+- Wird Rollback genutzt, sicherstellen, dass Konfiguration und Partitionierung es unterstützen.
 
-## Flash Utilization Policy
+## Flash-Nutzungsrichtlinie
 
-- Every partition should have a reason.
-- Free space should either:
-  - be assigned as growth headroom with an explicit note, or
-  - be allocated to useful data/app capacity.
-- Do not leave large gaps because of copied example layouts that do not match the target flash.
+- Jede Partition sollte einen Grund haben.
+- Freier Speicher sollte entweder:
+  - als Wachstums-Spielraum mit explizitem Hinweis zugewiesen sein, oder
+  - für nützliche Daten-/App-Kapazität vergeben sein.
+- Keine großen Lücken durch kopierte Beispiel-Layouts belassen, die nicht zum Ziel-Flash passen.
 
-## sdkconfig Editing Workflow (Reproducible)
+## sdkconfig-Bearbeitungs-Workflow (reproduzierbar)
 
-- Read current `sdkconfig` and the relevant component/project defaults.
-- Change only the required keys.
-- Keep related settings in sync (example: target, flash size, log levels, PSRAM, partition table options).
-- Explain why each configuration change was made.
-- Prefer checking the resulting `sdkconfig` diff over hand-wavy menu navigation steps.
+- Aktuelle `sdkconfig` und relevante Komponenten-/Projekt-Defaults lesen.
+- Nur die erforderlichen Schlüssel ändern.
+- Zusammenhängende Einstellungen synchron halten (Beispiel: Target, Flash-Größe, Log-Level, PSRAM, Partitionstabellen-Optionen).
+- Erklären, warum jede Konfigurationsänderung vorgenommen wurde.
+- Prüfen des resultierenden `sdkconfig`-Diffs gegenüber vagen Menü-Navigationsschritten bevorzugen.
 
-## menuconfig Policy
+## menuconfig-Richtlinie
 
-- `menuconfig` is a discovery/debug tool, not the primary delivery artifact.
-- If `menuconfig` is used to discover an option, reflect the final change in `sdkconfig`/defaults and show the exact config keys.
-- Do not leave the user with only "open menuconfig and click X" guidance unless explicitly requested.
+- `menuconfig` ist ein Erkundungs-/Debug-Werkzeug, nicht das primäre Liefer-Artefakt.
+- Wird `menuconfig` genutzt, um eine Option zu finden: die finale Änderung in `sdkconfig`/Defaults widerspiegeln und die exakten Konfigurationsschlüssel zeigen.
+- Den Nutzer nicht nur mit "menuconfig öffnen und X klicken"-Anweisung zurücklassen, außer explizit angefragt.
 
-## Partition / Config Review Checklist
+## Partitions-/Konfigurations-Review-Checkliste
 
-- Exact flash size confirmed.
-- OTA requirement confirmed.
-- Partition table matches feature set and flash capacity.
-- App slot sizes include realistic headroom.
-- NVS/data/core dump partitions sized intentionally.
-- `sdkconfig` partition-table selection points to the correct CSV.
-- Log level, PSRAM, and flash/boot settings are consistent with performance/debug goals.
-- No copied example layout remains without justification.
+- Exakte Flash-Größe bestätigt.
+- OTA-Anforderung bestätigt.
+- Partitionstabelle passt zu Feature-Set und Flash-Kapazität.
+- App-Slot-Größen enthalten realistischen Spielraum.
+- NVS-/Daten-/Core-Dump-Partitionen bewusst dimensioniert.
+- `sdkconfig`-Partitionstabellen-Auswahl zeigt auf die richtige CSV.
+- Log-Level-, PSRAM- und Flash-/Boot-Einstellungen sind konsistent mit Performance-/Debug-Zielen.
+- Kein kopiertes Beispiel-Layout bleibt ohne Begründung bestehen.

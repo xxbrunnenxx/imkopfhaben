@@ -1,44 +1,44 @@
-# ESP32 Logging and Observability (ESP-IDF)
+# ESP32-Logging und Observability (ESP-IDF)
 
-Use this reference when designing logs, filtering noise, or diagnosing issues from `idf.py monitor`.
+Diese Referenz nutzen beim Entwerfen von Logs, Filtern von Rauschen oder Diagnostizieren von Problemen über `idf.py monitor`.
 
-## Logging Policy
+## Logging-Richtlinie
 
-- Keep application-space logs verbose and high signal during development/debugging.
-- Reduce irrelevant library/default component logs when they hide the application's state transitions.
-- Prefer targeted filtering/tuning over global suppression.
+- Anwendungs-Logs während der Entwicklung/Fehlersuche ausführlich und mit hohem Signal halten.
+- Irrelevante Library-/Standard-Komponenten-Logs reduzieren, wenn sie die Zustandsübergänge der Anwendung verdecken.
+- Gezieltes Filtern/Feinjustieren gegenüber globaler Unterdrückung bevorzugen.
 
-## Practical ESP-IDF Logging Guidance
+## Praktische ESP-IDF-Logging-Hinweise
 
-- Use stable module tags (`wifi_mgr`, `sensor_task`, `display_drv`, `ota_updater`).
-- Log:
-  - state transitions
-  - error codes (`esp_err_t`)
-  - retry counts/backoff
-  - timing/latency (when relevant)
-  - key configuration decisions at startup
-- Avoid repeated unstructured info logs in tight loops.
-- If an on-device terminal is present, expose runtime log-level controls (by tag / wildcard) so signal can be tuned without reflashing.
+- Stabile Modul-Tags verwenden (`wifi_mgr`, `sensor_task`, `display_drv`, `ota_updater`).
+- Loggen:
+  - Zustandsübergänge
+  - Fehlercodes (`esp_err_t`)
+  - Retry-Anzahl/Backoff
+  - Timing/Latenz (wenn relevant)
+  - wichtige Konfigurationsentscheidungen beim Start
+- Wiederholte, unstrukturierte Info-Logs in engen Schleifen vermeiden.
+- Falls ein On-Device-Terminal vorhanden ist, Laufzeit-Log-Level-Steuerung (nach Tag/Wildcard) bereitstellen, damit das Signal ohne erneutes Flashen justiert werden kann.
 
-## Noise Reduction Strategy
+## Strategie zur Rauschreduzierung
 
-- Lower noisy component log verbosity selectively (build-time config or runtime log-level control where used).
-- Keep app modules at `DEBUG`/`VERBOSE` while reducing third-party/default chatter if needed.
-- Preserve enough system logs to diagnose reset/panic/network events.
+- Ausführlichkeit lauter Komponenten-Logs selektiv senken (Build-Zeit-Konfiguration oder Laufzeit-Log-Level-Steuerung, wo genutzt).
+- App-Module bei `DEBUG`/`VERBOSE` belassen, während Drittanbieter-/Standard-Rauschen bei Bedarf reduziert wird.
+- Genug System-Logs erhalten, um Reset-/Panic-/Netzwerk-Ereignisse diagnostizieren zu können.
 
-## What Good Logs Look Like
+## Wie gute Logs aussehen
 
-- Event-first and stateful:
+- Ereignis-first und zustandsbehaftet:
   - `wifi_mgr: disconnected reason=... retry=3 backoff_ms=2000`
   - `display_drv: flush region x=0 y=0 w=240 h=40 fmt=rgb565`
-- Include identifiers for peripherals/devices/buses when multiple instances exist.
-- Include durations for timeouts and retries.
+- Kennungen für Peripherie/Geräte/Busse einschließen, wenn mehrere Instanzen existieren.
+- Dauern für Timeouts und Retries einschließen.
 
-## Review Checklist
+## Review-Checkliste
 
-- Application logs are verbose enough to debug behavior.
-- Library/default noise is reduced when it obscures signal.
-- Terminal log-level commands (if present) are scoped and safe.
-- Error logs include code + context, not only generic failure text.
-- Startup logs capture key target/config assumptions.
-- Logs do not create excessive timing disruption in hot paths.
+- Anwendungs-Logs sind ausführlich genug, um das Verhalten zu debuggen.
+- Library-/Standard-Rauschen ist reduziert, wenn es das Signal verdeckt.
+- Terminal-Log-Level-Kommandos (falls vorhanden) sind eingegrenzt und sicher.
+- Fehler-Logs enthalten Code + Kontext, nicht nur generischen Fehlertext.
+- Start-Logs erfassen wichtige Ziel-/Konfigurationsannahmen.
+- Logs verursachen keine übermäßige Timing-Störung in Hot Paths.
