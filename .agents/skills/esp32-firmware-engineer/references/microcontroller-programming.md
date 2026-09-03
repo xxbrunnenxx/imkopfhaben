@@ -1,89 +1,89 @@
-# ESP32 Peripheral Programming (ESP-IDF)
+# ESP32-Peripherie-Programmierung (ESP-IDF)
 
-Use this reference for ESP32 GPIO, interrupts, timers, ADC, PWM, watchdogs, and low-level programming decisions in ESP-IDF.
+Diese Referenz für ESP32-GPIO, Interrupts, Timer, ADC, PWM, Watchdogs und Low-Level-Programmierentscheidungen in ESP-IDF nutzen.
 
-## ESP32-Specific Default
+## ESP32-spezifischer Standard
 
-- Prefer ESP-IDF drivers and HAL-style APIs first.
-- Avoid direct register programming unless:
-  - the project already does it
-  - a required feature is unavailable in the driver
-  - there is a measured performance/timing reason
-- If direct registers are used, isolate them behind a component API and document chip assumptions.
+- Zuerst ESP-IDF-Treiber und HAL-artige APIs bevorzugen.
+- Direkte Register-Programmierung vermeiden, außer:
+  - das Projekt macht es bereits so
+  - eine benötigte Funktion ist im Treiber nicht verfügbar
+  - es gibt einen gemessenen Performance-/Timing-Grund
+- Werden direkte Register verwendet, hinter einer Komponenten-API isolieren und Chip-Annahmen dokumentieren.
 
-## GPIO Configuration
+## GPIO-Konfiguration
 
-- Use `gpio_config()` with explicit mode, pull, and interrupt settings.
-- Validate pin capability on the selected target (input-only pins, analog-capable pins, strapping pins, RTC IO availability).
-- Prefer named constants and board definitions over raw GPIO numbers scattered across code.
+- `gpio_config()` mit explizitem Modus, Pull und Interrupt-Einstellungen verwenden.
+- Pin-Fähigkeit auf dem gewählten Ziel validieren (Input-only-Pins, analogfähige Pins, Strapping-Pins, RTC-IO-Verfügbarkeit).
+- Benannte Konstanten und Board-Definitionen gegenüber rohen, im Code verstreuten GPIO-Nummern bevorzugen.
 
-Basic pattern:
-- board pin map header
-- one init function per subsystem
-- no hidden reconfiguration in unrelated modules
+Grundmuster:
+- Board-Pin-Map-Header
+- eine Init-Funktion pro Subsystem
+- keine versteckte Rekonfiguration in fachfremden Modulen
 
-## GPIO Interrupts
+## GPIO-Interrupts
 
-- Use `gpio_install_isr_service()` and `gpio_isr_handler_add()` for GPIO ISR wiring.
-- Mark ISR handlers `IRAM_ATTR` when required by the configured interrupt path.
-- Keep ISR handlers minimal: timestamp, latch state, notify task, return.
-- Debounce in task context or timer context, not by blocking in ISR.
+- `gpio_install_isr_service()` und `gpio_isr_handler_add()` für GPIO-ISR-Verdrahtung verwenden.
+- ISR-Handler mit `IRAM_ATTR` markieren, wenn vom konfigurierten Interrupt-Pfad gefordert.
+- ISR-Handler minimal halten: Zeitstempel, Zustand latchen, Task benachrichtigen, zurückkehren.
+- Entprellen im Task- oder Timer-Kontext, nicht durch Blockieren im ISR.
 
-## Timer Choices (ESP-IDF)
+## Timer-Wahl (ESP-IDF)
 
-- `esp_timer`: software callbacks, high-resolution scheduling.
-- `gptimer`: hardware timer/capture/compare use cases.
-- FreeRTOS timers: non-precise app-level timing/retries.
+- `esp_timer`: Software-Callbacks, hochauflösende Terminierung.
+- `gptimer`: Hardware-Timer-/Capture-/Compare-Anwendungsfälle.
+- FreeRTOS-Timer: unpräzises App-Level-Timing/Retries.
 
-Do not force one timer type for all problems. Pick based on precision, callback context, and CPU load.
+Nicht einen Timer-Typ für alle Probleme erzwingen. Nach Präzision, Callback-Kontext und CPU-Last auswählen.
 
-## PWM and Pulse Output
+## PWM und Puls-Ausgabe
 
-- Prefer LEDC for common PWM use cases (LED dimming, simple PWM outputs).
-- Use MCPWM for motor-control-class needs where relevant and supported.
-- Validate timer resolution/frequency tradeoffs explicitly.
+- LEDC für gängige PWM-Anwendungsfälle bevorzugen (LED-Dimmen, einfache PWM-Ausgänge).
+- MCPWM für motorsteuerungsartige Anforderungen nutzen, wo relevant und unterstützt.
+- Timer-Auflösungs-/Frequenz-Kompromisse explizit validieren.
 
-## ADC Patterns
+## ADC-Muster
 
-- Prefer ESP-IDF ADC drivers (oneshot/continuous, version-dependent APIs) and calibration helpers when voltage accuracy matters.
-- Be explicit about attenuation, sampling conditions, and calibration source.
-- Avoid assuming lab-bench voltage readings match in-field under load/noise.
-- Separate “raw sensor read” from “engineering units conversion” in code for easier testing.
+- ESP-IDF-ADC-Treiber (Oneshot/Continuous, versionsabhängige APIs) und Kalibrierungs-Helfer bevorzugen, wenn Spannungsgenauigkeit wichtig ist.
+- Explizit bei Dämpfung, Abtastbedingungen und Kalibrierungsquelle sein.
+- Nicht annehmen, dass Laborbank-Spannungswerte im Feld unter Last/Rauschen übereinstimmen.
+- "Rohes Sensor-Lesen" von "Umrechnung in technische Einheiten" im Code trennen, für einfacheres Testen.
 
-## UART / Serial Logging Integration
+## UART-/Serial-Logging-Integration
 
-- Keep application protocol UART handling separate from console/log UART assumptions.
-- If using `idf.py monitor` for logs, document baud and port assumptions in debug steps.
-- Avoid flooding logs in tight loops; it distorts timing and can mask race/watchdog issues.
+- Anwendungsprotokoll-UART-Handling getrennt von Konsolen-/Log-UART-Annahmen halten.
+- Bei Nutzung von `idf.py monitor` für Logs Baudrate und Port-Annahmen in Debug-Schritten dokumentieren.
+- Log-Flutung in engen Schleifen vermeiden; das verzerrt Timing und kann Race-/Watchdog-Probleme verdecken.
 
-## Watchdogs (Practical)
+## Watchdogs (praktisch)
 
-- Use task watchdogs and system watchdogs intentionally; do not disable them to hide starvation issues.
-- Feed watchdogs in the owner task/main loop path, not in random helper functions.
-- When watchdog resets occur, inspect:
-  - blocking calls
-  - deadlocks
-  - ISR storms
-  - long critical sections
-  - log flooding / busy waits
+- Task-Watchdogs und System-Watchdogs bewusst einsetzen; nicht deaktivieren, um Starvation-Probleme zu verdecken.
+- Watchdogs im Owner-Task-/Main-Loop-Pfad füttern, nicht in beliebigen Hilfsfunktionen.
+- Bei Watchdog-Resets prüfen:
+  - blockierende Aufrufe
+  - Deadlocks
+  - ISR-Stürme
+  - lange kritische Abschnitte
+  - Log-Flutung/Busy-Waits
 
-## Clocking and Timing (ESP32)
+## Taktung und Timing (ESP32)
 
-- Clock/frequency behavior is largely configured through ESP-IDF and `sdkconfig`; avoid manual clock-tree style code from other MCUs.
-- For timing-sensitive code, measure actual intervals (`esp_timer_get_time()`, timestamps, scope/logic analyzer) instead of assuming nominal frequency.
-- For throughput-sensitive peripherals (display/storage/streaming), review flash/PSRAM mode, bus clock, DMA usage, and memory placement together; the best option is hardware- and board-dependent.
+- Takt-/Frequenzverhalten wird größtenteils über ESP-IDF und `sdkconfig` konfiguriert; manuellen Clock-Tree-artigen Code aus anderen MCUs vermeiden.
+- Für zeitkritischen Code tatsächliche Intervalle messen (`esp_timer_get_time()`, Zeitstempel, Oszilloskop/Logikanalysator) statt nominale Frequenz anzunehmen.
+- Bei durchsatzkritischer Peripherie (Display/Speicher/Streaming) Flash-/PSRAM-Modus, Bus-Takt, DMA-Nutzung und Speicherplatzierung gemeinsam prüfen; die beste Option ist hardware- und board-abhängig.
 
-## Low-Power Programming Cross-Reference
+## Querverweis Low-Power-Programmierung
 
-- For sleep/wakeup and power strategy, read `references/power-optimization.md`.
-- For communication bus timing and DMA concerns, read `references/communication-protocols.md`.
+- Für Sleep/Wakeup und Power-Strategie `references/power-optimization.md` lesen.
+- Für Kommunikationsbus-Timing und DMA-Belange `references/communication-protocols.md` lesen.
 
-## Review Checklist (Merged and ESP32-Adapted)
+## Review-Checkliste (zusammengeführt und ESP32-adaptiert)
 
-- ESP-IDF drivers used unless a justified low-level exception exists.
-- Pin capabilities and strapping constraints checked for target chip.
-- GPIO ISR handlers are minimal, ISR-safe, and IRAM-safe where required.
-- Correct timer subsystem selected (`esp_timer`, `gptimer`, FreeRTOS timer, LEDC/MCPWM).
-- ADC attenuation/calibration assumptions documented.
-- Watchdog handling preserves diagnostics instead of masking issues.
-- Timing-sensitive behavior validated by measurement/logging, not assumptions.
+- ESP-IDF-Treiber verwendet, außer es gibt eine begründete Low-Level-Ausnahme.
+- Pin-Fähigkeiten und Strapping-Einschränkungen für den Ziel-Chip geprüft.
+- GPIO-ISR-Handler sind minimal, ISR-sicher und, wo gefordert, IRAM-sicher.
+- Korrektes Timer-Subsystem gewählt (`esp_timer`, `gptimer`, FreeRTOS-Timer, LEDC/MCPWM).
+- ADC-Dämpfungs-/Kalibrierungs-Annahmen dokumentiert.
+- Watchdog-Handling bewahrt Diagnostik statt Probleme zu verdecken.
+- Zeitkritisches Verhalten durch Messung/Logging validiert, nicht durch Annahmen.

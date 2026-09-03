@@ -1,20 +1,20 @@
-# ESP32 FreeRTOS Patterns (ESP-IDF)
+# ESP32-FreeRTOS-Patterns (ESP-IDF)
 
-Use this reference for ESP32/ESP-IDF tasking, synchronization, ISR handoff, timers, and watchdog-safe concurrency design.
+Nutze diese Referenz für ESP32/ESP-IDF-Task-Design, Synchronisation, ISR-Übergabe, Timer und Watchdog-sichere Nebenläufigkeits-Gestaltung.
 
-## Scope and Defaults
+## Umfang und Standardwerte
 
-- Target ESP-IDF projects using the built-in FreeRTOS integration.
-- Prefer standard FreeRTOS APIs plus ESP-IDF integrations (`esp_event`, `esp_timer`, `esp_task_wdt`) over custom schedulers.
-- Treat dual-core behavior as an explicit design concern on classic ESP32/ESP32-S3. Do not assume dual-core on all ESP32 variants (for example, ESP32-C3 is single-core).
+- Zielt auf ESP-IDF-Projekte mit der eingebauten FreeRTOS-Integration.
+- Bevorzuge Standard-FreeRTOS-APIs plus ESP-IDF-Integrationen (`esp_event`, `esp_timer`, `esp_task_wdt`) gegenüber eigenen Schedulern.
+- Behandle Dual-Core-Verhalten auf klassischem ESP32/ESP32-S3 als expliziten Design-Aspekt. Nicht bei allen ESP32-Varianten Dual-Core annehmen (z. B. ist ESP32-C3 Single-Core).
 
-## Task Design Patterns
+## Task-Design-Patterns
 
-### Periodic Task (No Drift)
+### Periodischer Task (ohne Drift)
 
-- Use `vTaskDelayUntil()` for periodic sampling/control loops.
-- Measure execution time and log misses if the loop can overrun its period.
-- Keep peripheral transactions bounded with timeouts.
+- `vTaskDelayUntil()` für periodisches Sampling/Regel-Schleifen nutzen.
+- Ausführungszeit messen und Verpasser loggen, falls die Schleife ihre Periode überschreiten kann.
+- Peripherie-Transaktionen mit Timeouts begrenzt halten.
 
 ```c
 static void sensor_task(void *arg)
@@ -29,19 +29,19 @@ static void sensor_task(void *arg)
 }
 ```
 
-### Event-Driven Task
+### Event-getriebener Task
 
-- Prefer a queue when payload data must be transferred.
-- Prefer task notifications when only signaling/bit flags are needed (lower overhead than semaphores).
-- Prefer event groups for multi-subsystem readiness gates.
+- Eine Queue bevorzugen, wenn Nutzdaten übertragen werden müssen.
+- Task-Notifications bevorzugen, wenn nur Signalisierung/Bit-Flags nötig sind (geringerer Overhead als Semaphoren).
+- Event-Gruppen für Bereitschafts-Gates über mehrere Subsysteme bevorzugen.
 
-## ISR to Task Handoff (ESP32-Specific Constraints)
+## ISR-zu-Task-Übergabe (ESP32-spezifische Einschränkungen)
 
-- Keep ISRs short and `IRAM`-safe if they can run while flash cache is unavailable.
-- Use `IRAM_ATTR` on time-critical ISRs and ensure called functions/data are in IRAM/DRAM as required by the interrupt context.
-- Use `xQueueSendFromISR()`, `xTaskNotifyFromISR()`, or `vTaskNotifyGiveFromISR()` only.
-- Call `portYIELD_FROM_ISR()` when a higher-priority task was woken.
-- Never call blocking ESP-IDF driver APIs from an ISR.
+- ISRs kurz und `IRAM`-sicher halten, falls sie laufen können, während der Flash-Cache nicht verfügbar ist.
+- `IRAM_ATTR` bei zeitkritischen ISRs nutzen und sicherstellen, dass aufgerufene Funktionen/Daten wie vom Interrupt-Kontext gefordert in IRAM/DRAM liegen.
+- Nur `xQueueSendFromISR()`, `xTaskNotifyFromISR()` oder `vTaskNotifyGiveFromISR()` nutzen.
+- `portYIELD_FROM_ISR()` aufrufen, wenn ein Task mit höherer Priorität aufgeweckt wurde.
+- Niemals blockierende ESP-IDF-Treiber-APIs aus einer ISR heraus aufrufen.
 
 ```c
 static TaskHandle_t s_worker_task;
@@ -56,73 +56,73 @@ static void IRAM_ATTR gpio_isr_handler(void *arg)
 }
 ```
 
-## Core Affinity and Priority Guidance
+## Core-Affinität und Prioritäts-Leitfaden
 
-- Do not pin tasks to a core unless there is a clear reason (latency, driver affinity, cache behavior, isolation).
-- Use `xTaskCreatePinnedToCore()` only when measured behavior requires it.
-- Review priority inversions when multiple tasks share I2C/SPI/UART/network resources.
-- Avoid long blocking calls in high-priority tasks; they commonly trigger watchdog symptoms.
+- Tasks nicht auf einen Core festpinnen, außer es gibt einen klaren Grund (Latenz, Treiber-Affinität, Cache-Verhalten, Isolation).
+- `xTaskCreatePinnedToCore()` nur nutzen, wenn gemessenes Verhalten es erfordert.
+- Prioritäts-Inversionen prüfen, wenn mehrere Tasks sich I2C-/SPI-/UART-/Netzwerk-Ressourcen teilen.
+- Lange blockierende Aufrufe in hochprioren Tasks vermeiden; sie lösen häufig Watchdog-Symptome aus.
 
-## Synchronization Patterns
+## Synchronisations-Patterns
 
-### Mutexes
+### Mutexe
 
-- Use mutexes for shared peripheral buses (I2C/SPI) or shared state with non-trivial critical sections.
-- Keep lock hold time short; do not log heavily while holding a mutex.
-- Prefer one owner task for complex peripherals instead of many tasks sharing a mutex.
+- Mutexe für gemeinsam genutzte Peripherie-Busse (I2C/SPI) oder gemeinsamen Zustand mit nicht-trivialen kritischen Abschnitten nutzen.
+- Sperrzeit kurz halten; während des Haltens eines Mutex nicht ausgiebig loggen.
+- Einen einzigen Besitzer-Task für komplexe Peripherie bevorzugen, statt viele Tasks einen Mutex teilen zu lassen.
 
-### Critical Sections
+### Kritische Abschnitte
 
-- Use only for very short, bounded read-modify-write operations.
-- Avoid wrapping driver calls, logging, or queue operations in critical sections.
-- Remember critical sections can increase interrupt latency and watchdog risk.
+- Nur für sehr kurze, begrenzte Read-Modify-Write-Operationen nutzen.
+- Treiber-Aufrufe, Logging oder Queue-Operationen nicht in kritischen Abschnitten einwickeln.
+- Daran denken, dass kritische Abschnitte die Interrupt-Latenz und das Watchdog-Risiko erhöhen können.
 
-## Timers: Pick the Right Tool
+## Timer: das richtige Werkzeug wählen
 
-- `esp_timer`: high-resolution callbacks, deferred work scheduling, microsecond time base.
-- FreeRTOS software timers: lightweight task-context timer callbacks, millisecond-scale periodic work.
-- `gptimer` driver: hardware timer peripheral, waveform/capture/tighter timing use cases.
+- `esp_timer`: hochauflösende Callbacks, verzögerte Arbeitsplanung, Mikrosekunden-Zeitbasis.
+- FreeRTOS-Software-Timer: leichtgewichtige Timer-Callbacks im Task-Kontext, periodische Arbeit im Millisekunden-Maßstab.
+- `gptimer`-Treiber: Hardware-Timer-Peripherie, für Wellenform-/Capture-/engere Timing-Anwendungsfälle.
 
-Rule of thumb:
-- Control loop / task cadence -> task + `vTaskDelayUntil()`
-- App-level retry/backoff -> FreeRTOS timer or `esp_timer`
-- Precise peripheral timing/capture -> hardware timer (`gptimer`, RMT, LEDC depending use case)
+Faustregel:
+- Regel-Schleife/Task-Takt -> Task + `vTaskDelayUntil()`
+- App-seitiger Retry/Backoff -> FreeRTOS-Timer oder `esp_timer`
+- Präzises Peripherie-Timing/Capture -> Hardware-Timer (`gptimer`, RMT, LEDC je nach Anwendungsfall)
 
-## ESP-IDF Event Loop Integration
+## ESP-IDF-Event-Loop-Integration
 
-- Use `esp_event` for Wi-Fi, IP, and other subsystem events instead of ad hoc polling.
-- Keep event handlers small; defer heavy work to a task/queue.
-- Track handler registration/unregistration to avoid duplicate callbacks and leaks.
+- `esp_event` für WLAN-, IP- und andere Subsystem-Events statt Ad-hoc-Polling nutzen.
+- Event-Handler klein halten; schwere Arbeit an einen Task/eine Queue delegieren.
+- Handler-Registrierung/-Deregistrierung nachverfolgen, um doppelte Callbacks und Lecks zu vermeiden.
 
-## Memory and Stack Monitoring (RTOS-Focused)
+## Speicher- und Stack-Überwachung (RTOS-fokussiert)
 
-- Monitor stack margins with `uxTaskGetStackHighWaterMark()` during testing.
-- Watch heap health with `heap_caps_get_free_size()` and `heap_caps_get_minimum_free_size()`.
-- Treat task stack size as a design parameter, especially for logging, JSON/TLS, and protocol parsing paths.
+- Stack-Reserven während des Testens mit `uxTaskGetStackHighWaterMark()` überwachen.
+- Heap-Gesundheit mit `heap_caps_get_free_size()` und `heap_caps_get_minimum_free_size()` beobachten.
+- Task-Stack-Größe als Design-Parameter behandeln, besonders für Logging-, JSON/TLS- und Protokoll-Parsing-Pfade.
 
-## Watchdog and Liveness
+## Watchdog und Lebendigkeit
 
-- Use `esp_task_wdt` for long-running tasks in production where appropriate.
-- Feed/monitor watchdogs intentionally; do not “fix” watchdog resets by disabling the watchdog first.
-- Investigate root causes: deadlocks, long critical sections, busy loops, blocked callbacks, or starved lower-priority tasks.
+- `esp_task_wdt` für langlaufende Tasks in der Produktion nutzen, wo angebracht.
+- Watchdogs bewusst füttern/überwachen; Watchdog-Resets nicht "beheben", indem man zuerst den Watchdog deaktiviert.
+- Grundursachen untersuchen: Deadlocks, lange kritische Abschnitte, Busy-Loops, blockierte Callbacks oder ausgehungerte niedrigpriore Tasks.
 
-## Runtime Introspection via Service Terminal (Recommended)
+## Laufzeit-Introspektion über Service-Terminal (empfohlen)
 
-- If a USB/serial service terminal exists, expose bounded RTOS diagnostics commands:
-  - task list/state/priority
-  - stack high-water marks
-  - heap/min-free snapshots
-- Prefer snapshot-style commands over long-running reports.
-- Ensure diagnostic commands do not block critical tasks or hold shared locks for long.
+- Falls ein USB-/Seriell-Service-Terminal existiert, begrenzte RTOS-Diagnose-Kommandos anbieten:
+  - Task-Liste/-Zustand/-Priorität
+  - Stack-High-Water-Marks
+  - Heap-/Min-Frei-Schnappschüsse
+- Snapshot-artige Kommandos gegenüber langlaufenden Berichten bevorzugen.
+- Sicherstellen, dass Diagnose-Kommandos keine kritischen Tasks blockieren oder gemeinsame Locks lange halten.
 
-## Review Checklist (Merged and ESP32-Adapted)
+## Review-Checkliste (zusammengeführt und ESP32-angepasst)
 
-- Use `vTaskDelayUntil()` for periodic tasks to avoid drift.
-- Keep ISRs short and defer work to tasks via queue/notification/event bits.
-- Verify ISR-safe API usage and IRAM safety for ISR paths.
-- Use task notifications when payload transfer is not needed.
-- Size stacks from measurement, not guesswork.
-- Prefer mutexes over long critical sections; check priority inversion exposure.
-- Monitor heap/stack during bring-up and regression testing.
-- Confirm watchdog strategy for production builds.
-- If a service terminal exists, verify RTOS diagnostics commands are safe and bounded.
+- `vTaskDelayUntil()` für periodische Tasks nutzen, um Drift zu vermeiden.
+- ISRs kurz halten und Arbeit über Queue/Notification/Event-Bits an Tasks delegieren.
+- ISR-sichere API-Nutzung und IRAM-Sicherheit für ISR-Pfade prüfen.
+- Task-Notifications nutzen, wenn keine Nutzdaten-Übertragung nötig ist.
+- Stack-Größen aus Messung dimensionieren, nicht raten.
+- Mutexe gegenüber langen kritischen Abschnitten bevorzugen; Prioritäts-Inversions-Risiko prüfen.
+- Heap/Stack während Bring-up und Regressionstests überwachen.
+- Watchdog-Strategie für Produktions-Builds bestätigen.
+- Falls ein Service-Terminal existiert, prüfen, dass RTOS-Diagnose-Kommandos sicher und begrenzt sind.

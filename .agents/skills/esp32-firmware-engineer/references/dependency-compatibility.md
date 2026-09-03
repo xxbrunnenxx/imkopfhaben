@@ -1,103 +1,103 @@
-# ESP-IDF / Plugin Compatibility Evidence (ESP-ADF, ESP-SR, etc.)
+# ESP-IDF-/Plugin-Kompatibilitätsnachweis (ESP-ADF, ESP-SR usw.)
 
-Use this reference before build/debug/flash when external ESP frameworks/plugins are in use. Compatibility must be proven with exact-version evidence.
+Nutze diese Referenz vor Build/Debug/Flash, wenn externe ESP-Frameworks/-Plugins im Einsatz sind. Kompatibilität muss mit exakt-versionierten Belegen nachgewiesen werden.
 
-## Core Rule
+## Kernregel
 
-- Do not continue until you have concrete evidence that every plugin/framework is compatible with the exact ESP-IDF version and with each other (when they are used together).
-- "Concrete evidence" means exact versions + a verifiable source (matrix, manifest, release note, pinned compatibility file, or tested upstream bundle).
+- Nicht fortfahren, bis konkrete Belege vorliegen, dass jedes Plugin/Framework mit der exakten ESP-IDF-Version und untereinander kompatibel ist (wenn sie zusammen genutzt werden).
+- "Konkrete Belege" bedeutet exakte Versionen + eine überprüfbare Quelle (Matrix, Manifest, Release-Note, fixierte Kompatibilitätsdatei oder getestetes Upstream-Bundle).
 
-## Why This Matters
+## Warum das wichtig ist
 
-- ESP-IDF, ESP-ADF, and ESP-SR often have version constraints that are not interchangeable.
-- Individual compatibility with ESP-IDF is not enough when multiple frameworks are combined.
-- A stack can pass one check (`ESP-SR` says `idf >= 5.0`) and still fail in practice due to an `ESP-ADF` matrix gap or cross-stack mismatch.
+- ESP-IDF, ESP-ADF und ESP-SR haben oft Versions-Randbedingungen, die nicht beliebig austauschbar sind.
+- Individuelle Kompatibilität mit ESP-IDF reicht nicht aus, wenn mehrere Frameworks kombiniert werden.
+- Ein Stack kann eine Prüfung bestehen (`ESP-SR` sagt `idf >= 5.0`) und trotzdem in der Praxis scheitern, wegen einer Lücke in der `ESP-ADF`-Matrix oder einer Cross-Stack-Inkompatibilität.
 
-## Evidence Sources (Preferred Order)
+## Beleg-Quellen (bevorzugte Reihenfolge)
 
-## 1. Project-pinned compatibility lock (best for repeated builds)
+## 1. Projekt-fixierte Kompatibilitäts-Sperrdatei (am besten für wiederholte Builds)
 
-- A checked-in file that explicitly pins:
-  - ESP-IDF version/tag
-  - plugin/framework versions/tags/commits (ESP-ADF, ESP-SR, etc.)
-  - source of compatibility proof (URL/release/matrix)
-  - date/notes (optional)
+- Eine eingecheckte Datei, die explizit fixiert:
+  - ESP-IDF-Version/-Tag
+  - Plugin-/Framework-Versionen/-Tags/-Commits (ESP-ADF, ESP-SR usw.)
+  - Quelle des Kompatibilitätsnachweises (URL/Release/Matrix)
+  - Datum/Notizen (optional)
 
-Use `assets/templates/compatibility/` as a starting point.
+`assets/templates/compatibility/` als Ausgangspunkt nutzen.
 
-## 2. Official compatibility matrices / release notes
+## 2. Offizielle Kompatibilitäts-Matrizen / Release-Notes
 
-- ESP-ADF README compatibility matrix (row for ADF release + column for exact IDF release)
-- ESP-ADF release notes (exact supported IDF versions)
-- ESP-SKAINET release/bundle docs (if using ESP-SR + audio stack combinations)
+- ESP-ADF-README-Kompatibilitätsmatrix (Zeile für ADF-Release + Spalte für exakte IDF-Version)
+- ESP-ADF-Release-Notes (exakt unterstützte IDF-Versionen)
+- ESP-SKAINET-Release-/Bundle-Doku (bei Kombination von ESP-SR + Audio-Stack)
 
-## 3. Component manifests / dependency constraints
+## 3. Komponenten-Manifeste / Abhängigkeits-Randbedingungen
 
-- `idf_component.yml` `dependencies.idf` version range (for example ESP-SR)
-- Managed component lockfiles and version pins
+- `idf_component.yml` `dependencies.idf`-Versionsbereich (z. B. ESP-SR)
+- Verwaltete Komponenten-Sperrdateien und Versions-Fixierungen
 
-Note:
-- Manifest ranges are useful evidence for plugin -> IDF compatibility.
-- They are usually not enough to prove plugin A <-> plugin B compatibility.
+Hinweis:
+- Manifest-Bereiche sind nützliche Belege für Plugin-zu-IDF-Kompatibilität.
+- Sie reichen meist nicht aus, um Plugin-A-zu-Plugin-B-Kompatibilität nachzuweisen.
 
-## 4. Local, reproducible build/test evidence
+## 4. Lokale, reproduzierbare Build-/Test-Belege
 
-- Successful clean build with exact versions
-- Smoke test or sample example build
-- Preferably with the compatibility evidence recorded afterward in a lock file
+- Erfolgreicher Clean-Build mit exakten Versionen
+- Smoke-Test oder Build eines Beispielprojekts
+- Idealerweise mit dem Kompatibilitätsnachweis anschließend in einer Sperrdatei festgehalten
 
-Build success alone is helpful but should not replace upstream version evidence when known compatibility matrices exist.
+Build-Erfolg allein ist hilfreich, sollte aber Upstream-Versionsbelege nicht ersetzen, wenn bekannte Kompatibilitätsmatrizen existieren.
 
-## Required Checks for Common Stacks
+## Erforderliche Prüfungen für gängige Stacks
 
 ### ESP-IDF + ESP-ADF
 
-- Record exact ESP-IDF version (major.minor.patch or tag)
-- Record exact ESP-ADF version/tag
-- Verify the ESP-ADF README/release matrix explicitly lists the selected ESP-IDF version
-- Verify the selected ADF row marks it as supported
+- Exakte ESP-IDF-Version festhalten (Major.Minor.Patch oder Tag)
+- Exakte ESP-ADF-Version/-Tag festhalten
+- Verifizieren, dass die ESP-ADF-README-/Release-Matrix die gewählte ESP-IDF-Version explizit auflistet
+- Verifizieren, dass die gewählte ADF-Zeile sie als unterstützt markiert
 
-If the exact IDF release is not listed, compatibility is unproven (do not assume forward compatibility).
+Falls die exakte IDF-Version nicht gelistet ist, gilt Kompatibilität als unbewiesen (keine Vorwärtskompatibilität annehmen).
 
 ### ESP-IDF + ESP-SR
 
-- Record exact ESP-IDF version
-- Record exact ESP-SR version/tag
-- Verify `esp-sr/idf_component.yml` `dependencies.idf` range includes the selected ESP-IDF version
-- Check additional target constraints (chip support, PSRAM recommendations, etc.) from ESP-SR docs
+- Exakte ESP-IDF-Version festhalten
+- Exakte ESP-SR-Version/-Tag festhalten
+- Verifizieren, dass der `esp-sr/idf_component.yml`-`dependencies.idf`-Bereich die gewählte ESP-IDF-Version einschließt
+- Zusätzliche Ziel-Randbedingungen (Chip-Unterstützung, PSRAM-Empfehlungen usw.) aus der ESP-SR-Doku prüfen
 
 ### ESP-IDF + ESP-ADF + ESP-SR (Cross-Stack)
 
-- Pass all individual checks above
-- Also require explicit cross-stack evidence:
-  - project compatibility lock file, or
-  - ESP-SKAINET release/bundle documentation, or
-  - user-provided tested matrix with exact versions
+- Alle obigen individuellen Prüfungen bestehen
+- Zusätzlich explizite Cross-Stack-Belege erforderlich:
+  - Projekt-Kompatibilitäts-Sperrdatei, oder
+  - ESP-SKAINET-Release-/Bundle-Dokumentation, oder
+  - vom Nutzer bereitgestellte getestete Matrix mit exakten Versionen
 
-Do not infer cross-stack compatibility from two independent checks.
+Cross-Stack-Kompatibilität nicht aus zwei unabhängigen Prüfungen ableiten.
 
-## Agent Workflow
+## Agenten-Ablauf
 
-1. Enumerate plugins/frameworks in use and exact versions.
-2. Gather evidence from local manifests/readmes/release docs.
-3. Write an evidence report (and optionally a lock file) before build.
-4. If any edge is missing/ambiguous, stop and ask for version changes or approved evidence.
+1. Genutzte Plugins/Frameworks und exakte Versionen erfassen.
+2. Belege aus lokalen Manifesten/READMEs/Release-Docs sammeln.
+3. Vor dem Build einen Beleg-Report (und optional eine Sperrdatei) schreiben.
+4. Falls ein Punkt fehlt/unklar ist, stoppen und nach Versions-Änderungen oder freigegebenen Belegen fragen.
 
-Reference helper:
-- `scripts/check_plugin_compatibility.py` validates common ESP-IDF/ESP-ADF/ESP-SR evidence and writes `build/plugin-compatibility-evidence.txt`.
-- Set `ESP_REQUIRED_PLUGINS=esp-adf,esp-sr` to force checks when auto-detection is uncertain.
-- Set `ESP_STACK_COMPAT_EVIDENCE=...` or add a project compatibility lock file to satisfy cross-stack proof requirements.
+Referenz-Helfer:
+- `scripts/check_plugin_compatibility.py` validiert gängige ESP-IDF-/ESP-ADF-/ESP-SR-Belege und schreibt `build/plugin-compatibility-evidence.txt`.
+- `ESP_REQUIRED_PLUGINS=esp-adf,esp-sr` setzen, um Prüfungen zu erzwingen, wenn die Auto-Erkennung unsicher ist.
+- `ESP_STACK_COMPAT_EVIDENCE=...` setzen oder eine Projekt-Kompatibilitäts-Sperrdatei ergänzen, um Cross-Stack-Nachweispflichten zu erfüllen.
 
-## Example: What "Unproven" Looks Like
+## Beispiel: Wie "unbewiesen" aussieht
 
-- ESP-ADF matrix supports up to IDF `v5.3`, but project is on IDF `v5.5`.
-- ESP-SR manifest says `idf >= 5.0` and passes.
-- Result: stack is still unproven because ADF -> IDF evidence is missing for `v5.5`.
+- Die ESP-ADF-Matrix unterstützt bis IDF `v5.3`, aber das Projekt läuft auf IDF `v5.5`.
+- Das ESP-SR-Manifest sagt `idf >= 5.0` und besteht die Prüfung.
+- Ergebnis: der Stack gilt weiterhin als unbewiesen, weil der ADF-zu-IDF-Beleg für `v5.5` fehlt.
 
-## Review Checklist
+## Review-Checkliste
 
-- Every framework in use has an exact version/tag/commit recorded.
-- Each framework has explicit compatibility evidence against the exact ESP-IDF version.
-- Cross-stack evidence exists when multiple frameworks interact.
-- Evidence is written to a report or lock file before build.
-- No “probably compatible” assumptions remain.
+- Jedes genutzte Framework hat eine exakte Version/einen Tag/einen Commit festgehalten.
+- Jedes Framework hat einen expliziten Kompatibilitätsnachweis gegen die exakte ESP-IDF-Version.
+- Cross-Stack-Belege existieren, wenn mehrere Frameworks zusammenwirken.
+- Der Nachweis wird vor dem Build in einem Report oder einer Sperrdatei festgehalten.
+- Keine "wahrscheinlich kompatibel"-Annahmen bleiben bestehen.

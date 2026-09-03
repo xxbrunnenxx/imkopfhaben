@@ -1,31 +1,31 @@
-# Security Hardening Reference
+# Referenz: Sicherheits-Härtung
 
-## Security Feature Overview
+## Überblick der Sicherheits-Funktionen
 
-| Feature | Where Configured | Reversible? | Production Required? |
+| Funktion | Wo konfiguriert | Umkehrbar? | Für Produktion erforderlich? |
 |---|---|---|---|
-| Secure Boot v2 | eFuse + sdkconfig | No (eFuse burn) | Yes for signed field devices |
-| Flash Encryption | eFuse + sdkconfig | No (Development mode only) | Yes for sensitive data |
-| NVS Encryption | sdkconfig + key partition | Yes (key erasable) | If NVS holds secrets |
-| JTAG Disable | eFuse | No | Yes for production |
-| UART Download Disable | eFuse | No | Yes for tamper resistance |
-| Service Terminal Auth | App code | Yes | Required if terminal exposed in production |
+| Secure Boot v2 | eFuse + sdkconfig | Nein (eFuse-Brennung) | Ja, für signierte Feldgeräte |
+| Flash-Verschlüsselung | eFuse + sdkconfig | Nein (nur im Development-Modus) | Ja, für sensible Daten |
+| NVS-Verschlüsselung | sdkconfig + Key-Partition | Ja (Key löschbar) | Falls NVS Geheimnisse enthält |
+| JTAG deaktivieren | eFuse | Nein | Ja, für Produktion |
+| UART-Download deaktivieren | eFuse | Nein | Ja, für Manipulationsschutz |
+| Service-Terminal-Auth | App-Code | Ja | Erforderlich, wenn Terminal in Produktion exponiert ist |
 
-**Burn eFuse bits only after testing in Development mode. Release mode eFuse burns are permanent and irreversible.**
+**eFuse-Bits nur nach Tests im Development-Modus brennen. eFuse-Brennungen im Release-Modus sind dauerhaft und unumkehrbar.**
 
 ---
 
 ## Secure Boot v2
 
-Verifies every stage of the boot chain (bootloader → app) using RSA-PSS or ECDSA signatures.
+Verifiziert jede Stufe der Boot-Kette (Bootloader → App) mittels RSA-PSS- oder ECDSA-Signaturen.
 
-### Generate Signing Key
+### Signierschlüssel erzeugen
 ```bash
 espsecure.py generate_signing_key --version 2 --scheme rsa3072 secure_boot_signing_key.pem
 # Keep secure_boot_signing_key.pem offline and in a secrets manager. Never commit it.
 ```
 
-### sdkconfig Settings (Development — key burned via idf.py)
+### sdkconfig-Einstellungen (Development — Key wird über idf.py gebrannt)
 ```
 CONFIG_SECURE_BOOT=y
 CONFIG_SECURE_BOOT_V2_ENABLED=y
@@ -36,7 +36,7 @@ CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC=y   # disable for production
 CONFIG_SECURE_BOOT_ALLOW_JTAG=y        # disable for production
 ```
 
-### sdkconfig Settings (Production)
+### sdkconfig-Einstellungen (Produktion)
 ```
 CONFIG_SECURE_BOOT=y
 CONFIG_SECURE_BOOT_V2_ENABLED=y
@@ -47,15 +47,15 @@ CONFIG_SECURE_BOOTLOADER_NO_REBOOT_ON_FAILURE=y  # brick if verification fails
 # CONFIG_SECURE_BOOT_ALLOW_JTAG is NOT set
 ```
 
-### First Flash with Secure Boot
+### Erstes Flashen mit Secure Boot
 ```bash
 idf.py build
 # Bootloader is signed automatically at build time with the configured key.
 idf.py -p /dev/ttyUSB0 flash   # Burns Secure Boot eFuse on first successful boot
 ```
 
-### Signing OTA Images
-OTA images must be signed with the same key used for the bootloader:
+### OTA-Images signieren
+OTA-Images müssen mit demselben Schlüssel signiert werden, der für den Bootloader genutzt wird:
 ```bash
 espsecure.py sign_data --version 2 --keyfile secure_boot_signing_key.pem \
     --output firmware_signed.bin build/firmware.bin
@@ -63,35 +63,35 @@ espsecure.py sign_data --version 2 --keyfile secure_boot_signing_key.pem \
 
 ---
 
-## Flash Encryption
+## Flash-Verschlüsselung
 
-Encrypts all flash contents (bootloader, app, NVS, OTA partitions) using AES-XTS-256.
+Verschlüsselt den gesamten Flash-Inhalt (Bootloader, App, NVS, OTA-Partitionen) mit AES-XTS-256.
 
-### Development Mode (Reversible via reflash)
+### Development-Modus (über Neu-Flashen umkehrbar)
 ```
 CONFIG_FLASH_ENCRYPTION_ENABLED=y
 CONFIG_FLASH_ENCRYPTION_MODE_DEVELOPMENT=y
 ```
-- ESP32 generates a random key and burns it to eFuse on first encrypted boot.
-- You can still reflash in development mode using `idf.py encrypted-flash`.
-- The plaintext binary is encrypted before writing.
+- Der ESP32 erzeugt einen zufälligen Schlüssel und brennt ihn beim ersten verschlüsselten Boot in den eFuse.
+- Im Development-Modus kann weiterhin per `idf.py encrypted-flash` neu geflasht werden.
+- Die Klartext-Binärdatei wird vor dem Schreiben verschlüsselt.
 
-### Release Mode (Permanent — production only)
+### Release-Modus (dauerhaft — nur Produktion)
 ```
 CONFIG_FLASH_ENCRYPTION_ENABLED=y
 CONFIG_FLASH_ENCRYPTION_MODE_RELEASE=y
 ```
-- Disables UART download mode permanently.
-- No more plaintext reflashing after this eFuse is burned.
+- Deaktiviert den UART-Download-Modus dauerhaft.
+- Nach dem Brennen dieses eFuse ist kein Klartext-Neuflashen mehr möglich.
 
-### Flash Encrypted Build + Flash Workflow
+### Workflow für verschlüsselten Build + Flash
 ```bash
 idf.py build
 idf.py -p /dev/ttyUSB0 encrypted-flash  # initial flash (pre-encryption)
 # After first boot, flash is encrypted; subsequent OTA goes through esp_ota_ops normally
 ```
 
-### Pre-encrypting Binaries for Factory Programming
+### Binärdateien für die Werksfertigung vorab verschlüsseln
 ```bash
 # Get the device's flash encryption key (already burned to eFuse in development mode):
 espefuse.py -p /dev/ttyUSB0 burn_key BLOCK_KEY0 flash_encryption_key.bin FLASH_ENCRYPTION
@@ -103,11 +103,11 @@ espsecure.py encrypt_flash_data --aes-xts --keyfile flash_encryption_key.bin \
 
 ---
 
-## NVS Encryption
+## NVS-Verschlüsselung
 
-Encrypts NVS partition contents using AES-XTS. Protects credentials, calibration data, and secrets stored in NVS.
+Verschlüsselt den Inhalt der NVS-Partition mit AES-XTS. Schützt Zugangsdaten, Kalibrierdaten und in NVS gespeicherte Geheimnisse.
 
-### Generate NVS Encryption Key Partition
+### NVS-Verschlüsselungs-Key-Partition erzeugen
 ```bash
 python $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py \
     generate-key --keytype XTS_AES_256 --key_protect_hmac \
@@ -115,13 +115,13 @@ python $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.
     --kp_hmac_inputkey nvs_key_partition.bin
 ```
 
-### sdkconfig Settings
+### sdkconfig-Einstellungen
 ```
 CONFIG_NVS_ENCRYPTION=y
 CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME_HMAC=y  # or _FLASH_ENC if using flash encryption
 ```
 
-### Initializing NVS with Encryption at Runtime
+### NVS zur Laufzeit mit Verschlüsselung initialisieren
 ```c
 #include "nvs_flash.h"
 #include "nvs_sec_provider.h"
@@ -143,9 +143,9 @@ ESP_ERROR_CHECK(err);
 
 ---
 
-## Disabling Debug Interfaces
+## Debug-Schnittstellen deaktivieren
 
-### JTAG (via eFuse)
+### JTAG (über eFuse)
 ```bash
 # Check current JTAG eFuse state first:
 espefuse.py -p /dev/ttyUSB0 summary
@@ -154,12 +154,12 @@ espefuse.py -p /dev/ttyUSB0 summary
 espefuse.py -p /dev/ttyUSB0 burn_efuse JTAG_DISABLE
 ```
 
-Or via sdkconfig (burned automatically at first boot with Secure Boot Release mode):
+Oder über sdkconfig (wird beim ersten Boot mit Secure-Boot-Release-Modus automatisch gebrannt):
 ```
 # CONFIG_SECURE_BOOT_ALLOW_JTAG is not set
 ```
 
-### UART Download Mode
+### UART-Download-Modus
 ```
 CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC=n  # prevents ROM serial downloader in secure boot
 # For full disable (Release flash encryption also disables this):
@@ -168,11 +168,11 @@ CONFIG_ESP_CONSOLE_UART_NONE=y        # removes console UART entirely (extreme h
 
 ---
 
-## Service Terminal Hardening
+## Härtung des Service-Terminals
 
-The on-device service terminal (see `references/device-terminal-console.md`) must be controlled in production builds.
+Das geräteseitige Service-Terminal (siehe `references/device-terminal-console.md`) muss in Produktions-Builds kontrolliert werden.
 
-### Compile-Time Removal
+### Entfernung zur Compile-Zeit
 ```c
 // In app_console_commands.c or main.c:
 #ifdef CONFIG_APP_SERVICE_TERMINAL_ENABLE
@@ -184,7 +184,7 @@ The on-device service terminal (see `references/device-terminal-console.md`) mus
 # CONFIG_APP_SERVICE_TERMINAL_ENABLE is not set
 ```
 
-### Runtime Authentication (if terminal must remain in production)
+### Laufzeit-Authentifizierung (falls das Terminal in Produktion bestehen bleiben muss)
 ```c
 static bool terminal_authenticated = false;
 
@@ -220,22 +220,22 @@ static int cmd_settings(int argc, char **argv)
 
 ---
 
-## Secure Coding Practices
+## Sichere Programmierpraktiken
 
-### Stack Canaries
+### Stack-Canaries
 ```
 CONFIG_COMPILER_STACK_CHECK_MODE_NORM=y   # adds __stack_chk_guard checks
 # or stronger:
 CONFIG_COMPILER_STACK_CHECK_MODE_STRONG=y
 ```
 
-### Heap Integrity Checks (Development/QA builds)
+### Heap-Integritätsprüfungen (Development-/QA-Builds)
 ```
 CONFIG_HEAP_POISONING_COMPREHENSIVE=y  # expensive, use for test builds only
 CONFIG_HEAP_TASK_TRACKING=y
 ```
 
-### Assert Behavior
+### Assert-Verhalten
 ```
 # Development: abort on assert failure (captures stack trace)
 CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL=2
@@ -244,7 +244,7 @@ CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL=2
 CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL=1
 ```
 
-### TLS Certificate Pinning for HTTPS OTA
+### TLS-Zertifikats-Pinning für HTTPS-OTA
 ```c
 // Embed server certificate in the firmware binary:
 // In CMakeLists.txt:
@@ -261,25 +261,25 @@ esp_http_client_config_t cfg = {
 };
 ```
 
-### Sensitive Data Lifetime
-- Zero secrets in RAM after use: `explicit_bzero(buf, len)` or `memset` + compiler barrier.
-- Do not log credentials, tokens, or key material at any log level.
-- Store secrets in NVS with encryption enabled — never in SPIFFS or plain NVS.
+### Lebensdauer sensibler Daten
+- Geheimnisse nach Gebrauch im RAM auf null setzen: `explicit_bzero(buf, len)` oder `memset` + Compiler-Barriere.
+- Zugangsdaten, Tokens oder Schlüsselmaterial auf keinem Log-Level loggen.
+- Geheimnisse mit aktivierter Verschlüsselung in NVS speichern — niemals in SPIFFS oder unverschlüsseltem NVS.
 
 ---
 
-## Production Build Checklist
+## Checkliste für Produktions-Builds
 
-- [ ] Secure Boot v2 enabled; signing key stored offline (not in repo)
-- [ ] Flash Encryption in Release mode (or Development mode for engineering builds)
-- [ ] NVS Encryption enabled for all secret/credential namespaces
-- [ ] JTAG disabled via eFuse or Secure Boot Release policy
-- [ ] UART download mode disabled (Release flash encryption) or ROM basic disabled
-- [ ] Service terminal removed or auth-gated behind a credential from encrypted NVS
-- [ ] OTA images signed with Secure Boot key before serving
-- [ ] Anti-rollback counter set and `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`
-- [ ] TLS certificate pinned for all HTTPS connections (OTA, cloud, etc.)
-- [ ] Stack canaries enabled (`CONFIG_COMPILER_STACK_CHECK_MODE_NORM`)
-- [ ] No debug symbols or verbose logs in release build (`CONFIG_LOG_DEFAULT_LEVEL_WARN` or higher)
-- [ ] No `CONFIG_OTA_ALLOW_HTTP=y` in production sdkconfig
-- [ ] `espefuse.py summary` run and verified before shipping; no unexpected eFuse bits set
+- [ ] Secure Boot v2 aktiviert; Signierschlüssel offline gespeichert (nicht im Repo)
+- [ ] Flash-Verschlüsselung im Release-Modus (oder Development-Modus für Engineering-Builds)
+- [ ] NVS-Verschlüsselung für alle Geheimnis-/Zugangsdaten-Namespaces aktiviert
+- [ ] JTAG per eFuse oder Secure-Boot-Release-Policy deaktiviert
+- [ ] UART-Download-Modus deaktiviert (Release-Flash-Verschlüsselung) oder ROM Basic deaktiviert
+- [ ] Service-Terminal entfernt oder hinter einer Zugangsdaten-Prüfung aus verschlüsseltem NVS abgesichert
+- [ ] OTA-Images vor dem Ausliefern mit Secure-Boot-Key signiert
+- [ ] Anti-Rollback-Zähler gesetzt und `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`
+- [ ] TLS-Zertifikat für alle HTTPS-Verbindungen gepinnt (OTA, Cloud usw.)
+- [ ] Stack-Canaries aktiviert (`CONFIG_COMPILER_STACK_CHECK_MODE_NORM`)
+- [ ] Keine Debug-Symbole oder ausführlichen Logs im Release-Build (`CONFIG_LOG_DEFAULT_LEVEL_WARN` oder höher)
+- [ ] Kein `CONFIG_OTA_ALLOW_HTTP=y` in der Produktions-sdkconfig
+- [ ] `espefuse.py summary` vor der Auslieferung ausgeführt und geprüft; keine unerwarteten eFuse-Bits gesetzt

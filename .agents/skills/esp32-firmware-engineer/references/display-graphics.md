@@ -1,48 +1,48 @@
-# ESP32 Display and Graphics Validation (ESP-IDF)
+# ESP32-Display- und Grafik-Validierung (ESP-IDF)
 
-Use this reference for display bring-up, framebuffer formats, flush paths, and graphics correctness on ESP32 projects.
+Diese Referenz nutzen für Display-Bring-up, Framebuffer-Formate, Flush-Pfade und Grafik-Korrektheit bei ESP32-Projekten.
 
-## First Principle: Validate the Display Data Path
+## Erstes Prinzip: Den Display-Datenpfad validieren
 
-Before writing or changing graphics code, confirm:
+Vor dem Schreiben oder Ändern von Grafik-Code bestätigen:
 
-- Display controller model (for example ST7789, ILI9341, GC9A01, etc.)
-- Interface type (SPI, i80/parallel, RGB, MIPI-DSI on supported targets)
-- Resolution and orientation
-- Pixel format expected by the controller/path (RGB565, BGR565, RGB888, etc.)
-- Byte order / endianness / color order
-- Window/flush command protocol and region alignment constraints
-- DMA/buffer requirements (alignment, internal RAM vs PSRAM support)
+- Display-Controller-Modell (zum Beispiel ST7789, ILI9341, GC9A01 usw.)
+- Schnittstellentyp (SPI, i80/parallel, RGB, MIPI-DSI auf unterstützten Zielen)
+- Auflösung und Ausrichtung
+- Vom Controller/Pfad erwartetes Pixelformat (RGB565, BGR565, RGB888 usw.)
+- Byte-Reihenfolge / Endianness / Farbreihenfolge
+- Fenster-/Flush-Kommandoprotokoll und Regions-Ausrichtungsbeschränkungen
+- DMA-/Puffer-Anforderungen (Ausrichtung, internes RAM vs. PSRAM-Unterstützung)
 
-If any of these are unknown, stop and ask before changing graphics code.
+Ist eines davon unbekannt: anhalten und nachfragen, bevor Grafik-Code geändert wird.
 
-## Common Failure Modes (Usually Not "Rendering Logic" Bugs)
+## Häufige Fehlerbilder (meist keine "Rendering-Logik"-Bugs)
 
-- Colors swapped (RGB/BGR mismatch)
-- Blue/red swapped or tint issues (byte order / endian mismatch)
-- Corrupted lines/tearing (buffer stride, DMA alignment, race in flush ownership)
-- Partial updates in wrong region (window coordinates or rotation transform mismatch)
-- Random corruption under load (buffer lifetime issue, PSRAM/DMA mismatch, cache/coherency assumptions)
+- Vertauschte Farben (RGB/BGR-Mismatch)
+- Blau/Rot vertauscht oder Farbstich-Probleme (Byte-Reihenfolge-/Endian-Mismatch)
+- Beschädigte Zeilen/Tearing (Puffer-Stride, DMA-Ausrichtung, Race bei der Flush-Ownership)
+- Teil-Updates im falschen Bereich (Fenster-Koordinaten- oder Rotations-Transform-Mismatch)
+- Zufällige Beschädigung unter Last (Puffer-Lebensdauer-Problem, PSRAM-/DMA-Mismatch, Cache-/Kohärenz-Annahmen)
 
-## Buffer and Format Rules
+## Puffer- und Format-Regeln
 
-- Convert only to the exact format the display path expects.
-- Keep a single documented source-of-truth format at the display boundary.
-- Validate stride/line pitch assumptions explicitly.
-- Do not assume a library's default color order matches your panel/controller config.
+- Nur in das exakte Format konvertieren, das der Display-Pfad erwartet.
+- Ein einziges, dokumentiertes Source-of-Truth-Format an der Display-Grenze beibehalten.
+- Stride-/Zeilen-Pitch-Annahmen explizit validieren.
+- Nicht annehmen, dass die Standard-Farbreihenfolge einer Library zur eigenen Panel-/Controller-Konfiguration passt.
 
-## Performance Considerations
+## Performance-Überlegungen
 
-- Match bus clock and DMA usage to board wiring and panel stability limits.
-- Prefer DMA-capable buffers for large transfers when supported/required.
-- Validate whether the display driver path supports PSRAM-backed buffers on the chosen target and IDF version.
-- Use partial updates/dirty rectangles when applicable and correct for the UI stack.
+- Bus-Takt und DMA-Nutzung an Board-Verkabelung und Panel-Stabilitätsgrenzen anpassen.
+- DMA-fähige Puffer für große Transfers bevorzugen, wenn unterstützt/erforderlich.
+- Prüfen, ob der Display-Treiber-Pfad PSRAM-gestützte Puffer auf dem gewählten Target und der IDF-Version unterstützt.
+- Teil-Updates/Dirty-Rectangles verwenden, wo anwendbar und für den UI-Stack korrekt.
 
-## Review Checklist
+## Review-Checkliste
 
-- Controller/interface/pixel format explicitly identified.
-- Color order and byte order are explicit in code/config.
-- Flush buffer lifetime is valid through transaction completion.
-- DMA/memory placement meets driver requirements.
-- Rotation/window math matches panel configuration.
-- Performance tuning changes are measured and remain visually correct.
+- Controller/Schnittstelle/Pixelformat explizit identifiziert.
+- Farbreihenfolge und Byte-Reihenfolge sind im Code/in der Konfiguration explizit.
+- Flush-Puffer-Lebensdauer ist bis zum Abschluss der Transaktion gültig.
+- DMA-/Speicherplatzierung erfüllt die Treiber-Anforderungen.
+- Rotations-/Fenster-Mathematik passt zur Panel-Konfiguration.
+- Performance-Tuning-Änderungen sind gemessen und bleiben visuell korrekt.

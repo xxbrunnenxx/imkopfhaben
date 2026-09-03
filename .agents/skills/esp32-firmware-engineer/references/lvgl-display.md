@@ -1,16 +1,16 @@
-# LVGL + ESP-IDF Reference
+# LVGL + ESP-IDF Referenz
 
-## Version Compatibility Matrix
+## Versions-Kompatibilitätsmatrix
 
-| LVGL | Minimum ESP-IDF | Notes |
+| LVGL | Minimum ESP-IDF | Hinweise |
 |---|---|---|
-| v8.3.x | 4.4+ | Stable, widely used; uses `lv_disp_drv_t` / `lv_indev_drv_t` API |
-| v9.0.x | 5.0+ | Breaking API change from v8 — `lv_display_t`, new flush callback signature |
-| v9.1+ | 5.1+ | Recommended for new projects on IDF 5.x |
+| v8.3.x | 4.4+ | Stabil, weit verbreitet; nutzt `lv_disp_drv_t` / `lv_indev_drv_t` API |
+| v9.0.x | 5.0+ | Breaking API-Änderung gegenüber v8 — `lv_display_t`, neue Flush-Callback-Signatur |
+| v9.1+ | 5.1+ | Empfohlen für neue Projekte auf IDF 5.x |
 
-**Always confirm the exact LVGL version in `idf_component.yml` or `CMakeLists.txt` before writing any driver or integration code. The v8→v9 API change is not backwards compatible.**
+**Vor jedem Treiber- oder Integrationscode immer die exakte LVGL-Version in `idf_component.yml` oder `CMakeLists.txt` bestätigen. Die v8→v9-API-Änderung ist nicht rückwärtskompatibel.**
 
-Obtain LVGL via the IDF Component Manager:
+LVGL über den IDF Component Manager beziehen:
 ```yaml
 # idf_component.yml
 dependencies:
@@ -19,14 +19,14 @@ dependencies:
   # lvgl/lvgl: "^8.3.0"
 ```
 
-Or via managed components:
+Oder über Managed Components:
 ```bash
 idf.py add-dependency "lvgl/lvgl^9.1.0"
 ```
 
 ---
 
-## Display Flush Callback (v9.x)
+## Display-Flush-Callback (v9.x)
 
 ```c
 #include "lvgl.h"
@@ -58,7 +58,7 @@ static void disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_ma
 }
 ```
 
-**v8.x Equivalent (different function signature):**
+**v8.x-Äquivalent (andere Funktionssignatur):**
 ```c
 static void disp_flush_v8(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_p)
 {
@@ -69,7 +69,7 @@ static void disp_flush_v8(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t 
 
 ---
 
-## Display Initialization
+## Display-Initialisierung
 
 ### v9.x
 ```c
@@ -108,11 +108,11 @@ void lvgl_display_init(void)
 
 ---
 
-## Tick Source (Required)
+## Tick-Quelle (erforderlich)
 
-LVGL requires a millisecond tick to animate, time events, and drive transitions.
+LVGL braucht einen Millisekunden-Tick, um zu animieren, Events zu timen und Übergänge zu steuern.
 
-### Option A: FreeRTOS Timer (Preferred)
+### Option A: FreeRTOS-Timer (bevorzugt)
 ```c
 static void lvgl_tick_timer_cb(TimerHandle_t xTimer)
 {
@@ -127,7 +127,7 @@ void lvgl_tick_init(void)
 }
 ```
 
-### Option B: esp_timer (Higher Resolution)
+### Option B: esp_timer (höhere Auflösung)
 ```c
 static void lvgl_tick_cb(void *arg)
 {
@@ -148,11 +148,11 @@ void lvgl_tick_init(void)
 
 ---
 
-## LVGL Task and Mutex (Thread Safety)
+## LVGL-Task und Mutex (Thread-Sicherheit)
 
-LVGL is **not thread-safe**. All `lv_` calls — including UI construction, style updates, and animations — must happen from the same task that calls `lv_timer_handler()`, or be protected by a mutex.
+LVGL ist **nicht thread-sicher**. Alle `lv_`-Aufrufe — inklusive UI-Aufbau, Style-Updates und Animationen — müssen aus demselben Task kommen, der `lv_timer_handler()` aufruft, oder durch ein Mutex geschützt sein.
 
-### Dedicated LVGL Task Pattern
+### Muster: eigener LVGL-Task
 ```c
 static SemaphoreHandle_t lvgl_mutex;
 
@@ -191,20 +191,20 @@ void update_label_from_task(lv_obj_t *label, const char *text)
 
 ---
 
-## Color Format and Byte Order
+## Farbformat und Byte-Reihenfolge
 
-**This is the most common source of wrong colors and washed-out display output.**
+**Das ist die häufigste Ursache für falsche Farben und ausgewaschene Display-Ausgabe.**
 
-### Identify Your Controller's Expected Format
-| Controller | Typical Format | Byte Order |
+### Das erwartete Format des eigenen Controllers bestimmen
+| Controller | Typisches Format | Byte-Reihenfolge |
 |---|---|---|
-| ILI9341 | RGB565 | Big-endian (MSB first) |
-| ST7789 | RGB565 | Big-endian |
-| SH8601 | RGB888 or ARGB8888 | Depends on init |
-| GC9A01 | RGB565 | Big-endian |
-| RA8875 | RGB565 | Big-endian |
+| ILI9341 | RGB565 | Big-Endian (MSB zuerst) |
+| ST7789 | RGB565 | Big-Endian |
+| SH8601 | RGB888 oder ARGB8888 | Abhängig von der Initialisierung |
+| GC9A01 | RGB565 | Big-Endian |
+| RA8875 | RGB565 | Big-Endian |
 
-### Configuring LVGL Color Format
+### LVGL-Farbformat konfigurieren
 ```c
 // v9.x — set on the display object:
 lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
@@ -212,8 +212,8 @@ lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
 lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB888);
 ```
 
-### Byte Swap for SPI Controllers
-Most ESP32 SPI controllers transmit LSB-first by default; most display controllers expect big-endian RGB565. Fix with:
+### Byte-Swap für SPI-Controller
+Die meisten ESP32-SPI-Controller senden standardmäßig LSB-first; die meisten Display-Controller erwarten Big-Endian-RGB565. Beheben mit:
 ```c
 // v9.x:
 lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
@@ -224,13 +224,13 @@ lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
 // .flags = SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_NO_DUMMY  -- check your IDF version
 ```
 
-If colors are inverted (blue appears red), the byte order is wrong. If colors look correct but washed-out/dark, alpha channel or bit depth is wrong.
+Sind die Farben invertiert (Blau erscheint als Rot), ist die Byte-Reihenfolge falsch. Sehen die Farben korrekt, aber ausgewaschen/dunkel aus, stimmt der Alpha-Kanal oder die Bittiefe nicht.
 
 ---
 
-## Memory Configuration
+## Speicher-Konfiguration
 
-### sdkconfig Options
+### sdkconfig-Optionen
 ```
 # Increase task stack for LVGL rendering (default is often too small):
 # The lvgl task itself: 8192–16384 bytes depending on widget complexity.
@@ -245,7 +245,7 @@ CONFIG_SPIRAM_USE_MALLOC=y
 CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=16384  # keep small allocs in IRAM
 ```
 
-### Allocating Draw Buffers
+### Draw-Buffer zuweisen
 ```c
 // Internal SRAM (fast, limited — use for small buffers or when PSRAM unavailable):
 static lv_color_t buf[LCD_WIDTH * 20];  // 20 lines
@@ -262,21 +262,21 @@ lv_color_t *dma_buf = heap_caps_aligned_alloc(64,
     MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 ```
 
-**On ESP32 (original):** DMA-capable memory is IRAM/DRAM; PSRAM is not DMA-capable for SPI.
-**On ESP32-S3:** PSRAM can be used for SPI DMA with EDMA (check driver docs and `MALLOC_CAP_DMA`).
+**Auf dem ESP32 (original):** DMA-fähiger Speicher ist IRAM/DRAM; PSRAM ist für SPI nicht DMA-fähig.
+**Auf dem ESP32-S3:** PSRAM kann für SPI-DMA mit EDMA genutzt werden (Treiber-Doku und `MALLOC_CAP_DMA` prüfen).
 
 ---
 
-## Performance Tuning
+## Performance-Tuning
 
 ### Double Buffering
-Use two render buffers so LVGL can prepare the next frame while the DMA is transmitting the current one:
+Zwei Render-Buffer nutzen, damit LVGL den nächsten Frame vorbereiten kann, während die DMA den aktuellen überträgt:
 ```c
 lv_display_set_buffers(disp, buf1, buf2, sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 ```
-In the flush callback, start DMA and return immediately. Call `lv_display_flush_ready()` from the DMA completion callback — this allows LVGL to start rendering the next frame concurrently.
+Im Flush-Callback die DMA starten und sofort zurückkehren. `lv_display_flush_ready()` aus dem DMA-Completion-Callback aufrufen — das erlaubt LVGL, das Rendern des nächsten Frames gleichzeitig zu beginnen.
 
-### Avoid Blocking in Flush Callback
+### Blockieren im Flush-Callback vermeiden
 ```c
 // Bad: blocks until transfer completes
 spi_device_transmit(spi, &t);
@@ -287,35 +287,35 @@ spi_device_queue_trans(spi, &t, portMAX_DELAY);
 // lv_display_flush_ready() called from DMA complete CB
 ```
 
-### SPI Frequency
-- ILI9341/ST7789: typically 40–80MHz depending on board trace quality
-- Start at 20MHz, increase until artifacts appear, then back off 10%
-- Set via `spi_device_interface_config_t.clock_speed_hz`
+### SPI-Frequenz
+- ILI9341/ST7789: typischerweise 40–80MHz, abhängig von der Board-Leiterbahnqualität
+- Bei 20MHz starten, erhöhen bis Artefakte auftreten, dann 10% zurückgehen
+- Einstellen über `spi_device_interface_config_t.clock_speed_hz`
 
-### Dirty Region Rendering
-LVGL only redraws changed regions. Avoid calling `lv_obj_invalidate()` on entire screens unnecessarily. Prefer updating individual labels, arcs, or images.
+### Dirty-Region-Rendering
+LVGL zeichnet nur geänderte Bereiche neu. `lv_obj_invalidate()` nicht unnötig auf ganzen Bildschirmen aufrufen. Lieber einzelne Labels, Arcs oder Bilder aktualisieren.
 
 ---
 
-## Common Pitfalls
+## Häufige Fallstricke
 
-| Symptom | Cause | Fix |
+| Symptom | Ursache | Behebung |
 |---|---|---|
-| Screen all white/black after init | Flush callback never called or controller not initialized | Verify `lv_timer_handler()` is called; check display init sequence |
-| Colors wrong (blue ↔ red) | RGB byte order mismatch | Enable byte swap or swap R/B in flush callback |
-| Colors washed out / dark | Wrong color depth (e.g. 24-bit data to 16-bit controller) | Match `lv_display_set_color_format()` to controller |
-| Crash in flush callback | Draw buffer not in DMA-capable memory | Use `MALLOC_CAP_DMA\|MALLOC_CAP_INTERNAL` for SPI DMA buffers |
-| Flickering / tearing | Single buffer, no vsync | Use double buffer; add DMA completion signaling |
-| UI locks up after a few updates | `lv_timer_handler()` blocked or mutex deadlock | Ensure LVGL task runs without blocking; check mutex acquire/release pairing |
-| `lv_tick_inc` not called | No tick source configured | Add FreeRTOS timer or `esp_timer` calling `lv_tick_inc(1)` every 1ms |
-| Animations stutter | `lv_timer_handler()` called too infrequently | Cap sleep to 5ms; don't `vTaskDelay(time_to_next)` with large values |
-| Stack overflow in LVGL task | Complex widgets exceed task stack | Increase task stack to 16384+ bytes for complex UIs |
+| Bildschirm komplett weiß/schwarz nach Init | Flush-Callback nie aufgerufen oder Controller nicht initialisiert | Prüfen, ob `lv_timer_handler()` aufgerufen wird; Display-Init-Sequenz prüfen |
+| Farben falsch (Blau ↔ Rot) | RGB-Byte-Reihenfolge falsch | Byte-Swap aktivieren oder R/B im Flush-Callback tauschen |
+| Farben ausgewaschen / dunkel | Falsche Farbtiefe (z. B. 24-Bit-Daten an einen 16-Bit-Controller) | `lv_display_set_color_format()` an den Controller anpassen |
+| Absturz im Flush-Callback | Draw-Buffer nicht in DMA-fähigem Speicher | `MALLOC_CAP_DMA\|MALLOC_CAP_INTERNAL` für SPI-DMA-Buffer nutzen |
+| Flackern / Tearing | Einzelner Buffer, kein Vsync | Double Buffer nutzen; DMA-Completion-Signalisierung ergänzen |
+| UI hängt nach ein paar Updates | `lv_timer_handler()` blockiert oder Mutex-Deadlock | Sicherstellen, dass der LVGL-Task nicht blockiert; Mutex-Acquire/Release-Paarung prüfen |
+| `lv_tick_inc` wird nicht aufgerufen | Keine Tick-Quelle konfiguriert | FreeRTOS-Timer oder `esp_timer` ergänzen, der alle 1ms `lv_tick_inc(1)` aufruft |
+| Animationen stottern | `lv_timer_handler()` wird zu selten aufgerufen | Sleep auf 5ms deckeln; `vTaskDelay(time_to_next)` nicht mit großen Werten aufrufen |
+| Stack-Overflow im LVGL-Task | Komplexe Widgets überschreiten den Task-Stack | Task-Stack für komplexe UIs auf 16384+ Bytes erhöhen |
 
 ---
 
-## LVGL + ESP-IDF Component Manager Lock File
+## LVGL + ESP-IDF Component-Manager-Lock-Datei
 
-After resolving a working combination, record it in the project compatibility lock file:
+Nach dem Ermitteln einer funktionierenden Kombination in der Kompatibilitäts-Lock-Datei des Projekts festhalten:
 
 ```yaml
 # esp-framework-compat.lock
