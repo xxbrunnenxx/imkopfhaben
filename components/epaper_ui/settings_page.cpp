@@ -21,6 +21,7 @@ constexpr int kButtonStackGap = design::spacing::k12;
 struct Layout {
     UiRect wifi_toggle = {};
     UiRect access_point_toggle = {};
+    UiRect playback_toggle = {};
     UiRect storage_status = {};
     UiRect enable_otg_button = {};
     UiRect format_sd_button = {};
@@ -48,7 +49,14 @@ Layout BuildLayout(int portrait_width, int portrait_height, const SettingsPageSt
     const UiRect access_point_toggle =
         MenuToggleBounds(page_x, wifi_toggle.bottom(), access_point_style);
 
-    const int storage_heading_y = access_point_toggle.bottom() + kSectionGap;
+    const int recording_heading_y = access_point_toggle.bottom() + kSectionGap;
+    const int recording_items_y =
+        recording_heading_y + LineHeight(kSectionRole) + kNetworkHeadingGap;
+    MenuToggleStyle playback_toggle_style = network_toggle_style;
+    const UiRect playback_toggle =
+        MenuToggleBounds(page_x, recording_items_y, playback_toggle_style);
+
+    const int storage_heading_y = playback_toggle.bottom() + kSectionGap;
     SdStatusStyle storage_style = {};
     storage_style.max_width = page_width;
     const UiRect storage_status = SdStatusBounds(page_x,
@@ -78,6 +86,7 @@ Layout BuildLayout(int portrait_width, int portrait_height, const SettingsPageSt
     return {
         .wifi_toggle = wifi_toggle,
         .access_point_toggle = access_point_toggle,
+        .playback_toggle = playback_toggle,
         .storage_status = storage_status,
         .enable_otg_button = enable_otg_button,
         .format_sd_button = format_sd_button,
@@ -98,6 +107,8 @@ UiRect SettingsPageItemBounds(int portrait_width,
             return layout.wifi_toggle;
         case SettingsPageItemId::kAccessPointToggle:
             return layout.access_point_toggle;
+        case SettingsPageItemId::kPlaybackToggle:
+            return layout.playback_toggle;
         case SettingsPageItemId::kEnableOtgButton:
             return layout.enable_otg_button;
         case SettingsPageItemId::kFormatSdButton:
@@ -132,6 +143,7 @@ bool HitTestSettingsPageItem(int portrait_width,
     constexpr SettingsPageItemId kItems[] = {
         SettingsPageItemId::kWifiToggle,
         SettingsPageItemId::kAccessPointToggle,
+        SettingsPageItemId::kPlaybackToggle,
         SettingsPageItemId::kEnableOtgButton,
         SettingsPageItemId::kFormatSdButton,
         SettingsPageItemId::kManualOnboardingButton,
@@ -226,6 +238,30 @@ void DrawSettingsPage(uint8_t* framebuffer,
                    layout.access_point_toggle.y,
                    state.access_point_toggle,
                    access_point_style);
+
+    DrawTypographyText(framebuffer,
+                       raw_width,
+                       raw_height,
+                       portrait_width,
+                       portrait_height,
+                       title_x,
+                       layout.playback_toggle.y - kNetworkHeadingGap - LineHeight(kSectionRole),
+                       "Recording",
+                       kSectionRole,
+                       design::color::kBlack);
+
+    MenuToggleStyle playback_style = {};
+    playback_style.width = layout.playback_toggle.width;
+    playback_style.height = layout.playback_toggle.height;
+    DrawMenuToggle(framebuffer,
+                   raw_width,
+                   raw_height,
+                   portrait_width,
+                   portrait_height,
+                   layout.playback_toggle.x,
+                   layout.playback_toggle.y,
+                   state.playback_toggle,
+                   playback_style);
 
     DrawTypographyText(framebuffer,
                        raw_width,

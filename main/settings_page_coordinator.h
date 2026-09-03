@@ -4,6 +4,7 @@
 #include "epaper_ui/settings_page.h"
 #include "page_navigation/navigation_model.h"
 #include "page_navigation/roving_focus.h"
+#include "recording_session_service.h"
 #include "storage_service.h"
 #include "wifi_service.h"
 

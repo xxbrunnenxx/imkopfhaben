@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "local_ai_service.h"
+#include "nvs.h"
 #include "playback_service.h"
 #include "storage_service.h"
 #include "system_sound_service.h"
@@ -44,6 +45,8 @@ constexpr uint64_t kTranscriptionRetryIntervalUs = 10ULL * 60ULL * 1000000ULL;
 constexpr size_t kSignalWindowSamples = 240;
 constexpr int32_t kSpeechPeakThreshold = 700;
 constexpr size_t kMinSpeechWindows = 3;
+constexpr const char* kSettingsStorageNamespace = "recording_session";
+constexpr const char* kStoragePlaybackEnabled = "playback_on";
 
 constexpr std::array<TagOption, 4> kTagOptions = {{
     {.tag = recording_archive_service::RecordingTag::kNote, .label_text = "Note"},
@@ -73,6 +76,41 @@ std::atomic<bool> s_playback_worker_active{false};
 // Set when BOOT is released before the start cue finishes; consumed by HandleStartCueResult.
 bool s_finish_pending_after_start_cue = false;
 esp_timer_handle_t s_retry_timer = nullptr;
+// Persisted setting, independent of any other service (Settings page, "Recording" section).
+// Defaults to true (existing behavior) whenever nothing has been saved to NVS yet.
+std::atomic<bool> s_playback_after_recording_enabled{true};
+
+void LoadPlaybackSettingFromNvs()
+{
+    nvs_handle_t handle = 0;
+    if (nvs_open(kSettingsStorageNamespace, NVS_READONLY, &handle) != ESP_OK) {
+        return;  // never saved yet -- keep the default
+    }
+    uint8_t stored = 1;
+    if (nvs_get_u8(handle, kStoragePlaybackEnabled, &stored) == ESP_OK) {
+        s_playback_after_recording_enabled.store(stored != 0, std::memory_order_relaxed);
+    }
+    nvs_close(handle);
+}
+
+bool SavePlaybackSettingToNvs(bool enabled)
+{
+    nvs_handle_t handle = 0;
+    esp_err_t err = nvs_open(kSettingsStorageNamespace, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGW(kTag, "Failed to open recording_session NVS namespace: %s", esp_err_to_name(err));
+        return false;
+    }
+    bool ok = nvs_set_u8(handle, kStoragePlaybackEnabled, enabled ? 1 : 0) == ESP_OK;
+    if (ok) {
+        ok = nvs_commit(handle) == ESP_OK;
+    }
+    nvs_close(handle);
+    if (!ok) {
+        ESP_LOGW(kTag, "Failed to save playback-after-recording setting");
+    }
+    return ok;
+}
 
 // Finds the first archived recording still missing a transcript and re-runs it through the
 // same load-clip -> transcribe -> save-transcript pipeline as the manual "retry" buttons
@@ -351,6 +389,11 @@ bool StartClipPlayback(const recording_service::RecordedClipPtr& clip)
     if (clip == nullptr || clip->empty()) {
         return false;
     }
+    if (!s_playback_after_recording_enabled.load(std::memory_order_relaxed)) {
+        // Disabled in Settings -- the caller (HandleStopCueResult) falls through to
+        // AdvanceToTagSelection exactly as it already does when playback fails to start.
+        return false;
+    }
     bool expected = false;
     if (!s_playback_worker_active.compare_exchange_strong(expected, true)) {
         return false;
@@ -450,6 +493,7 @@ esp_err_t Init()
     s_snapshot.initialized = recording_service::IsInitialized();
     s_snapshot.max_recording_ms = recording_service::GetUiState().max_recording_ms;
     ResetToIdleLocked();
+    LoadPlaybackSettingFromNvs();
 
     if (s_retry_timer == nullptr) {
         esp_timer_create_args_t timer_args = {};
@@ -489,6 +533,17 @@ Snapshot GetSnapshot()
 const std::array<TagOption, 4>& TagOptions()
 {
     return kTagOptions;
+}
+
+bool GetPlaybackAfterRecordingEnabled()
+{
+    return s_playback_after_recording_enabled.load(std::memory_order_relaxed);
+}
+
+bool SetPlaybackAfterRecordingEnabled(bool enabled)
+{
+    s_playback_after_recording_enabled.store(enabled, std::memory_order_relaxed);
+    return SavePlaybackSettingToNvs(enabled);
 }
 
 bool BeginArchivedTranscription(const std::string& recording_id)

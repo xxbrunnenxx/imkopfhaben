@@ -86,6 +86,12 @@ epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
             wifi_state.access_point_mode,
             IsRoleFocused(page_navigation::NavigationItemRole::kSettingsEnableApToggle)),
     };
+    state.playback_toggle = {
+        .label_text = "Play back after recording",
+        .toggle_state = BuildToggleState(
+            recording_session_service::GetPlaybackAfterRecordingEnabled(),
+            IsRoleFocused(page_navigation::NavigationItemRole::kSettingsPlaybackToggle)),
+    };
 
     state.storage_status.has_sd_card =
         storage_snapshot.inserted && storage_snapshot.mounted && has_storage_stats;

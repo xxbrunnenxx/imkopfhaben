@@ -17,6 +17,7 @@ enum class ActivateIntent : uint8_t {
     kForceRefresh,
     kToggleWifi,
     kToggleAccessPoint,
+    kTogglePlayback,
     kEnableOtg,
     kShowFormatSdModal,
     kShowOnboarding,
@@ -37,6 +38,7 @@ struct ActivateCallbacks {
     std::function<void()> force_refresh;
     std::function<void()> toggle_wifi;
     std::function<void()> toggle_access_point;
+    std::function<void()> toggle_playback;
     std::function<void()> enable_otg;
     std::function<void()> show_format_sd_modal;
     std::function<void()> show_onboarding;

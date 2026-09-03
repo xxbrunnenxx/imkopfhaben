@@ -46,6 +46,7 @@ enum class NavigationItemRole : uint8_t {
     kFooterSticky,
     kSettingsWifiToggle,
     kSettingsEnableApToggle,
+    kSettingsPlaybackToggle,
     kSettingsEnableOtgButton,
     kSettingsFormatSdButton,
     kSettingsManualOnboardingButton,
