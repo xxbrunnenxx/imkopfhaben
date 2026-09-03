@@ -11,8 +11,10 @@
 #include "followup_task_config.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "overlay_runtime.h"
 #include "page_navigation/page_focus_projection.h"
 #include "playback_service.h"
+#include "project_assets.h"
 #include "recording_archive_service.h"
 #include "recording_session_service.h"
 #include "ui_refresh_runtime.h"
@@ -37,7 +39,17 @@ void TranscribeWorker(void* arg)
 {
     std::unique_ptr<std::string> recording_id(static_cast<std::string*>(arg));
     if (recording_id != nullptr) {
-        (void)recording_session_service::BeginArchivedTranscription(*recording_id);
+        // BeginArchivedTranscription refuses silently (returns false, no event fired) when
+        // another transcription -- a live recording, the background retry queue, or another
+        // manual tap -- is already using the transcription slot. Without this toast the tap
+        // simply appeared to do nothing, which reads as broken rather than "busy".
+        if (!recording_session_service::BeginArchivedTranscription(*recording_id)) {
+            epaper_ui::ToastState toast = {};
+            toast.visible = true;
+            toast.body_text = "Busy transcribing -- try again in a moment";
+            toast.leading_icon = project_assets::GetIcon(EmbeddedIconId::kRefresh);
+            (void)overlay_runtime::ShowToastForDuration(toast, 2000);
+        }
     }
     s_transcribe_worker_active.store(false, std::memory_order_release);
     vTaskDelete(nullptr);

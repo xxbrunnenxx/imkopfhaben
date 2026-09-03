@@ -16,6 +16,7 @@ enum class SettingsPageItemId : uint8_t {
     kNone = 0,
     kWifiToggle,
     kAccessPointToggle,
+    kPlaybackToggle,
     kEnableOtgButton,
     kFormatSdButton,
     kManualOnboardingButton,
@@ -26,6 +27,7 @@ struct SettingsPageState {
     std::string_view title_text = "Settings";
     MenuToggleState wifi_toggle = {};
     MenuToggleState access_point_toggle = {};
+    MenuToggleState playback_toggle = {};
     SdStatusState storage_status = {};
     ButtonState enable_otg_button = {};
     ButtonState format_sd_button = {};

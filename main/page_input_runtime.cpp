@@ -270,6 +270,10 @@ ButtonResult ApplySettingsActivateResult(const settings_page_interactions::Activ
         const wifi_service::UiState state = wifi_service::GetUiState();
         wifi_service::SetAccessPointEnabled(!state.access_point_mode);
     };
+    callbacks.toggle_playback = []() {
+        const bool enabled = recording_session_service::GetPlaybackAfterRecordingEnabled();
+        (void)recording_session_service::SetPlaybackAfterRecordingEnabled(!enabled);
+    };
     callbacks.show_format_sd_modal = []() {
         const storage_service::Snapshot snapshot = storage_service::GetSnapshot();
         if (!snapshot.inserted) {

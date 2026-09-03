@@ -1,7 +1,7 @@
 idf_component_register(
     SRCS "recording_session_service.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES esp_timer feedback_service local_ai_service playback_service
+    REQUIRES esp_timer feedback_service local_ai_service nvs_flash playback_service
              recording_archive_service recording_service storage_service system_sound_service
              task_config transcription_service
 )

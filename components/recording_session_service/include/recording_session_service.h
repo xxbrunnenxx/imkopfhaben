@@ -92,6 +92,12 @@ bool HandlePowerPressDown(const Context& context);
 bool HandlePowerLongPressStart(const Context& context);
 bool HandlePowerPressUp(const Context& context);
 bool SubmitTagSelection(int selected_index);
+
+// Whether a take is played back automatically right after recording, before tag selection.
+// Persisted setting (NVS), defaults to true (existing behavior). Independent of any other
+// service -- this is a recording-session preference, not tied to WiFi/local AI/etc.
+bool GetPlaybackAfterRecordingEnabled();
+bool SetPlaybackAfterRecordingEnabled(bool enabled);
 // Re-run transcription on an already-archived recording (e.g. an audio-only idea). Reuses the
 // live transcription pipeline: on success the transcript is saved to SD and the usual toasts
 // fire. Returns false if it can't start (busy, clip unreadable, provider not ready).

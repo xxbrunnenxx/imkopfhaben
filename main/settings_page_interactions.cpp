@@ -33,6 +33,14 @@ ActivateResult HandlePrimaryActivate(const SettingsPageCoordinator& coordinator)
         };
     }
     if (coordinator.IsRoleFocused(
+            page_navigation::NavigationItemRole::kSettingsPlaybackToggle)) {
+        return {
+            .intent = ActivateIntent::kTogglePlayback,
+            .handled = true,
+            .play_activate_cue = true,
+        };
+    }
+    if (coordinator.IsRoleFocused(
             page_navigation::NavigationItemRole::kSettingsEnableOtgButton)) {
         return {
             .intent = ActivateIntent::kEnableOtg,
@@ -96,6 +104,11 @@ void ApplyPrimaryActivateResult(const ActivateResult& result,
         case ActivateIntent::kToggleAccessPoint:
             if (callbacks.toggle_access_point) {
                 callbacks.toggle_access_point();
+            }
+            return;
+        case ActivateIntent::kTogglePlayback:
+            if (callbacks.toggle_playback) {
+                callbacks.toggle_playback();
             }
             return;
         case ActivateIntent::kEnableOtg:
