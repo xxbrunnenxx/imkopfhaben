@@ -44,20 +44,6 @@ verloren geht. Reihenfolge = ungefähre Priorität.
   (maskiertes Secret vs. offene URL) — nur die äußere Hülle wäre sicher
   extrahierbar, kein 1:1-Fix ohne Umbau von `applyProviderSettings`.
 
-## Offene Entscheidung
-
-- **`.agents/skills/esp32-firmware-engineer/` weiterhin unübersetzt
-  (bewusst).** `SKILL.md` + 17 Referenz-Dateien, bestätigt vendoriertes/
-  mitgeliefertes Claude-Code-Skill-Paket (kam im allerersten Commit
-  "init: setup a new esp-idf project" rein), kein Projekt-Dokument im
-  eigentlichen Sinn — deshalb bei der Doku-Übersetzung nicht ungefragt
-  mitgemacht. Alle echten Projekt-Dokumente (`docs/*.md`, `README.md`,
-  `AGENTS.md`, `webserver/README.md`, `scripts/README.md` — 10 Dateien
-  insgesamt) sind seit PR #6/#7 vollständig deutsch, repo-weit
-  gegengeprüft (`find . -iname "*.md" -not -path "./build/*" -not -path
-  "./managed_components/*" -not -path "*/node_modules/*"`). **Noch
-  offen:** Freigabe, ob der Skill-Ordner trotzdem übersetzt werden soll.
-
 ## Später, nicht dringend
 
 - **Offline-Warteschlange fürs Board ist gebaut, aber nie live getestet**
