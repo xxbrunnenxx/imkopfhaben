@@ -13,10 +13,6 @@ verloren geht. Reihenfolge = ungefähre Priorität.
 
 ## Vor dem Probelauf klären
 
-- **PR #3 (`fix-review-findings` → `folloup-waveshare`) noch nicht
-  gemerged.** https://github.com/xxbrunnenxx/imkopfhaben/pull/3 — Fixes
-  aus dem automatisierten Review (Deadlock, Race, Aufräumen), Build grün,
-  wartet auf Freigabe.
 - **Kein systemd-Unit für LM Studio.** Läuft nur manuell auf
   `0.0.0.0:1234`, übersteht keinen Kraken-Neustart (Bindung geht dann auf
   `127.0.0.1`-only zurück, muss von Hand mit `lms server start --bind
@@ -47,6 +43,29 @@ verloren geht. Reihenfolge = ungefähre Priorität.
   aber die beiden Pfade haben unterschiedliche Settings-Anwendungslogik
   (maskiertes Secret vs. offene URL) — nur die äußere Hülle wäre sicher
   extrahierbar, kein 1:1-Fix ohne Umbau von `applyProviderSettings`.
+
+## Nicht erledigt, obwohl beauftragt
+
+- **Doku-Übersetzung ins Deutsche unvollständig.** Auftrag war "alle
+  Dokumente auf `folloup-waveshare` prüfen, falls nicht deutsch,
+  übersetzen". Tatsächlich übersetzt: `docs/*.md` + Root-`README.md` (7
+  Dateien). **Übersehen:** `AGENTS.md` (Root), `webserver/README.md`,
+  `scripts/README.md` — alle drei nach wie vor englisch. Zusätzlich noch
+  nicht geklärt: `.agents/skills/esp32-firmware-engineer/` (`SKILL.md` +
+  17 Referenz-Dateien) — sieht nach vendorierter/mitgelieferter Skill-
+  Definition aus, kein Projekt-Dokument im eigentlichen Sinn, daher
+  bewusst nicht ungefragt mitübersetzt.
+  **Warum das passiert ist:** beim Scope-Check zu Beginn wurde nur
+  `ls docs/*.md README.md` ausgeführt — eine Prüfung, die auf den beiden
+  Orten aufbaute, mit denen in der Sitzung bis dahin ohnehin gearbeitet
+  wurde, nicht auf einer echten repo-weiten Suche. Es wurde angenommen,
+  dass alle Dokumentation dort liegt, statt das zu verifizieren. Erst
+  durch eine Besitzer-Rückmeldung ("die sind mir DIREKT ins Auge
+  gefallen") aufgefallen, nicht durch eigene Prüfung. Vollständige Liste
+  aller `.md`-Dateien im Repo: `find . -iname "*.md" -not -path
+  "./build/*" -not -path "./managed_components/*"`.
+  **Noch offen:** Freigabe, ob die drei übersehenen Dateien (und ggf. die
+  Skill-Referenzen) nachgeholt werden sollen.
 
 ## Später, nicht dringend
 
