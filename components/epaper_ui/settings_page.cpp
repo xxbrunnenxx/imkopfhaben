@@ -14,18 +14,16 @@ constexpr int kTopGap = design::spacing::k16;
 constexpr int kTitleBottomGap = design::spacing::k24;
 constexpr int kNetworkHeadingGap = 0;
 constexpr int kSectionGap = design::spacing::k24;
-constexpr int kStorageStatusGap = design::spacing::k12;
-constexpr int kStorageButtonTopGap = design::spacing::k16;
 constexpr int kButtonStackGap = design::spacing::k12;
+constexpr int kColumnGap = design::spacing::k12;
 
 struct Layout {
     UiRect wifi_toggle = {};
     UiRect access_point_toggle = {};
     UiRect playback_toggle = {};
-    UiRect storage_status = {};
-    UiRect enable_otg_button = {};
-    UiRect format_sd_button = {};
-    UiRect manual_onboarding_button = {};
+    UiRect timezone = {};
+    UiRect sync_now_button = {};
+    UiRect advanced_button = {};
 };
 
 Layout BuildLayout(int portrait_width, int portrait_height, const SettingsPageState& state)
@@ -56,41 +54,47 @@ Layout BuildLayout(int portrait_width, int portrait_height, const SettingsPageSt
     const UiRect playback_toggle =
         MenuToggleBounds(page_x, recording_items_y, playback_toggle_style);
 
-    const int storage_heading_y = playback_toggle.bottom() + kSectionGap;
-    SdStatusStyle storage_style = {};
-    storage_style.max_width = page_width;
-    const UiRect storage_status = SdStatusBounds(page_x,
-                                                 storage_heading_y + LineHeight(kSectionRole) +
-                                                     kStorageStatusGap,
-                                                 state.storage_status,
-                                                 storage_style);
+    // No separate section heading here: the select field already renders its own
+    // "Timezone" label above the value, so a heading would just duplicate it and
+    // waste a line of vertical space. Timezone and its sync button share one row
+    // (like the old time page's hour/minute split) instead of stacking, since
+    // this page doesn't scroll and every row counts.
+    const int time_field_y = playback_toggle.bottom() + kSectionGap;
+    const int sync_button_width = std::max(0, (page_width - kColumnGap) / 3);
+    const int timezone_width = std::max(0, page_width - sync_button_width - kColumnGap);
+    TextInputStyle timezone_style = {};
+    timezone_style.width = timezone_width;
+    const UiRect timezone = SelectInputBounds(page_x, time_field_y, state.timezone, timezone_style);
 
-    ButtonStyle otg_button_style = {};
-    otg_button_style.width = page_width;
-    const int button_y = storage_status.bottom() + kStorageButtonTopGap;
-    const UiRect enable_otg_button =
-        ButtonBounds(page_x, button_y, state.enable_otg_button, otg_button_style);
+    // Align the button with the field itself, not the label text above it.
+    const int timezone_label_offset =
+        state.timezone.label_text.empty()
+            ? 0
+            : LineHeight(timezone_style.label_role) + timezone_style.label_gap;
+    ButtonStyle sync_now_style = {};
+    sync_now_style.width = sync_button_width;
+    sync_now_style.height = timezone_style.field_height;
+    const UiRect sync_now_button = ButtonBounds(page_x + timezone_width + kColumnGap,
+                                                time_field_y + timezone_label_offset,
+                                                state.sync_now_button, sync_now_style);
 
-    ButtonStyle format_button_style = {};
-    format_button_style.width = page_width;
-    const UiRect format_sd_button =
-        ButtonBounds(page_x, enable_otg_button.bottom() + kButtonStackGap,
-                     state.format_sd_button, format_button_style);
-
-    ButtonStyle manual_button_style = {};
-    manual_button_style.width = page_width;
-    const UiRect manual_onboarding_button =
-        ButtonBounds(page_x, format_sd_button.bottom() + kButtonStackGap,
-                     state.manual_onboarding_button, manual_button_style);
+    // Storage status + maintenance actions (OTG/Format SD/Manual onboarding) moved to their
+    // own Advanced page -- this page's fixed layout has no scrolling, and there wasn't room
+    // left for all of it once Timezone/Sync moved in from the old time page.
+    ButtonStyle advanced_button_style = {};
+    advanced_button_style.width = page_width;
+    const int advanced_button_y =
+        std::max(timezone.bottom(), sync_now_button.bottom()) + kSectionGap;
+    const UiRect advanced_button =
+        ButtonBounds(page_x, advanced_button_y, state.advanced_button, advanced_button_style);
 
     return {
         .wifi_toggle = wifi_toggle,
         .access_point_toggle = access_point_toggle,
         .playback_toggle = playback_toggle,
-        .storage_status = storage_status,
-        .enable_otg_button = enable_otg_button,
-        .format_sd_button = format_sd_button,
-        .manual_onboarding_button = manual_onboarding_button,
+        .timezone = timezone,
+        .sync_now_button = sync_now_button,
+        .advanced_button = advanced_button,
     };
 }
 
@@ -109,12 +113,12 @@ UiRect SettingsPageItemBounds(int portrait_width,
             return layout.access_point_toggle;
         case SettingsPageItemId::kPlaybackToggle:
             return layout.playback_toggle;
-        case SettingsPageItemId::kEnableOtgButton:
-            return layout.enable_otg_button;
-        case SettingsPageItemId::kFormatSdButton:
-            return layout.format_sd_button;
-        case SettingsPageItemId::kManualOnboardingButton:
-            return layout.manual_onboarding_button;
+        case SettingsPageItemId::kTimezoneField:
+            return layout.timezone;
+        case SettingsPageItemId::kSyncNowButton:
+            return layout.sync_now_button;
+        case SettingsPageItemId::kAdvancedButton:
+            return layout.advanced_button;
         case SettingsPageItemId::kNone:
         default:
             return {};
@@ -144,9 +148,9 @@ bool HitTestSettingsPageItem(int portrait_width,
         SettingsPageItemId::kWifiToggle,
         SettingsPageItemId::kAccessPointToggle,
         SettingsPageItemId::kPlaybackToggle,
-        SettingsPageItemId::kEnableOtgButton,
-        SettingsPageItemId::kFormatSdButton,
-        SettingsPageItemId::kManualOnboardingButton,
+        SettingsPageItemId::kTimezoneField,
+        SettingsPageItemId::kSyncNowButton,
+        SettingsPageItemId::kAdvancedButton,
     };
     for (SettingsPageItemId candidate : kItems) {
         const UiRect bounds =
@@ -263,69 +267,42 @@ void DrawSettingsPage(uint8_t* framebuffer,
                    state.playback_toggle,
                    playback_style);
 
-    DrawTypographyText(framebuffer,
-                       raw_width,
-                       raw_height,
-                       portrait_width,
-                       portrait_height,
-                       title_x,
-                       layout.storage_status.y - kStorageStatusGap - LineHeight(kSectionRole),
-                       "Storage",
-                       kSectionRole,
-                       design::color::kBlack);
+    TextInputStyle timezone_style = {};
+    timezone_style.width = layout.timezone.width;
+    DrawSelectInput(framebuffer,
+                    raw_width,
+                    raw_height,
+                    portrait_width,
+                    portrait_height,
+                    layout.timezone.x,
+                    layout.timezone.y,
+                    state.timezone,
+                    timezone_style);
 
-    SdStatusStyle storage_style = {};
-    storage_style.max_width = layout.storage_status.width;
-    DrawSdStatus(framebuffer,
-                 raw_width,
-                 raw_height,
-                 portrait_width,
-                 portrait_height,
-                 layout.storage_status.x,
-                 layout.storage_status.y,
-                 state.storage_status,
-                 storage_style);
-
-    // Outlined, like Manual onboarding: OTG is a mode toggle, not a destructive action, so
-    // it should not compete with Format SD for emphasis.
-    ButtonStyle otg_button_style = {};
-    otg_button_style.width = layout.enable_otg_button.width;
+    ButtonStyle sync_now_style = {};
+    sync_now_style.width = layout.sync_now_button.width;
+    sync_now_style.height = layout.sync_now_button.height;
     DrawButton(framebuffer,
                raw_width,
                raw_height,
                portrait_width,
                portrait_height,
-               layout.enable_otg_button.x,
-               layout.enable_otg_button.y,
-               state.enable_otg_button,
-               otg_button_style);
+               layout.sync_now_button.x,
+               layout.sync_now_button.y,
+               state.sync_now_button,
+               sync_now_style);
 
-    ButtonStyle format_button_style = {};
-    format_button_style.width = layout.format_sd_button.width;
-    // Primary action on the page -> primary (darker) variant.
-    format_button_style.variant = ButtonVariant::kPrimary;
+    ButtonStyle advanced_button_style = {};
+    advanced_button_style.width = layout.advanced_button.width;
     DrawButton(framebuffer,
                raw_width,
                raw_height,
                portrait_width,
                portrait_height,
-               layout.format_sd_button.x,
-               layout.format_sd_button.y,
-               state.format_sd_button,
-               format_button_style);
-
-    // Secondary utility action -> default (outlined) variant so it reads below Format SD.
-    ButtonStyle manual_button_style = {};
-    manual_button_style.width = layout.manual_onboarding_button.width;
-    DrawButton(framebuffer,
-               raw_width,
-               raw_height,
-               portrait_width,
-               portrait_height,
-               layout.manual_onboarding_button.x,
-               layout.manual_onboarding_button.y,
-               state.manual_onboarding_button,
-               manual_button_style);
+               layout.advanced_button.x,
+               layout.advanced_button.y,
+               state.advanced_button,
+               advanced_button_style);
 
     DrawGlobalFooter(framebuffer,
                      raw_width,

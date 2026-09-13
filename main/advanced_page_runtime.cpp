@@ -1,28 +1,22 @@
-#include "settings_page_runtime.h"
+#include "advanced_page_runtime.h"
 
 #include <climits>
 #include <mutex>
 
-#include "esp_log.h"
-#include "overlay_runtime.h"
+#include "advanced_page_coordinator.h"
+#include "advanced_page_interactions.h"
 #include "page_navigation/navigation_model.h"
 #include "page_navigation/page_focus_projection.h"
-#include "project_assets.h"
-#include "settings_page_interactions.h"
-#include "settings_page_coordinator.h"
-#include "timezone_service.h"
+#include "storage_service.h"
 #include "ui_refresh_runtime.h"
-#include "wifi_service.h"
 
-namespace settings_page_runtime {
+namespace advanced_page_runtime {
 namespace {
 
-constexpr const char* kTag = "SettingsPageRuntime";
-
 std::mutex s_mutex;
-SettingsPageCoordinator s_coordinator = {};
+AdvancedPageCoordinator s_coordinator = {};
 int32_t s_interaction_generation = 1;
-bool s_timezone_modal_active = false;
+bool s_pending_launch = false;
 
 void AdvanceInteractionGenerationLocked()
 {
@@ -72,7 +66,7 @@ footer_runtime::ProjectionState BuildFooterProjectionStateLocked()
 {
     const page_navigation::PageFocusProjection projection =
         page_navigation::ProjectPageFocus(s_coordinator.navigation_model(),
-                                          page_navigation::NavigationItemSection::kSettingsPageMenu,
+                                          page_navigation::NavigationItemSection::kAdvancedPageMenu,
                                           s_coordinator.focus().index(),
                                           -1,
                                           -1);
@@ -85,13 +79,13 @@ bool FooterProjectionChangedForFocusIndexes(int old_focus_index, int new_focus_i
 {
     const page_navigation::PageFocusProjection old_projection =
         page_navigation::ProjectPageFocus(s_coordinator.navigation_model(),
-                                          page_navigation::NavigationItemSection::kSettingsPageMenu,
+                                          page_navigation::NavigationItemSection::kAdvancedPageMenu,
                                           old_focus_index,
                                           -1,
                                           -1);
     const page_navigation::PageFocusProjection new_projection =
         page_navigation::ProjectPageFocus(s_coordinator.navigation_model(),
-                                          page_navigation::NavigationItemSection::kSettingsPageMenu,
+                                          page_navigation::NavigationItemSection::kAdvancedPageMenu,
                                           new_focus_index,
                                           -1,
                                           -1);
@@ -99,11 +93,9 @@ bool FooterProjectionChangedForFocusIndexes(int old_focus_index, int new_focus_i
            FooterItemForSelectedIndex(new_projection.footer_selected_index);
 }
 
-epaper_ui::SettingsPageState BuildStateLocked()
+epaper_ui::AdvancedPageState BuildStateLocked()
 {
-    s_coordinator.RefreshTimezoneFromService(timezone_service::GetSnapshot(),
-                                             timezone_service::ListTimezones());
-    return s_coordinator.BuildState(wifi_service::GetUiState());
+    return s_coordinator.BuildState(storage_service::GetSnapshot());
 }
 
 }  // namespace
@@ -111,7 +103,7 @@ epaper_ui::SettingsPageState BuildStateLocked()
 esp_err_t UpdateDisplayState()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
-    return display_service::SetSettingsPageState(BuildStateLocked());
+    return display_service::SetAdvancedPageState(BuildStateLocked());
 }
 
 esp_err_t UpdateDisplayStateAndRequestRefresh(display_service::RefreshMode refresh_mode)
@@ -125,7 +117,7 @@ esp_err_t UpdateDisplayStateAndRequestRefresh(
     const display_service::RefreshRequest& refresh_request)
 {
     return ui_refresh_runtime::Schedule(
-        ui_refresh_runtime::SurfaceKey::kSettingsPage, &UpdateDisplayState, refresh_request);
+        ui_refresh_runtime::SurfaceKey::kAdvancedPage, &UpdateDisplayState, refresh_request);
 }
 
 page_actions::FocusMoveOutcome MoveFocus(int delta)
@@ -133,28 +125,25 @@ page_actions::FocusMoveOutcome MoveFocus(int delta)
     page_actions::FocusMoveOutcome result = {};
     int old_focus_index = -1;
     int new_focus_index = -1;
-    epaper_ui::SettingsPageState old_state = {};
-    epaper_ui::SettingsPageState new_state = {};
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         old_focus_index = s_coordinator.focus().index();
-        old_state = BuildStateLocked();
-        result = settings_page_interactions::HandleMoveFocus(s_coordinator, delta);
+        result = advanced_page_interactions::HandleMoveFocus(s_coordinator, delta);
         if (!result.handled) {
             return result;
         }
         new_focus_index = s_coordinator.focus().index();
-        new_state = BuildStateLocked();
     }
 
     result.sync_footer_projection =
-        FooterProjectionChangedForFocusIndexes(old_focus_index, new_focus_index);    return result;
+        FooterProjectionChangedForFocusIndexes(old_focus_index, new_focus_index);
+    return result;
 }
 
-settings_page_interactions::ActivateResult ActivateFocusedItem()
+advanced_page_interactions::ActivateResult ActivateFocusedItem()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
-    return settings_page_interactions::HandlePrimaryActivate(s_coordinator);
+    return advanced_page_interactions::HandlePrimaryActivate(s_coordinator);
 }
 
 footer_runtime::ProjectionState BuildFooterProjectionState()
@@ -166,16 +155,13 @@ footer_runtime::ProjectionState BuildFooterProjectionState()
 page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem item)
 {
     page_actions::FocusUpdateOutcome result = {};
-    const page_navigation::NavigationItemRole role =
-        FooterRoleForFooterItem(item);
+    const page_navigation::NavigationItemRole role = FooterRoleForFooterItem(item);
     if (role == page_navigation::NavigationItemRole::kUnknown) {
         return result;
     }
 
     int old_focus_index = -1;
     int new_focus_index = -1;
-    epaper_ui::SettingsPageState old_state = {};
-    epaper_ui::SettingsPageState new_state = {};
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         const int focus_index = s_coordinator.navigation_model().IndexOfRole(role);
@@ -183,18 +169,17 @@ page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem
             return result;
         }
         old_focus_index = s_coordinator.focus().index();
-        old_state = BuildStateLocked();
         if (!s_coordinator.SetFocusIndex(focus_index)) {
             return result;
         }
         new_focus_index = s_coordinator.focus().index();
-        new_state = BuildStateLocked();
     }
 
     result.handled = true;
     result.apply_page_state = true;
     result.sync_footer_projection =
-        FooterProjectionChangedForFocusIndexes(old_focus_index, new_focus_index);    return result;
+        FooterProjectionChangedForFocusIndexes(old_focus_index, new_focus_index);
+    return result;
 }
 
 void ResetFocus()
@@ -209,57 +194,20 @@ void ResetFocus()
     footer_runtime::SetProjectionState(projection);
 }
 
-esp_err_t ShowTimezoneModal()
-{
-    epaper_ui::SelectModalState state = {};
-    {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        state.visible = true;
-        state.title_text = "Select timezone";
-        const int selected = s_coordinator.SelectedTimezoneIndex();
-        state.selected_index = selected < 0 ? 0 : selected;
-        for (const timezone_service::TimezoneInfo& tz : s_coordinator.timezones()) {
-            state.items.push_back({
-                .label_text = tz.description.empty() ? tz.name : tz.description,
-            });
-        }
-        s_timezone_modal_active = true;
-    }
-    return overlay_runtime::ShowSelectModal(state);
-}
-
-bool HandleSelectModalSubmit(int selected_index)
-{
-    bool was_active = false;
-    {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        was_active = s_timezone_modal_active;
-        s_timezone_modal_active = false;
-        if (was_active) {
-            s_coordinator.SetTimezoneByIndex(selected_index);
-        }
-    }
-    if (was_active) {
-        (void)UpdateDisplayStateAndRequestRefresh(display_service::RefreshMode::kPartial);
-    }
-    return was_active;
-}
-
-void ClearPendingSelectModal()
+void RequestLaunch()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
-    s_timezone_modal_active = false;
+    s_pending_launch = true;
 }
 
-esp_err_t SyncTimeNow()
+bool ConsumePendingLaunch()
 {
-    const bool success = timezone_service::SyncNow();
-    epaper_ui::ToastState toast = {};
-    toast.visible = true;
-    toast.body_text = success ? "Synced" : "Sync failed";
-    toast.leading_icon = project_assets::GetIcon(EmbeddedIconId::kTime);
-    (void)overlay_runtime::ShowToastForDuration(toast, 2000);
-    return success ? ESP_OK : ESP_FAIL;
+    std::lock_guard<std::mutex> lock(s_mutex);
+    if (!s_pending_launch) {
+        return false;
+    }
+    s_pending_launch = false;
+    return true;
 }
 
-}  // namespace settings_page_runtime
+}  // namespace advanced_page_runtime

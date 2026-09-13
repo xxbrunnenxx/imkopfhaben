@@ -9,8 +9,8 @@ namespace page_navigation {
 
 enum class NavigationScope : uint8_t {
     kSettings = 0,
+    kAdvanced,
     kWifi,
-    kTime,
     kDashboard,
     kVibeCheck,
     kSummarize,
@@ -25,8 +25,8 @@ enum class NavigationItemSection : uint8_t {
     kNone = 0,
     kFooter,
     kSettingsPageMenu,
+    kAdvancedPageMenu,
     kWifiPageControls,
-    kTimePageControls,
     kDashboardPageMenu,
     kVibeCheckPageControls,
     kSummarizePageControls,
@@ -42,27 +42,21 @@ enum class NavigationItemRole : uint8_t {
     kFooterHome,
     kFooterSettings,
     kFooterWifi,
-    kFooterTime,
     kFooterSticky,
     kSettingsWifiToggle,
     kSettingsEnableApToggle,
     kSettingsPlaybackToggle,
-    kSettingsEnableOtgButton,
-    kSettingsFormatSdButton,
-    kSettingsManualOnboardingButton,
+    kSettingsTimezoneField,
+    kSettingsSyncNowButton,
+    kSettingsAdvancedButton,
+    kAdvancedEnableOtgButton,
+    kAdvancedFormatSdButton,
+    kAdvancedManualOnboardingButton,
     kWifiPageNetworkList,
     kWifiPagePasswordInput,
     kWifiPagePasswordVisibilityButton,
     kWifiPageScanButton,
     kWifiPageConnectButton,
-    kTimePageTimezone,
-    kTimePageHour,
-    kTimePageMinute,
-    kTimePageMeridiem,
-    kTimePageMonth,
-    kTimePageDay,
-    kTimePageYear,
-    kTimePageSave,
     kDashboardMenuItem,
     kVibeCheckPageCard,
     kSummarizePageSegmentControl,
@@ -96,8 +90,8 @@ struct NavigationModel {
 };
 
 NavigationModel BuildSettingsPageNavigationModel();
+NavigationModel BuildAdvancedPageNavigationModel();
 NavigationModel BuildWifiPageNavigationModel();
-NavigationModel BuildTimePageNavigationModel();
 NavigationModel BuildDashboardPageNavigationModel();
 NavigationModel BuildVibeCheckPageNavigationModel();
 NavigationModel BuildSummarizePageNavigationModel();

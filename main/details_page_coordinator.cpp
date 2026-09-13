@@ -56,12 +56,8 @@ std::string FormatTimeLabel(const RecordingEntry& entry)
         std::tm local = {};
         localtime_r(&stamp, &local);
         char buffer[16] = {};
-        if (std::strftime(buffer, sizeof(buffer), "%I:%M %p", &local) > 0) {
-            std::string text = buffer;
-            if (text.size() > 1 && text.front() == '0') {
-                text.erase(0, 1);
-            }
-            return text;
+        if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local) > 0) {
+            return buffer;
         }
     }
     return "--:--";

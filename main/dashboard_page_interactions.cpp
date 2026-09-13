@@ -30,9 +30,6 @@ ActivateResult HandlePrimaryActivate(DashboardPageCoordinator& coordinator)
         case NavigationItemRole::kFooterWifi:
             result.intent = ActivateIntent::kShowWifi;
             break;
-        case NavigationItemRole::kFooterTime:
-            result.intent = ActivateIntent::kShowTime;
-            break;
         default:
             result.handled = false;
             result.play_activate_cue = false;
@@ -62,11 +59,6 @@ void ApplyPrimaryActivateResult(const ActivateResult& result, const ActivateCall
         case ActivateIntent::kShowWifi:
             if (callbacks.show_wifi) {
                 callbacks.show_wifi();
-            }
-            break;
-        case ActivateIntent::kShowTime:
-            if (callbacks.show_time) {
-                callbacks.show_time();
             }
             break;
         case ActivateIntent::kNone:

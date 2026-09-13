@@ -16,13 +16,12 @@
 #include "todos_page_interactions.h"
 #include "todos_page_runtime.h"
 #include "settings_page_interactions.h"
+#include "advanced_page_runtime.h"
 #include "settings_page_runtime.h"
 #include "recording_session_service.h"
 #include "storage_service.h"
 #include "summarize_page_interactions.h"
 #include "summarize_page_runtime.h"
-#include "time_page_interactions.h"
-#include "time_page_runtime.h"
 #include "ui_refresh_runtime.h"
 #include "vibe_check_page_interactions.h"
 #include "vibe_check_page_runtime.h"
@@ -94,19 +93,19 @@ esp_err_t ApplyWifiPageAndFooterDisplayState()
     return page_err != ESP_OK ? page_err : footer_err;
 }
 
-void ApplyTimePageStateUpdate(display_service::RefreshMode refresh_mode)
+void ApplyAdvancedPageStateUpdate(display_service::RefreshMode refresh_mode)
 {
-    (void)time_page_runtime::UpdateDisplayStateAndRequestRefresh(refresh_mode);
+    (void)advanced_page_runtime::UpdateDisplayStateAndRequestRefresh(refresh_mode);
 }
 
-void ApplyTimePageStateUpdate(const display_service::RefreshRequest& refresh_request)
+void ApplyAdvancedPageStateUpdate(const display_service::RefreshRequest& refresh_request)
 {
-    (void)time_page_runtime::UpdateDisplayStateAndRequestRefresh(refresh_request);
+    (void)advanced_page_runtime::UpdateDisplayStateAndRequestRefresh(refresh_request);
 }
 
-esp_err_t ApplyTimePageAndFooterDisplayState()
+esp_err_t ApplyAdvancedPageAndFooterDisplayState()
 {
-    const esp_err_t page_err = time_page_runtime::UpdateDisplayState();
+    const esp_err_t page_err = advanced_page_runtime::UpdateDisplayState();
     if (page_err != ESP_OK && page_err != ESP_ERR_INVALID_STATE) {
         return page_err;
     }
@@ -164,6 +163,31 @@ void ApplySettingsFocusUpdate(const page_actions::FocusUpdateOutcome& outcome)
     }
 }
 
+void ApplyAdvancedFocusUpdate(const page_actions::FocusUpdateOutcome& outcome)
+{
+    if (!outcome.handled) {
+        return;
+    }
+
+    if (outcome.sync_footer_projection) {
+        footer_runtime::SetProjectionState(advanced_page_runtime::BuildFooterProjectionState());
+    }
+    if (outcome.apply_page_state) {
+        const display_service::RefreshRequest refresh_request = {
+            .refresh_mode = display_service::RefreshMode::kPartial,
+            .scope = display_service::RefreshScope::kRegion,
+        };
+        if (outcome.sync_footer_projection) {
+            (void)ui_refresh_runtime::Schedule(ui_refresh_runtime::SurfaceKey::kAdvancedPage,
+                                               &ApplyAdvancedPageAndFooterDisplayState,
+                                               refresh_request);
+            return;
+        }
+
+        ApplyAdvancedPageStateUpdate(refresh_request);
+    }
+}
+
 void ApplyWifiFocusUpdate(const page_actions::FocusUpdateOutcome& outcome)
 {
     if (!outcome.handled) {
@@ -186,31 +210,6 @@ void ApplyWifiFocusUpdate(const page_actions::FocusUpdateOutcome& outcome)
         }
 
         ApplyWifiPageStateUpdate(refresh_request);
-    }
-}
-
-void ApplyTimeFocusUpdate(const page_actions::FocusUpdateOutcome& outcome)
-{
-    if (!outcome.handled) {
-        return;
-    }
-
-    if (outcome.sync_footer_projection) {
-        footer_runtime::SetProjectionState(time_page_runtime::BuildFooterProjectionState());
-    }
-    if (outcome.apply_page_state) {
-        const display_service::RefreshRequest refresh_request = {
-            .refresh_mode = display_service::RefreshMode::kPartial,
-            .scope = display_service::RefreshScope::kRegion,
-        };
-        if (outcome.sync_footer_projection) {
-            (void)ui_refresh_runtime::Schedule(ui_refresh_runtime::SurfaceKey::kTimePage,
-                                               &ApplyTimePageAndFooterDisplayState,
-                                               refresh_request);
-            return;
-        }
-
-        ApplyTimePageStateUpdate(refresh_request);
     }
 }
 
@@ -256,11 +255,14 @@ ButtonResult ApplySettingsActivateResult(const settings_page_interactions::Activ
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
     };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
-    };
     callbacks.force_refresh = []() {
         ApplySettingsPageStateUpdate(display_service::RefreshMode::kFull);
+    };
+    callbacks.show_timezone_modal = []() {
+        (void)settings_page_runtime::ShowTimezoneModal();
+    };
+    callbacks.sync_time_now = []() {
+        (void)settings_page_runtime::SyncTimeNow();
     };
     callbacks.toggle_wifi = []() {
         const wifi_service::UiState state = wifi_service::GetUiState();
@@ -273,6 +275,38 @@ ButtonResult ApplySettingsActivateResult(const settings_page_interactions::Activ
     callbacks.toggle_playback = []() {
         const bool enabled = recording_session_service::GetPlaybackAfterRecordingEnabled();
         (void)recording_session_service::SetPlaybackAfterRecordingEnabled(!enabled);
+    };
+    callbacks.show_advanced = []() {
+        // Deferred so the screen change happens after input dispatch; app_shell polls for it.
+        advanced_page_runtime::RequestLaunch();
+    };
+    settings_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
+    if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
+        result.interaction_result.play_feedback = false;
+        result.interaction_result.feedback_cue = app_interaction::FeedbackCue::kNone;
+    }
+    return result;
+}
+
+ButtonResult ApplyAdvancedActivateResult(const advanced_page_interactions::ActivateResult& activation)
+{
+    ButtonResult result = {};
+    if (!activation.handled) {
+        return result;
+    }
+
+    result.handled = true;
+    result.interaction_result = MakeConsumedResult(activation.play_activate_cue);
+
+    advanced_page_interactions::ActivateCallbacks callbacks = {};
+    callbacks.show_home = [&result]() {
+        result.footer_item = footer_runtime::FooterFocusItem::kHome;
+    };
+    callbacks.show_settings = [&result]() {
+        result.footer_item = footer_runtime::FooterFocusItem::kSettings;
+    };
+    callbacks.show_wifi = [&result]() {
+        result.footer_item = footer_runtime::FooterFocusItem::kWifi;
     };
     callbacks.show_format_sd_modal = []() {
         const storage_service::Snapshot snapshot = storage_service::GetSnapshot();
@@ -317,7 +351,7 @@ ButtonResult ApplySettingsActivateResult(const settings_page_interactions::Activ
         // Deferred so the screen change happens after input dispatch; app_shell polls for it.
         onboarding_page_runtime::RequestManualLaunch();
     };
-    settings_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
+    advanced_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
     if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
         result.interaction_result.play_feedback = false;
         result.interaction_result.feedback_cue = app_interaction::FeedbackCue::kNone;
@@ -341,9 +375,6 @@ ButtonResult ApplyWifiActivateResult(const wifi_page_interactions::ActivateResul
     };
     callbacks.show_settings = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kSettings;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
     };
     callbacks.force_refresh = []() {
         ApplyWifiPageStateUpdate(display_service::RefreshMode::kFull);
@@ -402,70 +433,6 @@ ButtonResult ApplyWifiSecondaryActivateResult(
     return result;
 }
 
-ButtonResult ApplyTimeActivateResult(const time_page_interactions::ActivateResult& activation)
-{
-    ButtonResult result = {};
-    if (!activation.handled) {
-        return result;
-    }
-
-    result.handled = true;
-    result.interaction_result = MakeConsumedResult(activation.play_activate_cue);
-
-    time_page_interactions::ActivateCallbacks callbacks = {};
-    callbacks.show_home = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kHome;
-    };
-    callbacks.show_settings = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kSettings;
-    };
-    callbacks.show_wifi = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kWifi;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
-    };
-    callbacks.show_timezone_modal = []() {
-        (void)time_page_runtime::ShowTimezoneModal();
-    };
-    callbacks.edit_hour = []() {
-        (void)time_page_runtime::ShowFieldKeyboard(
-            page_navigation::NavigationItemRole::kTimePageHour);
-    };
-    callbacks.edit_minute = []() {
-        (void)time_page_runtime::ShowFieldKeyboard(
-            page_navigation::NavigationItemRole::kTimePageMinute);
-    };
-    callbacks.edit_month = []() {
-        (void)time_page_runtime::ShowFieldKeyboard(
-            page_navigation::NavigationItemRole::kTimePageMonth);
-    };
-    callbacks.edit_day = []() {
-        (void)time_page_runtime::ShowFieldKeyboard(
-            page_navigation::NavigationItemRole::kTimePageDay);
-    };
-    callbacks.edit_year = []() {
-        (void)time_page_runtime::ShowFieldKeyboard(
-            page_navigation::NavigationItemRole::kTimePageYear);
-    };
-    callbacks.toggle_meridiem = []() {
-        time_page_runtime::ToggleMeridiem();
-    };
-    callbacks.save = []() {
-        (void)time_page_runtime::Save();
-    };
-    time_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
-    if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
-        result.interaction_result.play_feedback = false;
-        result.interaction_result.feedback_cue = app_interaction::FeedbackCue::kNone;
-    }
-
-    if (activation.apply_page_state) {
-        ApplyTimePageStateUpdate(display_service::RefreshMode::kPartial);
-    }
-    return result;
-}
-
 ButtonResult ApplyDashboardActivateResult(
     const dashboard_page_interactions::ActivateResult& activation)
 {
@@ -489,9 +456,6 @@ ButtonResult ApplyDashboardActivateResult(
     };
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
     };
     dashboard_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
     if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
@@ -518,6 +482,23 @@ FocusMoveResult ApplySettingsMoveResult(const page_actions::FocusMoveOutcome& ou
     return result;
 }
 
+FocusMoveResult ApplyAdvancedMoveResult(const page_actions::FocusMoveOutcome& outcome)
+{
+    FocusMoveResult result = {};
+    if (!outcome.handled) {
+        return result;
+    }
+
+    result.handled = true;
+    result.interaction_result = MakeConsumedResult(outcome.play_navigation_cue);
+    ApplyAdvancedFocusUpdate({
+        .handled = outcome.handled,
+        .apply_page_state = outcome.apply_page_state,
+        .sync_footer_projection = outcome.sync_footer_projection,
+    });
+    return result;
+}
+
 FocusMoveResult ApplyWifiMoveResult(const page_actions::FocusMoveOutcome& outcome)
 {
     FocusMoveResult result = {};
@@ -528,23 +509,6 @@ FocusMoveResult ApplyWifiMoveResult(const page_actions::FocusMoveOutcome& outcom
     result.handled = true;
     result.interaction_result = MakeConsumedResult(outcome.play_navigation_cue);
     ApplyWifiFocusUpdate({
-        .handled = outcome.handled,
-        .apply_page_state = outcome.apply_page_state,
-        .sync_footer_projection = outcome.sync_footer_projection,
-    });
-    return result;
-}
-
-FocusMoveResult ApplyTimeMoveResult(const page_actions::FocusMoveOutcome& outcome)
-{
-    FocusMoveResult result = {};
-    if (!outcome.handled) {
-        return result;
-    }
-
-    result.handled = true;
-    result.interaction_result = MakeConsumedResult(outcome.play_navigation_cue);
-    ApplyTimeFocusUpdate({
         .handled = outcome.handled,
         .apply_page_state = outcome.apply_page_state,
         .sync_footer_projection = outcome.sync_footer_projection,
@@ -630,9 +594,6 @@ ButtonResult ApplyVibeCheckActivateResult(
     };
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
     };
     callbacks.enter_card = []() { vibe_check_page_runtime::EnterFocusedCard(); };
     callbacks.refresh_idea = []() { vibe_check_page_runtime::RefreshIdea(); };
@@ -759,9 +720,6 @@ ButtonResult ApplySummarizeActivateResult(
     };
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
     };
     callbacks.toggle_segment = []() { summarize_page_runtime::ToggleSegment(); };
     callbacks.enter_scroll = []() { summarize_page_runtime::EnterScroll(); };
@@ -896,9 +854,6 @@ ButtonResult ApplyNotesActivateResult(const notes_page_interactions::ActivateRes
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
     };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
-    };
     callbacks.open_item_actions = []() { (void)notes_page_runtime::ShowItemActionsModal(); };
     notes_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
     if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
@@ -1027,9 +982,6 @@ ButtonResult ApplyTodosActivateResult(const todos_page_interactions::ActivateRes
     };
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
     };
     callbacks.open_item_actions = []() { (void)todos_page_runtime::ShowItemActionsModal(); };
     todos_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
@@ -1160,9 +1112,6 @@ ButtonResult ApplyFollowUpActivateResult(
     };
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
-    };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
     };
     callbacks.open_item_actions = []() { (void)follow_up_page_runtime::ShowItemActionsModal(); };
     follow_up_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
@@ -1361,9 +1310,6 @@ ButtonResult ApplyDetailsActivateResult(const details_page_interactions::Activat
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
     };
-    callbacks.show_time = [&result]() {
-        result.footer_item = footer_runtime::FooterFocusItem::kTime;
-    };
     // Deferred so the screen change happens after input dispatch returns.
     callbacks.show_previous_page = []() { details_page_runtime::RequestBack(); };
     callbacks.transcribe = []() { details_page_runtime::RequestTranscribe(); };
@@ -1451,6 +1397,30 @@ ButtonResult HandleSettingsButtonEvent(const button_service::ButtonEventInfo& ev
     }
 }
 
+ButtonResult HandleAdvancedButtonEvent(const button_service::ButtonEventInfo& event)
+{
+    ButtonResult result = {};
+    if (!button_service::IsPrimaryButton(event.button)) {
+        return result;
+    }
+
+    switch (event.event) {
+        case button_service::ButtonEvent::kSingleClick:
+            return ApplyAdvancedActivateResult(advanced_page_runtime::ActivateFocusedItem());
+        case button_service::ButtonEvent::kPressDown:
+        case button_service::ButtonEvent::kPressUp:
+        case button_service::ButtonEvent::kPressRepeat:
+        case button_service::ButtonEvent::kLongPressStart:
+        case button_service::ButtonEvent::kLongPressUp:
+            result.handled = true;
+            result.interaction_result.consumed = true;
+            return result;
+        case button_service::ButtonEvent::kDoubleClick:
+        default:
+            return result;
+    }
+}
+
 ButtonResult HandleWifiButtonEvent(const button_service::ButtonEventInfo& event)
 {
     ButtonResult result = {};
@@ -1480,30 +1450,6 @@ ButtonResult HandleWifiButtonEvent(const button_service::ButtonEventInfo& event)
             if (!button_service::IsPrimaryButton(event.button)) {
                 return result;
             }
-            result.handled = true;
-            result.interaction_result.consumed = true;
-            return result;
-        case button_service::ButtonEvent::kDoubleClick:
-        default:
-            return result;
-    }
-}
-
-ButtonResult HandleTimeButtonEvent(const button_service::ButtonEventInfo& event)
-{
-    ButtonResult result = {};
-    if (!button_service::IsPrimaryButton(event.button)) {
-        return result;
-    }
-
-    switch (event.event) {
-        case button_service::ButtonEvent::kSingleClick:
-            return ApplyTimeActivateResult(time_page_runtime::ActivateFocusedItem());
-        case button_service::ButtonEvent::kPressDown:
-        case button_service::ButtonEvent::kPressUp:
-        case button_service::ButtonEvent::kPressRepeat:
-        case button_service::ButtonEvent::kLongPressStart:
-        case button_service::ButtonEvent::kLongPressUp:
             result.handled = true;
             result.interaction_result.consumed = true;
             return result;
@@ -1544,10 +1490,10 @@ footer_runtime::ProjectionState BuildFooterProjectionForScreen(display_service::
     switch (screen) {
         case display_service::ScreenId::kSettings:
             return settings_page_runtime::BuildFooterProjectionState();
+        case display_service::ScreenId::kAdvanced:
+            return advanced_page_runtime::BuildFooterProjectionState();
         case display_service::ScreenId::kWifi:
             return wifi_page_runtime::BuildFooterProjectionState();
-        case display_service::ScreenId::kTime:
-            return time_page_runtime::BuildFooterProjectionState();
         case display_service::ScreenId::kHome:
             return dashboard_page_runtime::BuildFooterProjectionState();
         case display_service::ScreenId::kVibeCheck:
@@ -1574,11 +1520,11 @@ void ResetFocusForScreen(display_service::ScreenId screen)
         case display_service::ScreenId::kSettings:
             settings_page_runtime::ResetFocus();
             return;
+        case display_service::ScreenId::kAdvanced:
+            advanced_page_runtime::ResetFocus();
+            return;
         case display_service::ScreenId::kWifi:
             wifi_page_runtime::ResetFocus();
-            return;
-        case display_service::ScreenId::kTime:
-            time_page_runtime::ResetFocus();
             return;
         case display_service::ScreenId::kHome:
             dashboard_page_runtime::ResetFocus();
@@ -1615,10 +1561,10 @@ FocusMoveResult MoveFocusForCurrentScreen(int delta, bool page_jump)
     switch (display_service::GetCurrentScreen()) {
         case display_service::ScreenId::kSettings:
             return ApplySettingsMoveResult(settings_page_runtime::MoveFocus(delta));
+        case display_service::ScreenId::kAdvanced:
+            return ApplyAdvancedMoveResult(advanced_page_runtime::MoveFocus(delta));
         case display_service::ScreenId::kWifi:
             return ApplyWifiMoveResult(wifi_page_runtime::MoveFocus(delta, page_jump));
-        case display_service::ScreenId::kTime:
-            return ApplyTimeMoveResult(time_page_runtime::MoveFocus(delta));
         case display_service::ScreenId::kHome:
             return ApplyDashboardMoveResult(dashboard_page_runtime::MoveFocus(delta));
         case display_service::ScreenId::kVibeCheck:
@@ -1647,10 +1593,10 @@ ButtonResult HandleButtonEventForScreen(display_service::ScreenId screen,
     switch (screen) {
         case display_service::ScreenId::kSettings:
             return HandleSettingsButtonEvent(event);
+        case display_service::ScreenId::kAdvanced:
+            return HandleAdvancedButtonEvent(event);
         case display_service::ScreenId::kWifi:
             return HandleWifiButtonEvent(event);
-        case display_service::ScreenId::kTime:
-            return HandleTimeButtonEvent(event);
         case display_service::ScreenId::kHome:
             return HandleDashboardButtonEvent(event);
         case display_service::ScreenId::kVibeCheck:

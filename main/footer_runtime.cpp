@@ -27,8 +27,6 @@ const EmbeddedImageAsset* FooterIcon(FooterFocusItem item)
             return project_assets::GetIcon(EmbeddedIconId::kSettings);
         case FooterFocusItem::kWifi:
             return project_assets::GetIcon(EmbeddedIconId::kWifiConfig);
-        case FooterFocusItem::kTime:
-            return project_assets::GetIcon(EmbeddedIconId::kTime);
         case FooterFocusItem::kFolder:
             return project_assets::GetIcon(EmbeddedIconId::kFolder);
         case FooterFocusItem::kSticky:
@@ -49,7 +47,6 @@ void ApplyProjectedSelection(epaper_ui::GlobalFooterState* state, FooterFocusIte
     state->home.selected = focused_item == FooterFocusItem::kHome;
     state->settings.selected = focused_item == FooterFocusItem::kSettings;
     state->wifi.selected = focused_item == FooterFocusItem::kWifi;
-    state->time.selected = focused_item == FooterFocusItem::kTime;
     state->folder.selected = focused_item == FooterFocusItem::kFolder;
     state->sticky.selected = focused_item == FooterFocusItem::kSticky;
     state->mic.selected = focused_item == FooterFocusItem::kMic;
@@ -74,7 +71,7 @@ bool LayoutStateEquals(const LayoutState& lhs, const LayoutState& rhs)
 {
     return lhs.visible == rhs.visible && lhs.show_home == rhs.show_home &&
            lhs.show_settings == rhs.show_settings && lhs.show_wifi == rhs.show_wifi &&
-           lhs.show_time == rhs.show_time && lhs.show_folder == rhs.show_folder &&
+           lhs.show_folder == rhs.show_folder &&
            lhs.show_mic == rhs.show_mic && lhs.show_sticky == rhs.show_sticky;
 }
 
@@ -144,9 +141,6 @@ epaper_ui::GlobalFooterState BuildState()
 
     state.wifi.visible = layout.show_wifi;
     state.wifi.icon = FooterIcon(FooterFocusItem::kWifi);
-
-    state.time.visible = layout.show_time;
-    state.time.icon = FooterIcon(FooterFocusItem::kTime);
 
     state.folder.visible = layout.show_folder;
     state.folder.icon = FooterIcon(FooterFocusItem::kFolder);

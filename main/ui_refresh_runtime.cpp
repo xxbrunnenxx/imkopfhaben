@@ -47,9 +47,9 @@ size_t SurfaceIndex(SurfaceKey key)
             return 3;
         case SurfaceKey::kSettingsPage:
             return 4;
-        case SurfaceKey::kWifiPage:
+        case SurfaceKey::kAdvancedPage:
             return 5;
-        case SurfaceKey::kTimePage:
+        case SurfaceKey::kWifiPage:
             return 6;
         case SurfaceKey::kDashboardPage:
             return 7;
@@ -85,10 +85,10 @@ const char* SurfaceName(SurfaceKey key)
             return "footer";
         case SurfaceKey::kSettingsPage:
             return "settings_page";
+        case SurfaceKey::kAdvancedPage:
+            return "advanced_page";
         case SurfaceKey::kWifiPage:
             return "wifi_page";
-        case SurfaceKey::kTimePage:
-            return "time_page";
         case SurfaceKey::kDashboardPage:
             return "dashboard_page";
         case SurfaceKey::kVibeCheckPage:
@@ -124,9 +124,9 @@ const char* SurfaceNameForIndex(size_t index)
         case 4:
             return "settings_page";
         case 5:
-            return "wifi_page";
+            return "advanced_page";
         case 6:
-            return "time_page";
+            return "wifi_page";
         case 7:
             return "dashboard_page";
         case 8:

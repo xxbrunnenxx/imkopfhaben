@@ -55,10 +55,7 @@ std::string FormatArchiveTimeLabel(const RecordingEntry& entry)
         std::tm local_tm = {};
         localtime_r(&epoch_seconds, &local_tm);
         char buffer[16] = {};
-        if (std::strftime(buffer, sizeof(buffer), "%I:%M %p", &local_tm) > 0) {
-            if (buffer[0] == '0') {
-                return std::string(buffer + 1);
-            }
+        if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local_tm) > 0) {
             return buffer;
         }
     }

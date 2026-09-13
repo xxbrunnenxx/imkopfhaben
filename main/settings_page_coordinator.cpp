@@ -1,43 +1,5 @@
 #include "settings_page_coordinator.h"
 
-#include <cstdio>
-#include <string>
-
-namespace {
-
-std::string FormatStorageBytes(uint64_t bytes)
-{
-    constexpr uint64_t kKilobyte = 1024ULL;
-    constexpr uint64_t kMegabyte = 1024ULL * kKilobyte;
-    constexpr uint64_t kGigabyte = 1024ULL * kMegabyte;
-
-    char buffer[32] = {};
-    if (bytes >= kGigabyte) {
-        std::snprintf(buffer,
-                      sizeof(buffer),
-                      "%.1f GB free",
-                      static_cast<double>(bytes) / static_cast<double>(kGigabyte));
-    } else if (bytes >= kMegabyte) {
-        std::snprintf(buffer,
-                      sizeof(buffer),
-                      "%.1f MB free",
-                      static_cast<double>(bytes) / static_cast<double>(kMegabyte));
-    } else if (bytes >= kKilobyte) {
-        std::snprintf(buffer,
-                      sizeof(buffer),
-                      "%.1f KB free",
-                      static_cast<double>(bytes) / static_cast<double>(kKilobyte));
-    } else {
-        std::snprintf(buffer,
-                      sizeof(buffer),
-                      "%llu B free",
-                      static_cast<unsigned long long>(bytes));
-    }
-    return std::string(buffer);
-}
-
-}  // namespace
-
 SettingsPageCoordinator::SettingsPageCoordinator() = default;
 
 void SettingsPageCoordinator::Show()
@@ -60,17 +22,52 @@ bool SettingsPageCoordinator::IsRoleFocused(page_navigation::NavigationItemRole 
     return navigation_model_.IsRoleSelected(focus_.index(), role);
 }
 
-epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
-    const wifi_service::UiState& wifi_state,
-    const storage_service::Snapshot& storage_snapshot) const
+void SettingsPageCoordinator::RefreshTimezoneFromService(
+    const timezone_service::Snapshot& snapshot,
+    const std::vector<timezone_service::TimezoneInfo>& timezones)
 {
-    storage_service::StorageStats storage_stats = {};
-    const bool allow_live_storage_stats =
-        !storage_service::IsWriteBusy() &&
-        storage_snapshot.mode != storage_service::Mode::kFormatting;
-    const bool has_storage_stats =
-        allow_live_storage_stats && storage_service::GetStorageStats(&storage_stats);
+    timezones_ = timezones;
+    timezone_name_ = snapshot.settings.timezone_name;
+    timezone_description_ = timezone_name_;
+    for (const timezone_service::TimezoneInfo& info : timezones_) {
+        if (info.name == timezone_name_) {
+            timezone_description_ = info.description.empty() ? info.name : info.description;
+            break;
+        }
+    }
+}
 
+int SettingsPageCoordinator::SelectedTimezoneIndex() const
+{
+    for (size_t index = 0; index < timezones_.size(); ++index) {
+        if (timezones_[index].name == timezone_name_) {
+            return static_cast<int>(index);
+        }
+    }
+    return -1;
+}
+
+void SettingsPageCoordinator::SetTimezoneByIndex(int index)
+{
+    if (index < 0 || index >= static_cast<int>(timezones_.size())) {
+        return;
+    }
+    timezone_name_ = timezones_[static_cast<size_t>(index)].name;
+    timezone_description_ = timezones_[static_cast<size_t>(index)].description.empty()
+                                ? timezones_[static_cast<size_t>(index)].name
+                                : timezones_[static_cast<size_t>(index)].description;
+
+    timezone_service::SettingsPatch patch = {};
+    patch.has_enabled = true;
+    patch.enabled = true;
+    patch.has_timezone_name = true;
+    patch.timezone_name = timezone_name_;
+    (void)timezone_service::ApplySettingsPatch(patch);
+}
+
+epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
+    const wifi_service::UiState& wifi_state) const
+{
     epaper_ui::SettingsPageState state = {};
     state.navigation_focus_index = focus_.index();
     state.title_text = "Settings";
@@ -93,44 +90,19 @@ epaper_ui::SettingsPageState SettingsPageCoordinator::BuildState(
             IsRoleFocused(page_navigation::NavigationItemRole::kSettingsPlaybackToggle)),
     };
 
-    state.storage_status.has_sd_card =
-        storage_snapshot.inserted && storage_snapshot.mounted && has_storage_stats;
-    if (state.storage_status.has_sd_card) {
-        state.storage_status.free_space_text = FormatStorageBytes(storage_stats.free_bytes);
-        state.storage_status.used_percent = storage_stats.used_percent;
-    }
-
-    // Label tracks the mode so the button reads correctly if the page is revisited while
-    // OTG is active or mid-transition.
-    std::string_view otg_label = "Enable OTG";
-    if (storage_snapshot.mode == storage_service::Mode::kUsbMounted) {
-        otg_label = "Disable OTG";
-    } else if (storage_snapshot.mode == storage_service::Mode::kEnteringUsbMode) {
-        otg_label = "Enabling OTG";
-    } else if (storage_snapshot.mode == storage_service::Mode::kExitingUsbMode) {
-        otg_label = "Disabling OTG";
-    }
-    state.enable_otg_button = {
-        .label_text = otg_label,
-        .selected =
-            IsRoleFocused(page_navigation::NavigationItemRole::kSettingsEnableOtgButton),
+    state.timezone = {
+        .label_text = "Timezone",
+        .placeholder_text = "Select timezone",
+        .value_text = timezone_description_,
+        .focused = IsRoleFocused(page_navigation::NavigationItemRole::kSettingsTimezoneField),
     };
-
-    std::string_view format_label = "Format SD";
-    if (storage_snapshot.mode == storage_service::Mode::kFormatting ||
-        (storage_snapshot.operation == storage_service::Operation::kFormatSd &&
-         storage_snapshot.phase == storage_service::OperationPhase::kStarted)) {
-        format_label = "Formatting SD";
-    }
-    state.format_sd_button = {
-        .label_text = format_label,
-        .selected =
-            IsRoleFocused(page_navigation::NavigationItemRole::kSettingsFormatSdButton),
+    state.sync_now_button = {
+        .label_text = "Sync now",
+        .selected = IsRoleFocused(page_navigation::NavigationItemRole::kSettingsSyncNowButton),
     };
-    state.manual_onboarding_button = {
-        .label_text = "Manual",
-        .selected = IsRoleFocused(
-            page_navigation::NavigationItemRole::kSettingsManualOnboardingButton),
+    state.advanced_button = {
+        .label_text = "Advanced",
+        .selected = IsRoleFocused(page_navigation::NavigationItemRole::kSettingsAdvancedButton),
     };
     return state;
 }

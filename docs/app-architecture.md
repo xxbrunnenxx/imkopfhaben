@@ -157,17 +157,16 @@ main/
   page_input_runtime.cpp
   shared_page_interactions.h
   # Pro-Seite-Runtime-Familien. Jede Feature-Seite hat ein {runtime, coordinator,
-  # interactions}-Trio (settings/wifi/time stammen von vor der Coordinator-Aufteilung
-  # und halten ihren Status weiterhin in der runtime):
+  # interactions}-Trio:
   #   dashboard_page_*  onboarding_page_*  vibe_check_page_*  summarize_page_*
   #   notes_page_*  todos_page_*  follow_up_page_*  details_page_*
-  #   settings_page_{runtime,coordinator,interactions}  wifi_page_*  time_page_*
+  #   settings_page_*  advanced_page_*  wifi_page_*
   settings_page_interactions.h
   settings_page_interactions.cpp
+  advanced_page_interactions.h
+  advanced_page_interactions.cpp
   wifi_page_interactions.h
   wifi_page_interactions.cpp
-  time_page_interactions.h
-  time_page_interactions.cpp
   page_interaction_runtime.h
   page_interaction_runtime.cpp
   timeline_format.h                # gemeinsame Timeline-Datum/Zeit-Formatierer ("Heute"-Logik)
@@ -362,7 +361,7 @@ laufen über `ui_refresh_runtime`, einen keyed-latest-wins-Worker. Jeder
 Aufrufer plant einen *Apply-Callback* (der frischen Status in
 `display_service` schiebt) plus eine Refresh-Anfrage, gekeyt per
 `SurfaceKey` (`kOverlay`, `kLockScreen`, `kStatusBar`, `kFooter`, und je
-ein Key pro Seite: `kSettingsPage`, `kWifiPage`, `kTimePage`,
+ein Key pro Seite: `kSettingsPage`, `kAdvancedPage`, `kWifiPage`,
 `kDashboardPage`, `kVibeCheckPage`, `kSummarizePage`, `kNotesPage`,
 `kTodosPage`, `kFollowUpPage`, `kDetailsPage`, `kOnboardingPage`). Der
 Worker fasst anstehende Arbeit pro Surface zusammen und löst pro Drain
@@ -453,8 +452,8 @@ Die aktuellen App-Runtime-Helfer unter `main/` sind:
   Tasten-Aktivierung, Fußzeilen-Projektions-Hooks, Touch-Provider-
   Registrierung und das Anwenden neutraler Seiten-Interaktions-Ergebnisse
   auf App-seitiges Verhalten
-- `settings_page_interactions` / `wifi_page_interactions` /
-  `time_page_interactions`: besitzen seitenlokale Fokus- und
+- `settings_page_interactions` / `advanced_page_interactions` /
+  `wifi_page_interactions`: besitzen seitenlokale Fokus- und
   Aktivierungs-Semantik für die aktuell seiteneigenen Bildschirme, sodass
   die gemeinsame Seiten-Eingabe-Schicht Intent/Ergebnisse anwendet statt
   Seiten-Verhalten offen in jeder Runtime zu codieren
@@ -661,8 +660,8 @@ Der Besitz ist bewusst so aufgeteilt:
   `input_focus_runtime` Seiten-Verhalten nicht fest verdrahten, und
   damit neutrale Seiten-Interaktions-Ergebnisse an einer Stelle
   angewendet werden statt in einzelnen Seiten-Runtimes
-- `main/settings_page_interactions.*`, `main/wifi_page_interactions.*`
-  und `main/time_page_interactions.*`: fokussierte Interaktions-Helfer,
+- `main/settings_page_interactions.*`, `main/advanced_page_interactions.*`
+  und `main/wifi_page_interactions.*`: fokussierte Interaktions-Helfer,
   die aktuellen Seiten-Fokus in neutrale Seiten-Ergebnisse plus
   Folge-Intents übersetzen, während Dienst-Effekte und
   Orchestrierungs-Callbacks außerhalb des Coordinators bleiben
@@ -755,65 +754,80 @@ Das hält den Interaktions-Besitz lokal, während es verhindert, dass
 Feedback-Policy in wiederverwendbare Runtime-Helfer oder gemeinsame
 Interaktions-Verträge einsickert.
 
-### Zeit-Einstellungs-Seite
+### Zeitzone (in den Einstellungen) und die Advanced-Seite
 
-Die Zeit-Einstellungs-Seite ist der erste Bildschirm, der End-zu-Ende
-durch das vollständige Seiten-Muster portiert wurde, und ist das
-Referenz-Beispiel für das Hinzufügen einer Seite. Sie wird über den
-globalen Fußzeilen-`Time`-Button erreicht und ist über fünf Schichten
-zusammengesetzt:
+Eine eigene Zeit-Einstellungs-Seite mit manueller Datum/Uhrzeit-Eingabe
+gab es früher (12h + AM/PM, eigener Fußzeilen-`Time`-Button). Sie wurde
+entfernt: NTP-Sync läuft ohnehin vollautomatisch bei jeder
+WLAN-Verbindung (siehe unten), manuelle Eingabe wurde vom Netzwerk-Pfad
+sowieso immer überschrieben, sobald WLAN stand. Übrig bleibt nur die
+Zeitzonen-Auswahl (NTP liefert UTC, die lokale Zeitzone kennt das Gerät
+sonst nicht) — die sitzt jetzt als normale Menüzeile direkt auf der
+Settings-Seite, neben einem "Sync now"-Knopf für den seltenen Fall, dass
+die Uhr sichtbar falsch steht:
 
-- **View-Renderer** (`components/epaper_ui/time_page.*`): ein
-  zustandsloses `DrawTimePage` plus `TimePageState`, Grenzen und
-  Hit-Test. Wie die anderen Seiten-Renderer lebt er in `epaper_ui`
-  (nicht `main/`), weil `display_service` — eine Komponente — ihn
-  zeichnet und nicht von `main` abhängen kann. Er komponiert die
-  Primitiven der Seite: `select_input` (Zeitzone), `time_input`
-  (Stunde/Minute/Monat/Tag/Jahr) und `button` (AM-PM und
-  Synchronisieren & Speichern). `text_input` ist die gemeinsame
-  Feld-Primitive, auf der diese aufbauen und die `password_input`
-  jetzt umschließt.
-- **Coordinator** (`main/time_page_coordinator.*`): besitzt die
-  editierbaren Feldwerte, das Navigationsmodell plus umlaufenden Fokus,
-  lädt Status aus `timezone_service` und baut `TimePageState` und den
-  Speicher-Patch. Ein `user_edited_`-Guard verhindert, dass
-  Hintergrund-Uhr-Ereignisse laufende Bearbeitungen überschreiben;
-  `MarkSaved()` löscht ihn nach einem Speichern, damit ein späterer Sync
-  die Seite neu lädt.
-- **Interactions** (`main/time_page_interactions.*`): bilden das
+- `main/settings_page_coordinator.*` hält Zeitzonen-Liste und aktuelle
+  Auswahl (`RefreshTimezoneFromService`, gespeist aus
+  `timezone_service::GetSnapshot()`/`ListTimezones()`). Anders als die
+  frühere Zeit-Seite gibt es keinen `user_edited_`-Zwischenspeicher:
+  `SetTimezoneByIndex` wendet die Wahl sofort per
+  `timezone_service::ApplySettingsPatch` an (nur `has_timezone_name`,
+  kein Datum/Uhrzeit-Feld mehr im Patch).
+- Das Auswahl-Overlay (`overlay_runtime::ShowSelectModal`,
+  `settings_page_runtime::ShowTimezoneModal`/`HandleSelectModalSubmit`)
+  ist dasselbe scrollbare `select_modal`-Muster wie zuvor auf der
+  Zeit-Seite, jetzt nur von `settings_page_runtime` statt einer eigenen
+  Runtime getragen.
+- "Sync now" ruft direkt `timezone_service::SyncNow()` und zeigt einen
+  Ergebnis-Toast — kein `SettingsPatch` nötig, da kein Datum/Uhrzeit-Feld
+  mehr mitgeschickt werden muss.
+
+Das Storage-Panel (SD-Status, OTG umschalten, Format SD, manuelles
+Onboarding) saß früher ebenfalls auf der Settings-Seite, passte aber
+nach dem Umzug von Zeitzone/Sync nicht mehr in deren festes,
+nicht-scrollendes Layout (800px-Portrait-Budget). Es lebt jetzt auf
+einer eigenen **Advanced-Seite** — die zusammen mit der Wifi-Seite das
+aktuelle Referenz-Beispiel für das vollständige Fünf-Schichten-Muster
+ist:
+
+- **View-Renderer** (`components/epaper_ui/advanced_page.*`): ein
+  zustandsloses `DrawAdvancedPage` plus `AdvancedPageState`, Grenzen und
+  Hit-Test — praktisch der unveränderte Storage-Teil der alten
+  Settings-Seite, nur in eine eigene Datei ausgelagert.
+- **Coordinator** (`main/advanced_page_coordinator.*`): besitzt das
+  Navigationsmodell plus umlaufenden Fokus, baut `AdvancedPageState` aus
+  `storage_service::Snapshot`.
+- **Interactions** (`main/advanced_page_interactions.*`): bilden das
   fokussierte Steuerelement auf einen neutralen Aktivierungs-Intent ab
-  (Zeitzonen-Modal öffnen, ein numerisches Feld bearbeiten, AM/PM
-  umschalten, speichern oder Fußzeilen-Navigation), ohne Nebenwirkungen.
-- **Runtime** (`main/time_page_runtime.*`): der mutex-gesicherte
+  (OTG umschalten, Format-SD-Modal öffnen, Onboarding starten, oder
+  Fußzeilen-Navigation), ohne Nebenwirkungen.
+- **Runtime** (`main/advanced_page_runtime.*`): der mutex-gesicherte
   Orchestrator — Fokus-Bewegung, Touch-resolve-/focus-/activate,
-  Fußzeilen-Projektion, die Overlay-Editoren und der Speichern-Ablauf.
-  Status wird an `display_service` geschoben, und Refreshes werden über
-  `ui_refresh_runtime` (`SurfaceKey::kTimePage`) geplant.
-- **Integration**: `display_service` erhält `ScreenId::kTime`,
-  `SetTimePageState` und einen `ApplyTime`-/`DrawTimeUnderlay`-Pfad;
-  `page_navigation` erhält den `kTime`-Scope, die Steuerelement-Rollen
-  und `BuildTimePageNavigationModel`; `page_input_runtime` routet den
-  Bildschirm; und `app_shell` stellt `ShowTimeScreen` plus den
-  Fußzeilen-`Time`-Eintrag bereit.
+  Fußzeilen-Projektion. Status wird an `display_service` geschoben,
+  Refreshes über `ui_refresh_runtime` (`SurfaceKey::kAdvancedPage`)
+  geplant.
+- **Integration**: `display_service` erhält `ScreenId::kAdvanced`,
+  `SetAdvancedPageState` und einen `ApplyAdvanced`-/
+  `DrawAdvancedUnderlay`-Pfad; `page_navigation` erhält den
+  `kAdvanced`-Scope, die Steuerelement-Rollen und
+  `BuildAdvancedPageNavigationModel`; `page_input_runtime` routet den
+  Bildschirm.
 
-Feld-Bearbeitung passiert in Overlays, sie erbt also die
-Overlay-Refresh-Regel von oben:
+Die Advanced-Seite hat **keinen eigenen Fußzeilen-Eintrag** — sie wird
+über einen normalen Knopf auf der Settings-Seite erreicht, genau wie das
+manuelle Onboarding. Da `page_input_runtime` nicht auf `app_shell`
+zugreifen kann (Abhängigkeitsrichtung ist umgekehrt), läuft der Übergang
+über dasselbe verzögerte Muster wie beim manuellen Onboarding:
+`advanced_page_runtime::RequestLaunch()` setzt nur ein Flag, `app_shell`
+konsumiert es direkt nach dem Eingabe-Dispatch
+(`ShowAdvancedFromSettingsIfRequested`) und ruft dann `ShowAdvancedScreen`.
+Zurück geht es über den normalen Fußzeilen-`Settings`-Eintrag, den die
+Advanced-Seite wie jede andere Seite mitführt — kein eigener
+"Zurück"-Mechanismus nötig.
 
-- Das Zeitzonen-Steuerelement öffnet ein scrollbares `select_modal`
-  über `timezone_service::ListTimezones()`; der gewählte Index wird
-  über den Auswahl-Modal-Absenden-Hook der Runtime übernommen.
-- Jedes numerische Feld öffnet die Tastatur in ihrem `kNumbers`-Layout
-  — ein eigenständiges Wähltastenfeld (`1`-`9`, dann `Bksp | 0 |
-  Fertig`); der eingetippte Wert wird beim Absenden übernommen.
+Der NTP-/RTC-Sync-Ablauf in `timezone_service` selbst ist von alldem
+unberührt:
 
-Der Speicher-/Sync-Ablauf:
-
-- `BuildSettingsPatch` wandelt die Felder um (12h + AM/PM zu 24h,
-  `YYYY-MM-DD` und `HH:MM`), und `Save()` ruft
-  `timezone_service::ApplySettingsPatch`, zeigt dann einen
-  Ergebnis-Toast. Das interne `Notify` des Patches treibt
-  `HandleTimezoneEvent`, das die Seite bereits neu synchronisiert, also
-  läuft `Save()` keinen redundanten vollständigen Sync mehr.
 - `ApplySettingsPatch` führt den blockierenden SNTP-Pfad nie auf dem
   Task des Aufrufers aus. Wenn das Netzwerk steht, reiht es den
   NTP-Sync auf dem dedizierten `timezone_sync`-Worker ein
@@ -825,12 +839,16 @@ Der Speicher-/Sync-Ablauf:
   nach verbunden ein, immer wenn die Uhr aktiviert und eine Zeitzone
   gesetzt ist (Standard Eastern). Der Übergangs-Guard verhindert, dass
   wiederholte "verbunden"-Ereignisse NTP zuspammen.
+- Die PCF85063-RTC sichert die Uhrzeit über Neustarts/Netzausfälle
+  hinweg ab (`SetSystemTimeFromRtc` beim Boot, `SetRtcFromEpoch` nach
+  jedem erfolgreichen Sync) — das Gerät hat also auch ganz ohne Netz
+  eine plausible Uhrzeit, nur eben nicht zwingend die aktuelle.
 
 Das `location`-Feld in den zugrundeliegenden `timezone_service`-
-Einstellungen wird bewusst nicht auf dieser Seite angezeigt. Es ist nur
-Metadaten (in NVS und im Web-Portal gehalten) und hat keine Wirkung auf
-die Zeithaltung, die allein von der Zeitzonen-Auswahl plus NTP
-gesteuert wird.
+Einstellungen wird bewusst nirgends angezeigt. Es ist nur Metadaten (in
+NVS und im Web-Portal gehalten) und hat keine Wirkung auf die
+Zeithaltung, die allein von der Zeitzonen-Auswahl plus NTP gesteuert
+wird.
 
 ## Aufnahme-Ablauf
 

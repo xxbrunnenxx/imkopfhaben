@@ -11,8 +11,7 @@ ActivateResult HandlePrimaryActivate(const SettingsPageCoordinator& coordinator)
             coordinator,
             ActivateIntent::kShowHome,
             ActivateIntent::kForceRefresh,
-            ActivateIntent::kShowWifi,
-            ActivateIntent::kShowTime);
+            ActivateIntent::kShowWifi);
     if (footer_result.handled) {
         return footer_result;
     }
@@ -40,26 +39,23 @@ ActivateResult HandlePrimaryActivate(const SettingsPageCoordinator& coordinator)
             .play_activate_cue = true,
         };
     }
-    if (coordinator.IsRoleFocused(
-            page_navigation::NavigationItemRole::kSettingsEnableOtgButton)) {
+    if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kSettingsTimezoneField)) {
         return {
-            .intent = ActivateIntent::kEnableOtg,
+            .intent = ActivateIntent::kShowTimezoneModal,
             .handled = true,
             .play_activate_cue = true,
         };
     }
-    if (coordinator.IsRoleFocused(
-            page_navigation::NavigationItemRole::kSettingsFormatSdButton)) {
+    if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kSettingsSyncNowButton)) {
         return {
-            .intent = ActivateIntent::kShowFormatSdModal,
+            .intent = ActivateIntent::kSyncTimeNow,
             .handled = true,
             .play_activate_cue = true,
         };
     }
-    if (coordinator.IsRoleFocused(
-            page_navigation::NavigationItemRole::kSettingsManualOnboardingButton)) {
+    if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kSettingsAdvancedButton)) {
         return {
-            .intent = ActivateIntent::kShowOnboarding,
+            .intent = ActivateIntent::kShowAdvanced,
             .handled = true,
             .play_activate_cue = true,
         };
@@ -86,9 +82,14 @@ void ApplyPrimaryActivateResult(const ActivateResult& result,
                 callbacks.show_wifi();
             }
             return;
-        case ActivateIntent::kShowTime:
-            if (callbacks.show_time) {
-                callbacks.show_time();
+        case ActivateIntent::kShowTimezoneModal:
+            if (callbacks.show_timezone_modal) {
+                callbacks.show_timezone_modal();
+            }
+            return;
+        case ActivateIntent::kSyncTimeNow:
+            if (callbacks.sync_time_now) {
+                callbacks.sync_time_now();
             }
             return;
         case ActivateIntent::kForceRefresh:
@@ -111,19 +112,9 @@ void ApplyPrimaryActivateResult(const ActivateResult& result,
                 callbacks.toggle_playback();
             }
             return;
-        case ActivateIntent::kEnableOtg:
-            if (callbacks.enable_otg) {
-                callbacks.enable_otg();
-            }
-            return;
-        case ActivateIntent::kShowFormatSdModal:
-            if (callbacks.show_format_sd_modal) {
-                callbacks.show_format_sd_modal();
-            }
-            return;
-        case ActivateIntent::kShowOnboarding:
-            if (callbacks.show_onboarding) {
-                callbacks.show_onboarding();
+        case ActivateIntent::kShowAdvanced:
+            if (callbacks.show_advanced) {
+                callbacks.show_advanced();
             }
             return;
         case ActivateIntent::kNone:

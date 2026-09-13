@@ -34,6 +34,7 @@
 #include "recording_session_service.h"
 #include "recording_service.h"
 #include "sdkconfig.h"
+#include "advanced_page_runtime.h"
 #include "settings_page_runtime.h"
 #include "details_page_runtime.h"
 #include "follow_up_page_runtime.h"
@@ -52,7 +53,6 @@
 #include "dashboard_page_runtime.h"
 #include "recording_archive_service.h"
 #include "timeline_format.h"
-#include "time_page_runtime.h"
 #include "vibe_check_page_runtime.h"
 #include "wifi_page_runtime.h"
 
@@ -161,7 +161,6 @@ footer_runtime::LayoutState FooterLayoutForScreen(display_service::ScreenId scre
     layout.visible = true;
     layout.show_settings = true;
     layout.show_wifi = true;
-    layout.show_time = true;
     // Home button is always visible, including on the home screen itself (tapping it
     // there does a full-screen refresh via HandleFooterActivate -> ShowHomeScreen(kFull)).
     layout.show_home = true;
@@ -241,6 +240,40 @@ esp_err_t ShowSettingsScreen(display_service::RefreshMode refresh_mode)
     }
     return display_service::SetCurrentScreen(display_service::ScreenId::kSettings, refresh_mode,
                                              "show_settings_screen");
+}
+
+esp_err_t ShowAdvancedScreen(display_service::RefreshMode refresh_mode)
+{
+    SyncStatusBarState("show_advanced_screen");
+    page_input_runtime::ResetFocusForScreen(display_service::ScreenId::kAdvanced);
+    footer_runtime::SetLayoutState(FooterLayoutForScreen(display_service::ScreenId::kAdvanced));
+    footer_runtime::SetProjectionState(
+        page_input_runtime::BuildFooterProjectionForScreen(display_service::ScreenId::kAdvanced));
+    const esp_err_t footer_err = footer_runtime::UpdateDisplayState();
+    if (footer_err != ESP_OK && footer_err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(kTag, "Footer sync before advanced screen failed: %s",
+                 esp_err_to_name(footer_err));
+    }
+    const esp_err_t advanced_err = advanced_page_runtime::UpdateDisplayState();
+    if (advanced_err != ESP_OK && advanced_err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(kTag, "Advanced page sync before show failed: %s",
+                 esp_err_to_name(advanced_err));
+    }
+    return display_service::SetCurrentScreen(display_service::ScreenId::kAdvanced, refresh_mode,
+                                             "show_advanced_screen");
+}
+
+// Open the Advanced page from the Settings "Advanced" button, deferred out of input dispatch
+// (page_input_runtime can't call this directly -- app_shell depends on it, not vice versa).
+void ShowAdvancedFromSettingsIfRequested()
+{
+    if (!advanced_page_runtime::ConsumePendingLaunch()) {
+        return;
+    }
+    const esp_err_t err = ShowAdvancedScreen(display_service::RefreshMode::kFull);
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(kTag, "Advanced launch failed: %s", esp_err_to_name(err));
+    }
 }
 
 esp_err_t ShowVibeCheckScreen(display_service::RefreshMode refresh_mode)
@@ -534,26 +567,6 @@ esp_err_t ShowWifiScreen(display_service::RefreshMode refresh_mode)
                                              "show_wifi_screen");
 }
 
-esp_err_t ShowTimeScreen(display_service::RefreshMode refresh_mode)
-{
-    SyncStatusBarState("show_time_screen");
-    page_input_runtime::ResetFocusForScreen(display_service::ScreenId::kTime);
-    footer_runtime::SetLayoutState(FooterLayoutForScreen(display_service::ScreenId::kTime));
-    footer_runtime::SetProjectionState(
-        page_input_runtime::BuildFooterProjectionForScreen(display_service::ScreenId::kTime));
-    const esp_err_t footer_err = footer_runtime::UpdateDisplayState();
-    if (footer_err != ESP_OK && footer_err != ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(kTag, "Footer sync before time screen failed: %s",
-                 esp_err_to_name(footer_err));
-    }
-    const esp_err_t time_err = time_page_runtime::SyncFromService(false);
-    if (time_err != ESP_OK && time_err != ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(kTag, "Time page sync before show failed: %s", esp_err_to_name(time_err));
-    }
-    return display_service::SetCurrentScreen(display_service::ScreenId::kTime, refresh_mode,
-                                             "show_time_screen");
-}
-
 // Gather every follow-up recording (newest first) as sticky-note items, reusing the same content
 // shape as the Follow-up timeline rows.
 std::vector<overlay_runtime::StickyNoteItem> BuildFollowUpStickyItems()
@@ -644,11 +657,6 @@ app_interaction::InputResult HandleFooterActivate(footer_runtime::FooterFocusIte
             result.play_feedback = true;
             result.feedback_cue = app_interaction::FeedbackCue::kClick;
             err = ShowWifiScreen(display_service::RefreshMode::kFull);
-            break;
-        case footer_runtime::FooterFocusItem::kTime:
-            result.play_feedback = true;
-            result.feedback_cue = app_interaction::FeedbackCue::kClick;
-            err = ShowTimeScreen(display_service::RefreshMode::kFull);
             break;
         case footer_runtime::FooterFocusItem::kSticky:
             // Opens the follow-up sticky overlay (or a nudge toast). The overlay owns its own
@@ -892,7 +900,7 @@ void HandleRecordingSessionEvent(const recording_session_service::Event& event, 
 
     switch (event.snapshot.phase) {
         case recording_session_service::Phase::kAwaitingTagSelection: {
-            time_page_runtime::ClearPendingSelectModal();
+            settings_page_runtime::ClearPendingSelectModal();
             const esp_err_t err =
                 overlay_runtime::ShowSelectModal(BuildRecordingTagSelectModalState());
             FlushOverlayFeedback();
@@ -1119,15 +1127,10 @@ void HandleTimezoneEvent(const timezone_service::Event& event, void*)
                  esp_err_to_name(lock_screen_err));
     }
 
-    // Keep the time page in sync on clock events when it is the active screen. If an overlay
-    // is open over it, ui_refresh_runtime suppresses the underlay repaint globally (the state
-    // is still applied), so we don't need to special-case overlays here.
-    const bool time_active = ScreenActiveForRefresh(display_service::ScreenId::kTime);
-    const esp_err_t time_page_err = time_page_runtime::SyncFromService(time_active);
-    if (time_page_err != ESP_OK && time_page_err != ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(kTag, "Time page update after time event failed: %s",
-                 esp_err_to_name(time_page_err));
-    }
+    // The settings page shows the timezone selection; keep it in sync so a change made
+    // through the portal API (not the on-device select modal, which already refreshes
+    // itself) is reflected here too.
+    (void)SyncSettingsPageState(true);
 
     const esp_err_t status_bar_err =
         s_startup_complete.load(std::memory_order_relaxed)
@@ -1245,7 +1248,7 @@ void HandleDispatchedButtonEvent(const button_service::ButtonEventInfo& event)
                 overlay_result.select_modal_selected_index) &&
             !follow_up_page_runtime::HandleItemActionSelection(
                 overlay_result.select_modal_selected_index) &&
-            !time_page_runtime::HandleSelectModalSubmit(
+            !settings_page_runtime::HandleSelectModalSubmit(
                 overlay_result.select_modal_selected_index)) {
             (void)recording_session_service::SubmitTagSelection(
                 overlay_result.select_modal_selected_index);
@@ -1341,6 +1344,7 @@ void HandleDispatchedButtonEvent(const button_service::ButtonEventInfo& event)
         HandleDetailsBackIfRequested();
         HandleOnboardingDismissIfRequested();
         ShowOnboardingFromSettingsIfRequested();
+        ShowAdvancedFromSettingsIfRequested();
         FlushOverlayFeedback();
         return;
     }

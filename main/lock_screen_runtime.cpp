@@ -37,12 +37,6 @@ uint32_t BuildMinuteKey(time_t now)
     return static_cast<uint32_t>(now / 60);
 }
 
-int FormatHour12(int hour24)
-{
-    const int hour12 = hour24 % 12;
-    return hour12 == 0 ? 12 : hour12;
-}
-
 bool RebuildClockStateLocked(bool force)
 {
     const time_t now = time(nullptr);
@@ -64,7 +58,7 @@ bool RebuildClockStateLocked(bool force)
         char weekday_text[16] = {};
         char month_text[8] = {};
 
-        std::snprintf(hour_text, sizeof(hour_text), "%02d", FormatHour12(local_tm.tm_hour));
+        std::snprintf(hour_text, sizeof(hour_text), "%02d", local_tm.tm_hour);
         std::snprintf(minute_text, sizeof(minute_text), "%02d", local_tm.tm_min);
         strftime(weekday_text, sizeof(weekday_text), "%A", &local_tm);
         strftime(month_text, sizeof(month_text), "%b", &local_tm);

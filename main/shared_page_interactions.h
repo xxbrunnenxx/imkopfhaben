@@ -10,8 +10,7 @@ template <typename ActivateResult, typename ActivateIntent, typename Coordinator
 ActivateResult HandleFooterPrimaryActivate(const Coordinator& coordinator,
                                           ActivateIntent show_home_intent,
                                           ActivateIntent show_settings_intent,
-                                          ActivateIntent footer_wifi_intent,
-                                          ActivateIntent footer_time_intent)
+                                          ActivateIntent footer_wifi_intent)
 {
     if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kFooterHome)) {
         return {
@@ -30,13 +29,6 @@ ActivateResult HandleFooterPrimaryActivate(const Coordinator& coordinator,
     if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kFooterWifi)) {
         return {
             .intent = footer_wifi_intent,
-            .handled = true,
-            .play_activate_cue = true,
-        };
-    }
-    if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kFooterTime)) {
-        return {
-            .intent = footer_time_intent,
             .handled = true,
             .play_activate_cue = true,
         };

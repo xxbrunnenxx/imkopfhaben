@@ -14,7 +14,6 @@ enum class ActivateIntent : uint8_t {
     kShowHome,
     kShowSettings,
     kShowWifi,
-    kShowTime,
     kEnterCard,
     kRefreshIdea,
     kDeleteIdea,
@@ -34,7 +33,6 @@ struct ActivateCallbacks {
     std::function<void()> show_home;
     std::function<void()> show_settings;
     std::function<void()> show_wifi;
-    std::function<void()> show_time;
     std::function<void()> enter_card;
     std::function<void()> refresh_idea;
     std::function<void()> delete_idea;

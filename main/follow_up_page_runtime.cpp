@@ -64,11 +64,9 @@ footer_runtime::FooterFocusItem FooterItemForSelectedIndex(int selected_index)
             return footer_runtime::FooterFocusItem::kSettings;
         case 2:
             return footer_runtime::FooterFocusItem::kWifi;
-        case 3:
-            return footer_runtime::FooterFocusItem::kTime;
         case 0:
             return footer_runtime::FooterFocusItem::kHome;
-        case 4:
+        case 3:
             return footer_runtime::FooterFocusItem::kSticky;
         default:
             return footer_runtime::FooterFocusItem::kNone;
@@ -84,8 +82,6 @@ page_navigation::NavigationItemRole FooterRoleForFooterItem(footer_runtime::Foot
             return page_navigation::NavigationItemRole::kFooterWifi;
         case footer_runtime::FooterFocusItem::kHome:
             return page_navigation::NavigationItemRole::kFooterHome;
-        case footer_runtime::FooterFocusItem::kTime:
-            return page_navigation::NavigationItemRole::kFooterTime;
         case footer_runtime::FooterFocusItem::kSticky:
             return page_navigation::NavigationItemRole::kFooterSticky;
         case footer_runtime::FooterFocusItem::kNone:

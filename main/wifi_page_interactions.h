@@ -15,7 +15,6 @@ enum class ActivateIntent : uint8_t {
     kNone = 0,
     kShowHome,
     kShowSettings,
-    kShowTime,
     kForceRefresh,
     kOpenPasswordKeyboard,
     kStartNetworkScan,
@@ -49,7 +48,6 @@ using FocusMoveResult = page_actions::FocusMoveOutcome;
 struct ActivateCallbacks {
     std::function<void()> show_home;
     std::function<void()> show_settings;
-    std::function<void()> show_time;
     std::function<void()> force_refresh;
     std::function<void()> open_password_keyboard;
     std::function<void()> start_network_scan;

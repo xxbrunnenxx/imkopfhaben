@@ -14,7 +14,6 @@ enum class GlobalFooterItemId : uint8_t {
     kHome,
     kSettings,
     kWifi,
-    kTime,
     kFolder,
     kMic,
     kSticky,
@@ -39,7 +38,6 @@ struct GlobalFooterState {
     FooterButtonState home = {};
     FooterButtonState settings = {};
     FooterButtonState wifi = {};
-    FooterButtonState time = {};
     FooterButtonState folder = {};
     FooterButtonState sticky = {};
     FooterMicState mic = {};

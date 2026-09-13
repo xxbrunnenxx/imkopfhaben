@@ -24,6 +24,15 @@ footer_runtime::ProjectionState BuildFooterProjectionState();
 page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem item);
 void ResetFocus();
 
+// Field activations (invoked by the page-input activate callbacks).
+esp_err_t ShowTimezoneModal();
+esp_err_t SyncTimeNow();
+// Applies a timezone chosen from the select modal launched by ShowTimezoneModal(), but only
+// if that modal is the one currently pending (mirrors the per-page claim chain in
+// app_shell.cpp's HandleDispatchedButtonEvent). Returns true if it claimed the submission.
+bool HandleSelectModalSubmit(int selected_index);
+void ClearPendingSelectModal();
+
 }  // namespace settings_page_runtime
 
 #endif  // SETTINGS_PAGE_RUNTIME_H_

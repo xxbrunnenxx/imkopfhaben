@@ -22,7 +22,6 @@
 #include "epaper_ui/onboarding_page.h"
 #include "epaper_ui/summarize_page.h"
 #include "epaper_ui/todos_page.h"
-#include "epaper_ui/time_page.h"
 #include "epaper_ui/vibe_check_page.h"
 #include "epaper_ui/wifi_page.h"
 #include "epaper_panel.h"
@@ -81,8 +80,8 @@ std::atomic<ScreenId> s_current_screen = ScreenId::kHome;
 epaper_ui::StatusBarState s_status_bar_state = {};
 epaper_ui::GlobalFooterState s_global_footer_state = {};
 epaper_ui::SettingsPageState s_settings_page_state = {};
+epaper_ui::AdvancedPageState s_advanced_page_state = {};
 epaper_ui::WifiPageState s_wifi_page_state = {};
-epaper_ui::TimePageState s_time_page_state = {};
 epaper_ui::DashboardPageState s_dashboard_page_state = {};
 epaper_ui::VibeCheckPageState s_vibe_check_page_state = {};
 epaper_ui::SummarizePageState s_summarize_page_state = {};
@@ -104,8 +103,8 @@ struct RenderSnapshot {
     epaper_ui::StatusBarState status_bar = {};
     epaper_ui::GlobalFooterState global_footer = {};
     epaper_ui::SettingsPageState settings_page = {};
+    epaper_ui::AdvancedPageState advanced_page = {};
     epaper_ui::WifiPageState wifi_page = {};
-    epaper_ui::TimePageState time_page = {};
     epaper_ui::DashboardPageState dashboard_page = {};
     epaper_ui::VibeCheckPageState vibe_check_page = {};
     epaper_ui::SummarizePageState summarize_page = {};
@@ -179,8 +178,8 @@ const RenderSnapshot& CaptureRenderSnapshot()
     snapshot.status_bar = s_status_bar_state;
     snapshot.global_footer = s_global_footer_state;
     snapshot.settings_page = s_settings_page_state;
+    snapshot.advanced_page = s_advanced_page_state;
     snapshot.wifi_page = s_wifi_page_state;
-    snapshot.time_page = s_time_page_state;
     snapshot.dashboard_page = s_dashboard_page_state;
     snapshot.vibe_check_page = s_vibe_check_page_state;
     snapshot.summarize_page = s_summarize_page_state;
@@ -367,6 +366,20 @@ void DrawSettingsUnderlay(uint8_t* framebuffer, const RenderSnapshot& snapshot)
                                 snapshot.global_footer);
 }
 
+void DrawAdvancedUnderlay(uint8_t* framebuffer, const RenderSnapshot& snapshot)
+{
+    EpaperPanel& panel = Panel();
+    panel.Clear(true);
+    epaper_ui::DrawAdvancedPage(framebuffer,
+                                WAVESHARE_EPD_WIDTH,
+                                WAVESHARE_EPD_HEIGHT,
+                                kPortraitWidth,
+                                kPortraitHeight,
+                                snapshot.advanced_page,
+                                snapshot.status_bar,
+                                snapshot.global_footer);
+}
+
 void DrawWifiUnderlay(uint8_t* framebuffer, const RenderSnapshot& snapshot)
 {
     EpaperPanel& panel = Panel();
@@ -377,20 +390,6 @@ void DrawWifiUnderlay(uint8_t* framebuffer, const RenderSnapshot& snapshot)
                             kPortraitWidth,
                             kPortraitHeight,
                             snapshot.wifi_page,
-                            snapshot.status_bar,
-                            snapshot.global_footer);
-}
-
-void DrawTimeUnderlay(uint8_t* framebuffer, const RenderSnapshot& snapshot)
-{
-    EpaperPanel& panel = Panel();
-    panel.Clear(true);
-    epaper_ui::DrawTimePage(framebuffer,
-                            WAVESHARE_EPD_WIDTH,
-                            WAVESHARE_EPD_HEIGHT,
-                            kPortraitWidth,
-                            kPortraitHeight,
-                            snapshot.time_page,
                             snapshot.status_bar,
                             snapshot.global_footer);
 }
@@ -635,6 +634,30 @@ esp_err_t ApplySettings(RefreshMode refresh_mode)
     return ESP_OK;
 }
 
+esp_err_t ApplyAdvanced(RefreshMode refresh_mode)
+{
+    const RenderSnapshot& snapshot = CaptureRenderSnapshot();
+    EpaperPanel& panel = Panel();
+    DrawAdvancedUnderlay(panel.framebuffer(), snapshot);
+    CaptureUnderlaySnapshot(panel.framebuffer());
+    DrawCurrentOverlays(panel.framebuffer(), snapshot);
+
+    // Publish the screen before driving the panel, not after. The drive takes
+    // seconds, and ScreenActiveForRefresh gates on this value: leaving it stale for
+    // the whole render means an async event arriving mid-transition sees the old
+    // screen, skips merging into this refresh, and lands afterwards as a separate
+    // partial-waveform drive over an image that was already correct.
+    s_current_screen.store(ScreenId::kAdvanced, std::memory_order_relaxed);
+    RefreshBusyGuard refresh_busy;
+    const esp_err_t err = RefreshForMode(panel, refresh_mode);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    LogMetrics(panel.metrics());
+    return ESP_OK;
+}
+
 esp_err_t ApplyWifi(RefreshMode refresh_mode)
 {
     const RenderSnapshot& snapshot = CaptureRenderSnapshot();
@@ -649,30 +672,6 @@ esp_err_t ApplyWifi(RefreshMode refresh_mode)
     // screen, skips merging into this refresh, and lands afterwards as a separate
     // partial-waveform drive over an image that was already correct.
     s_current_screen.store(ScreenId::kWifi, std::memory_order_relaxed);
-    RefreshBusyGuard refresh_busy;
-    const esp_err_t err = RefreshForMode(panel, refresh_mode);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    LogMetrics(panel.metrics());
-    return ESP_OK;
-}
-
-esp_err_t ApplyTime(RefreshMode refresh_mode)
-{
-    const RenderSnapshot& snapshot = CaptureRenderSnapshot();
-    EpaperPanel& panel = Panel();
-    DrawTimeUnderlay(panel.framebuffer(), snapshot);
-    CaptureUnderlaySnapshot(panel.framebuffer());
-    DrawCurrentOverlays(panel.framebuffer(), snapshot);
-
-    // Publish the screen before driving the panel, not after. The drive takes
-    // seconds, and ScreenActiveForRefresh gates on this value: leaving it stale for
-    // the whole render means an async event arriving mid-transition sees the old
-    // screen, skips merging into this refresh, and lands afterwards as a separate
-    // partial-waveform drive over an image that was already correct.
-    s_current_screen.store(ScreenId::kTime, std::memory_order_relaxed);
     RefreshBusyGuard refresh_busy;
     const esp_err_t err = RefreshForMode(panel, refresh_mode);
     if (err != ESP_OK) {
@@ -958,11 +957,11 @@ esp_err_t RefreshCurrentScreenRegionLocked()
         case ScreenId::kSettings:
             DrawSettingsUnderlay(panel.framebuffer(), snapshot);
             break;
+        case ScreenId::kAdvanced:
+            DrawAdvancedUnderlay(panel.framebuffer(), snapshot);
+            break;
         case ScreenId::kWifi:
             DrawWifiUnderlay(panel.framebuffer(), snapshot);
-            break;
-        case ScreenId::kTime:
-            DrawTimeUnderlay(panel.framebuffer(), snapshot);
             break;
         case ScreenId::kVibeCheck:
             DrawVibeCheckUnderlay(panel.framebuffer(), snapshot);
@@ -1028,10 +1027,10 @@ esp_err_t RefreshCurrentScreenLocked(RefreshMode refresh_mode)
             return ApplyHomeScreen(refresh_mode);
         case ScreenId::kSettings:
             return ApplySettings(refresh_mode);
+        case ScreenId::kAdvanced:
+            return ApplyAdvanced(refresh_mode);
         case ScreenId::kWifi:
             return ApplyWifi(refresh_mode);
-        case ScreenId::kTime:
-            return ApplyTime(refresh_mode);
         case ScreenId::kVibeCheck:
             return ApplyVibeCheck(refresh_mode);
         case ScreenId::kSummarize:
@@ -1131,8 +1130,8 @@ void DisplayTask(void*)
                 err = ApplyWifi(command.refresh_request.refresh_mode);
             } else if (command.screen == ScreenId::kSettings) {
                 err = ApplySettings(command.refresh_request.refresh_mode);
-            } else if (command.screen == ScreenId::kTime) {
-                err = ApplyTime(command.refresh_request.refresh_mode);
+            } else if (command.screen == ScreenId::kAdvanced) {
+                err = ApplyAdvanced(command.refresh_request.refresh_mode);
             } else if (command.screen == ScreenId::kVibeCheck) {
                 err = ApplyVibeCheck(command.refresh_request.refresh_mode);
             } else if (command.screen == ScreenId::kSummarize) {
@@ -1310,6 +1309,17 @@ esp_err_t SetSettingsPageState(const epaper_ui::SettingsPageState& state)
     return ESP_OK;
 }
 
+esp_err_t SetAdvancedPageState(const epaper_ui::AdvancedPageState& state)
+{
+    if (!s_initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    std::lock_guard<std::mutex> lock(s_state_mutex);
+    s_advanced_page_state = state;
+    return ESP_OK;
+}
+
 esp_err_t SetWifiPageState(const epaper_ui::WifiPageState& state)
 {
     if (!s_initialized) {
@@ -1321,16 +1331,6 @@ esp_err_t SetWifiPageState(const epaper_ui::WifiPageState& state)
     return ESP_OK;
 }
 
-esp_err_t SetTimePageState(const epaper_ui::TimePageState& state)
-{
-    if (!s_initialized) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    std::lock_guard<std::mutex> lock(s_state_mutex);
-    s_time_page_state = state;
-    return ESP_OK;
-}
 
 esp_err_t SetDashboardPageState(const epaper_ui::DashboardPageState& state)
 {

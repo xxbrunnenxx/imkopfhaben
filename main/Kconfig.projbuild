@@ -54,23 +54,30 @@ menu "Folloup Settings"
 
     config FOLLOWUP_LOCAL_AI_BASE_URL
         string "Local AI server base URL"
-        default "http://192.168.178.215:1234/v1/"
+        default "http://kraken.local:1234/v1/"
         help
             Base URL of the local OpenAI-compatible chat/completions server
-            (LM Studio, running google/gemma-4-e2b) used for summaries. A
-            runtime-saved base URL stored through the backend portal takes
-            precedence when present. No credential is sent -- this is a LAN
-            address, not a secret.
+            (LM Studio, running google/gemma-4-e2b) used for summaries. Uses
+            the mDNS hostname of the Kraken host, not a fixed IP -- Kraken's
+            address changes between networks (home vs. travel router), but
+            "kraken.local" resolves via the one-shot mDNS query that ESP-IDF's
+            standard hostname resolution already performs for ".local" names
+            (LWIP_DNS_SUPPORT_MDNS_QUERIES, on by default). A runtime-saved
+            base URL stored through the backend portal takes precedence when
+            present. No credential is sent -- this is a LAN address, not a
+            secret.
 
     config FOLLOWUP_LOCAL_AI_TRANSCRIBE_URL
         string "Local AI transcription endpoint URL"
-        default "http://192.168.178.215:8000/api/transcribe-raw"
+        default "http://kraken.local:8000/api/transcribe-raw"
         help
             URL of the local transcription endpoint (a thin wrapper around
             faster-whisper), served by imkopfhaben-brain on Kraken (port
-            8000, same process as the existing voice-notebook pipeline). A
-            runtime-saved URL stored through the backend portal takes
-            precedence when present.
+            8000, same process as the existing voice-notebook pipeline).
+            Uses the mDNS hostname "kraken.local" for the same reason as
+            FOLLOWUP_LOCAL_AI_BASE_URL above -- survives Kraken's IP
+            changing between networks. A runtime-saved URL stored through
+            the backend portal takes precedence when present.
 
     config FOLLOWUP_LOCAL_AI_MODEL_NAME
         string "Local AI model name"

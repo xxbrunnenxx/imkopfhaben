@@ -1,6 +1,7 @@
 #ifndef DISPLAY_SERVICE_H_
 #define DISPLAY_SERVICE_H_
 
+#include "epaper_ui/advanced_page.h"
 #include "epaper_ui/lock_screen.h"
 #include "epaper_ui/global_footer.h"
 #include "epaper_ui/keyboard.h"
@@ -9,7 +10,6 @@
 #include "epaper_ui/select_modal.h"
 #include "epaper_ui/dashboard_page.h"
 #include "epaper_ui/status_bar.h"
-#include "epaper_ui/time_page.h"
 #include "epaper_ui/details_page.h"
 #include "epaper_ui/follow_up_page.h"
 #include "epaper_ui/notes_page.h"
@@ -27,8 +27,8 @@ namespace display_service {
 enum class ScreenId {
     kHome,
     kSettings,
+    kAdvanced,
     kWifi,
-    kTime,
     kVibeCheck,
     kSummarize,
     kNotes,
@@ -91,8 +91,8 @@ ScreenId GetCurrentScreen();
 esp_err_t SetStatusBarState(const epaper_ui::StatusBarState& state);
 esp_err_t SetGlobalFooterState(const epaper_ui::GlobalFooterState& state);
 esp_err_t SetSettingsPageState(const epaper_ui::SettingsPageState& state);
+esp_err_t SetAdvancedPageState(const epaper_ui::AdvancedPageState& state);
 esp_err_t SetWifiPageState(const epaper_ui::WifiPageState& state);
-esp_err_t SetTimePageState(const epaper_ui::TimePageState& state);
 esp_err_t SetDashboardPageState(const epaper_ui::DashboardPageState& state);
 esp_err_t SetVibeCheckPageState(const epaper_ui::VibeCheckPageState& state);
 esp_err_t SetSummarizePageState(const epaper_ui::SummarizePageState& state);
