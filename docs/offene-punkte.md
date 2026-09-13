@@ -1,25 +1,34 @@
 # Offene Punkte — folloup-waveshare / lokale KI
 
-Stand: 2026-09-03. Noch keine GitHub-Issues, nur damit hier nichts
-verloren geht. Reihenfolge = ungefähre Priorität.
+Stand: 2026-09-13 (Board da, erster echter Probelauf gelaufen). Noch
+keine GitHub-Issues, nur damit hier nichts verloren geht. Reihenfolge =
+ungefähre Priorität.
 
-## Blocker
+## Erledigt seit dem letzten Stand (2026-09-13)
 
-- **Kein echtes Board zum Flashen/Testen.** Bestellt, noch nicht
-  angekommen. Der einzige verbleibende Blocker für einen echten
-  End-to-End-Probelauf — beide Server-Pfade (Transkription,
-  Chat-Completion) sind bereits live gegen die echten Firmware-Request-
-  Formate bestätigt.
+- **Board ist da, End-zu-Ende live getestet.** Mehrere echte Aufnahmen
+  über `/api/transcribe-raw` erfolgreich transkribiert (200 OK, Board-IP
+  im Log bestätigt). Chat-Completion/Zusammenfassungs-Pfad gegen
+  `google/gemma-4-e2b` ebenfalls live bestätigt (`Local AI readiness
+  check succeeded`). Der frühere Blocker "kein Board" ist damit weg.
+- **Feste IP durch `kraken.local` (mDNS) ersetzt** für
+  `FOLLOWUP_LOCAL_AI_BASE_URL`/`FOLLOWUP_LOCAL_AI_TRANSCRIBE_URL` —
+  übersteht jetzt einen Netzwechsel (Zuhause vs. unterwegs), ohne dass
+  Firmware neu geflasht werden muss. Betrifft nur den neu kompilierten
+  Default; ein per Portal-Reset zurückgesetztes Gerät übernimmt ihn
+  automatisch, ein Gerät mit noch aktivem IP-Override in NVS nicht.
 
-## Vor dem Probelauf klären
+## Vor dem nächsten Probelauf klären
 
-- **Kein systemd-Unit für LM Studio.** Läuft nur manuell auf
-  `0.0.0.0:1234`, übersteht keinen Kraken-Neustart (Bindung geht dann auf
-  `127.0.0.1`-only zurück, muss von Hand mit `lms server start --bind
-  0.0.0.0` neu gesetzt werden). Für den Prototyp-Testpfad selbst nicht
-  zwingend (die Transkription braucht LM Studio nicht, nur die
-  Chat-Completion/Zusammenfassung), aber der fragilste Punkt im aktuellen
-  Stand. Entwurf liegt in `kraken-arche` PR #1 (bereits gemerged, aber
+- **Kein systemd-Unit für LM Studio — weiterhin offen, heute erneut
+  bestätigt.** Kraken wurde zwischenzeitlich neu aufgesetzt; LM Studio
+  samt Modell war komplett weg und musste von Hand neu installiert,
+  Modell neu geladen und der Server erneut manuell mit `lms server
+  start --bind 0.0.0.0` gestartet werden. Genau das fragile Verhalten,
+  das dieser Punkt schon vorher beschrieb, jetzt real eingetreten.
+  Für den Prototyp-Testpfad selbst nicht zwingend (die Transkription
+  braucht LM Studio nicht, nur die Chat-Completion/Zusammenfassung).
+  Entwurf liegt in `kraken-arche` PR #1 (gemerged, weiterhin
   unverifiziert — kein Reboot-Test).
 - **Transkriptions-Readiness-Health-Check fehlt.** Prüft aktuell nur "ist
   eine URL konfiguriert", nicht ob der Server wirklich erreichbar ist —
@@ -46,7 +55,10 @@ verloren geht. Reihenfolge = ungefähre Priorität.
 
 ## Später, nicht dringend
 
-- **Offline-Warteschlange fürs Board ist gebaut, aber nie live getestet**
-  (kein Board). Code-seitig verifiziert, Review-Funde daran (Deadlock,
-  Race) sind in PR #3 gefixt.
+- **Offline-Warteschlange fürs Board weiterhin nicht live getestet** —
+  jetzt zwar ein Board da und der Online-Pfad (Aufnahme → sofortige
+  Transkription) mehrfach bestätigt, aber der eigentliche Offline-Fall
+  (Aufnahme ohne Netz, späterer automatischer Retry beim Reconnect)
+  wurde noch nicht gezielt durchgespielt. Code-seitig verifiziert,
+  Review-Funde daran (Deadlock, Race) sind in PR #3 gefixt.
 - Kein `transcribe_url`-Feld in der Portal-UI (nur `base_url` editierbar).
