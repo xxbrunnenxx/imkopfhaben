@@ -1,22 +1,9 @@
 # Offene Punkte — folloup-waveshare / lokale KI
 
-Stand: 2026-09-13 (Board da, erster echter Probelauf gelaufen). Noch
-keine GitHub-Issues, nur damit hier nichts verloren geht. Reihenfolge =
-ungefähre Priorität.
-
-## Erledigt seit dem letzten Stand (2026-09-13)
-
-- **Board ist da, End-zu-Ende live getestet.** Mehrere echte Aufnahmen
-  über `/api/transcribe-raw` erfolgreich transkribiert (200 OK, Board-IP
-  im Log bestätigt). Chat-Completion/Zusammenfassungs-Pfad gegen
-  `google/gemma-4-e2b` ebenfalls live bestätigt (`Local AI readiness
-  check succeeded`). Der frühere Blocker "kein Board" ist damit weg.
-- **Feste IP durch `kraken.local` (mDNS) ersetzt** für
-  `FOLLOWUP_LOCAL_AI_BASE_URL`/`FOLLOWUP_LOCAL_AI_TRANSCRIBE_URL` —
-  übersteht jetzt einen Netzwechsel (Zuhause vs. unterwegs), ohne dass
-  Firmware neu geflasht werden muss. Betrifft nur den neu kompilierten
-  Default; ein per Portal-Reset zurückgesetztes Gerät übernimmt ihn
-  automatisch, ein Gerät mit noch aktivem IP-Override in NVS nicht.
+Stand: 2026-09-13 (Board da, erster echter Probelauf gelaufen — der
+frühere Blocker "kein Board" ist damit weg und deshalb hier entfernt).
+Noch keine GitHub-Issues, nur damit hier nichts verloren geht.
+Reihenfolge = ungefähre Priorität.
 
 ## Vor dem nächsten Probelauf klären
 
