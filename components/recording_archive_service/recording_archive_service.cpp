@@ -730,7 +730,9 @@ int64_t FileModifiedSeconds(const std::string& path)
 // Returns ESP_OK when the directory was read fully (including the legitimately
 // absent case), or an error when the SD itself failed mid-read so callers can
 // tell an empty archive apart from a failed scan.
-esp_err_t ListEntriesInDirectory(const std::string& directory, std::vector<RecordingEntry>* entries)
+esp_err_t ListEntriesInDirectory(const std::string& directory,
+                                 std::vector<RecordingEntry>* entries,
+                                 bool include_transcript_text)
 {
     errno = 0;
     DIR* dir = opendir(directory.c_str());
@@ -784,7 +786,7 @@ esp_err_t ListEntriesInDirectory(const std::string& directory, std::vector<Recor
         entry.metadata_path = metadata_path;
         entry.modified_unix_seconds = FileModifiedSeconds(metadata_path);
         entry.metadata = metadata;
-        if (metadata.has_transcript) {
+        if (include_transcript_text && metadata.has_transcript) {
             std::string transcript;
             if (ReadTextFile(entry.transcript_path, &transcript)) {
                 entry.transcript_text = std::move(transcript);
@@ -798,6 +800,7 @@ esp_err_t ListEntriesInDirectory(const std::string& directory, std::vector<Recor
 
 struct ListEntriesContext {
     std::vector<RecordingEntry>* entries = nullptr;
+    bool include_transcript_text = true;
 };
 
 esp_err_t ListEntriesOnMountedFilesystem(const char* mount_point, void* context)
@@ -808,9 +811,11 @@ esp_err_t ListEntriesOnMountedFilesystem(const char* mount_point, void* context)
     }
     // Reset so a remount-and-retry inside RunWithMountedFilesystem can't append twice.
     list->entries->clear();
-    esp_err_t err = ListEntriesInDirectory(JoinPath(mount_point, "recordings"), list->entries);
+    esp_err_t err = ListEntriesInDirectory(
+        JoinPath(mount_point, "recordings"), list->entries, list->include_transcript_text);
     if (err == ESP_OK) {
-        err = ListEntriesInDirectory(JoinPath(mount_point, "todos"), list->entries);
+        err = ListEntriesInDirectory(
+            JoinPath(mount_point, "todos"), list->entries, list->include_transcript_text);
     }
     return err;
 }
@@ -1129,10 +1134,11 @@ SaveResult SaveTranscript(const std::string& recording_id, const std::string& tr
     return result;
 }
 
-std::vector<RecordingEntry> ListRecordings(esp_err_t* status)
+std::vector<RecordingEntry> ListRecordings(esp_err_t* status, bool include_transcript_text)
 {
     std::vector<RecordingEntry> entries;
-    ListEntriesContext context = {.entries = &entries};
+    ListEntriesContext context = {.entries = &entries,
+                                  .include_transcript_text = include_transcript_text};
     const esp_err_t err =
         storage_service::RunWithMountedFilesystem(ListEntriesOnMountedFilesystem, &context);
     if (status != nullptr) {

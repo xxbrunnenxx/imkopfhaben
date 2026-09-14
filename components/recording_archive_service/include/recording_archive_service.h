@@ -100,7 +100,11 @@ void RefreshAsync();
 // Runs SD I/O on the caller's task; call from a non-UI task. Entries are unsorted.
 // When the SD read fails, an empty list is returned and *status (if provided) is set to the
 // error, so callers can tell a genuinely empty archive apart from a failed read.
-std::vector<RecordingEntry> ListRecordings(esp_err_t* status = nullptr);
+// Pass include_transcript_text=false when only metadata (e.g. has_transcript) is needed --
+// skips the extra per-recording SD read of the transcript .txt file, leaving transcript_text
+// empty on every returned entry.
+std::vector<RecordingEntry> ListRecordings(esp_err_t* status = nullptr,
+                                           bool include_transcript_text = true);
 // Delete a recording and all of its sidecar files (.wav/.json/.txt), then re-aggregate.
 bool DeleteRecording(const std::string& recording_id);
 // Load an archived recording's WAV back into an in-memory clip (e.g. to re-transcribe it).

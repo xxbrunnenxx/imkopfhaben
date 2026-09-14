@@ -33,6 +33,47 @@ design::TypographyRole FitLabelRole(design::TypographyRole preferred_role,
     return kShrinkLadder.back();
 }
 
+// Toggle labels are static string literals set once by the owning coordinator, so the fitted
+// role/text for a given (address, width) pair never changes across redraws. Small fixed-size
+// cache avoids repeating the same MeasureText/FitTextToWidth work on every redraw -- keyed by
+// the label's data() pointer rather than its content, since that's cheaper and label text
+// storage is stable for the lifetime of the process.
+struct LabelFitCache {
+    const char* label_data = nullptr;
+    int max_width = -1;
+    design::TypographyRole role = design::TypographyRole::kLabelLargeBlack;
+    std::string fitted_text;
+};
+
+constexpr size_t kLabelFitCacheSlots = 4;
+LabelFitCache s_label_fit_cache[kLabelFitCacheSlots];
+size_t s_label_fit_cache_next = 0;
+
+void FitLabelCached(std::string_view text,
+                    design::TypographyRole preferred_role,
+                    int max_width,
+                    design::TypographyRole* out_role,
+                    std::string* out_text)
+{
+    for (const LabelFitCache& slot : s_label_fit_cache) {
+        if (slot.label_data == text.data() && slot.max_width == max_width) {
+            *out_role = slot.role;
+            *out_text = slot.fitted_text;
+            return;
+        }
+    }
+
+    *out_role = FitLabelRole(preferred_role, text, max_width);
+    *out_text = FitTextToWidth(*out_role, text, max_width);
+
+    LabelFitCache& slot = s_label_fit_cache[s_label_fit_cache_next];
+    slot.label_data = text.data();
+    slot.max_width = max_width;
+    slot.role = *out_role;
+    slot.fitted_text = *out_text;
+    s_label_fit_cache_next = (s_label_fit_cache_next + 1) % kLabelFitCacheSlots;
+}
+
 }  // namespace
 
 UiRect MenuToggleBounds(int origin_x, int origin_y, const MenuToggleStyle& style)
@@ -101,9 +142,9 @@ void DrawMenuToggle(uint8_t* framebuffer,
     const int label_max_width = std::max(
         0, toggle_x - ClampPositive(style.control_gap) - bounds.x -
                ClampPositive(style.horizontal_padding));
-    const design::TypographyRole label_role =
-        FitLabelRole(style.role, state.label_text, label_max_width);
-    const std::string label_text = FitTextToWidth(label_role, state.label_text, label_max_width);
+    design::TypographyRole label_role = style.role;
+    std::string label_text;
+    FitLabelCached(state.label_text, style.role, label_max_width, &label_role, &label_text);
 
     DrawTypographyText(framebuffer,
                        raw_width,

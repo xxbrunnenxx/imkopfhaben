@@ -130,7 +130,8 @@ void TryRetryOldestUnsentRecording()
     if (ts.request_in_flight) {
         return;  // a recording or another retry is already running
     }
-    for (const auto& entry : recording_archive_service::ListRecordings()) {
+    for (const auto& entry :
+        recording_archive_service::ListRecordings(nullptr, /*include_transcript_text=*/false)) {
         if (!entry.metadata.has_transcript) {
             ESP_LOGI(kTag, "Retrying queued transcription: id=%s", entry.recording_id.c_str());
             BeginArchivedTranscription(entry.recording_id);

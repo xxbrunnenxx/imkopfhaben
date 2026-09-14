@@ -25,13 +25,6 @@ Reihenfolge = ungefähre Priorität.
 
 ## Bekannt, bewusst nicht gefixt (aus dem Review, Besitzer-Entscheidung)
 
-- **Unnötige Transkript-Text-Ladevorgänge im Retry-Scan.**
-  `TryRetryOldestUnsentRecording()` liest bei jedem Durchlauf über
-  `ListRecordings()` den vollen Transkript-Text jeder schon
-  transkribierten Aufnahme mit, obwohl nur `has_transcript` gebraucht
-  wird. Läuft alle 10 Minuten + nach jeder erfolgreichen Speicherung.
-  Für den aktuellen Prototyp-Umfang (wenige Notizen) unkritisch, würde
-  erst über Wochen/Monate mit großem Archiv relevant.
 - **Doppelter Busy/Notify/Try-Catch-Wrapper im Portal-Frontend**
   (`webserver/src/portal/providerKeys.ts`). `saveLocalAiBaseUrl`/
   `resetLocalAiBaseUrl` bauen dieselbe Hülle nach, die
@@ -55,12 +48,6 @@ Reihenfolge = ungefähre Priorität.
   die kleinstmögliche zusammenhängende. Eine echte Verkleinerung
   bräuchte eine nicht-zusammenhängende Lookup-Tabelle in Generator UND
   Renderer — größerer Eingriff, kein minimalinvasiver Fix.
-- **`DrawMenuToggle()` berechnet das gefittete Label bei jedem Redraw
-  neu** (`components/epaper_ui/menu_toggle.cpp`), kein Cache. Die
-  Draw-Funktion ist laut Architektur bewusst zustandslos
-  (View-Renderer); ein Cache würde Zustand + Invalidierungslogik in eine
-  bisher reine Renderfunktion bringen, für einen bei kurzen
-  Label-Strings kaum messbaren Gewinn. Bewusst nicht gefixt.
 
 ## Später, nicht dringend
 
