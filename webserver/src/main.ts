@@ -61,11 +61,7 @@ import { createTimeController } from './portal/time';
 import { createWiFiController } from './portal/wifi';
 import { bindPortalEvents } from './portal/events';
 import { updatePortalUiState } from './portal/uiState';
-import type {
-  OpenAiModuleResponse,
-  TalkingClockModuleResponse,
-  ValidatableField,
-} from './portal/types';
+import type { TalkingClockModuleResponse, ValidatableField } from './portal/types';
 
 defineBottomSheet();
 defineButton();
@@ -92,9 +88,6 @@ const noopTimeInput = () => document.createElement('input') as unknown as Valida
 const stubClockModeToggle = document.createElement('button');
 const stubWakeupTimeInput = noopTimeInput();
 const stubBedtimeTimeInput = noopTimeInput();
-const stubOpenAiApiKeyInput = document.createElement('input') as unknown as ValidatableField & {
-  readOnly: boolean;
-};
 
 function updateUi() {
   updatePortalUiState({
@@ -109,13 +102,9 @@ function updateUi() {
 
 const localAiController = createProviderKeysController({
   fetchLocalAiModuleJson,
-  fetchOpenAiModuleJson: () => Promise.resolve({} as OpenAiModuleResponse),
   localAiBaseUrlInput: dom.localAiBaseUrlInput,
   isLocalAiModuleActive: () => true,
-  isOpenAiModuleActive: () => false,
   notifyLocalAi: setLocalAiNotification,
-  notifyOpenAi: () => {},
-  openAiApiKeyInput: stubOpenAiApiKeyInput,
   updateButtons: updateUi,
 });
 

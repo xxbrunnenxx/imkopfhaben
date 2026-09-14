@@ -92,7 +92,6 @@ export function normalizeModuleId(id?: string): ModuleId | '' {
     case 'classic':
     case 'xiaozhi':
     case 'local_ai':
-    case 'openai':
       return id;
     default:
       return '';

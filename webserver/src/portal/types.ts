@@ -111,7 +111,7 @@ export interface SleepStatusResponse {
   light_sleep_trigger_minutes?: number;
 }
 
-export type ModuleId = 'core' | 'classic' | 'xiaozhi' | 'local_ai' | 'openai';
+export type ModuleId = 'core' | 'classic' | 'xiaozhi' | 'local_ai';
 
 export interface BootstrapResponse {
   success: boolean;
@@ -137,12 +137,6 @@ export interface LocalAiModuleSettings {
   transcribe_url?: string;
   base_url_source?: string;
   model_name?: string;
-}
-
-export interface OpenAiModuleSettings {
-  has_key?: boolean;
-  last4?: string;
-  resumption_available?: boolean;
 }
 
 export interface XiaozhiModuleSettings {
@@ -191,12 +185,6 @@ export interface LocalAiModuleResponse {
   success: boolean;
   message?: string;
   settings?: LocalAiModuleSettings;
-}
-
-export interface OpenAiModuleResponse {
-  success: boolean;
-  message?: string;
-  settings?: OpenAiModuleSettings;
 }
 
 export interface XiaozhiModuleResponse {

@@ -25,13 +25,6 @@ Reihenfolge = ungefähre Priorität.
 
 ## Bekannt, bewusst nicht gefixt (aus dem Review, Besitzer-Entscheidung)
 
-- **Doppelter Busy/Notify/Try-Catch-Wrapper im Portal-Frontend**
-  (`webserver/src/portal/providerKeys.ts`). `saveLocalAiBaseUrl`/
-  `resetLocalAiBaseUrl` bauen dieselbe Hülle nach, die
-  `saveProviderKey`/`clearProviderKey` schon haben. Echte Duplikation,
-  aber die beiden Pfade haben unterschiedliche Settings-Anwendungslogik
-  (maskiertes Secret vs. offene URL) — nur die äußere Hülle wäre sicher
-  extrahierbar, kein 1:1-Fix ohne Umbau von `applyProviderSettings`.
 - **Font-Tabelle deckt Latin-1 0x20–0xFC ab** (`scripts/
   generate_epaper_fonts.py`, `kCharFirst`/`kCharLast`), 2,44× größer als
   reines ASCII. Grund: `FindGlyph()` (`components/epaper_ui/
