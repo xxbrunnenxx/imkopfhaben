@@ -9,6 +9,7 @@
 #include "display_service.h"
 #include "epaper_ui/global_footer.h"
 #include "esp_err.h"
+#include "page_navigation/navigation_model.h"
 
 namespace footer_runtime {
 
@@ -39,6 +40,12 @@ struct ProjectionState {
 };
 
 using ActivateHandler = app_interaction::InputResult (*)(FooterFocusItem item, void* context);
+
+// Maps a page's own footer item_index (as wired by AddFooterNavigationItems, see
+// navigation_model.cpp) to the corresponding footer icon -- shared by every page runtime's
+// focus-projection logic so the mapping is defined in exactly one place.
+FooterFocusItem FooterItemForSelectedIndex(int selected_index);
+page_navigation::NavigationItemRole FooterRoleForFooterItem(FooterFocusItem item);
 
 void SetActivateHandler(ActivateHandler handler, void* context);
 void SetLayoutState(const LayoutState& state);

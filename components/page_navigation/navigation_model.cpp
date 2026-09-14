@@ -16,6 +16,16 @@ void AddItem(NavigationModel& model,
     model.item_count = static_cast<int>(model.items.size());
 }
 
+// Every interactive page (all but onboarding) ends its navigation model with the same four
+// footer icons at the same item_index values, since the footer itself is shared/global.
+void AddFooterNavigationItems(NavigationModel& model)
+{
+    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
+    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
+    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
+    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+}
+
 }  // namespace
 
 const NavigationItemDescriptor* NavigationModel::ItemAt(int index) const
@@ -71,10 +81,7 @@ NavigationModel BuildSettingsPageNavigationModel()
             NavigationItemSection::kSettingsPageMenu,
             NavigationItemRole::kSettingsAdvancedButton,
             5);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -95,10 +102,7 @@ NavigationModel BuildAdvancedPageNavigationModel()
             NavigationItemSection::kAdvancedPageMenu,
             NavigationItemRole::kAdvancedManualOnboardingButton,
             2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -127,10 +131,7 @@ NavigationModel BuildWifiPageNavigationModel()
             NavigationItemSection::kWifiPageControls,
             NavigationItemRole::kWifiPageConnectButton,
             4);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -143,10 +144,7 @@ NavigationModel BuildDashboardPageNavigationModel()
         AddItem(model, NavigationItemSection::kDashboardPageMenu,
                 NavigationItemRole::kDashboardMenuItem, index);
     }
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -157,10 +155,7 @@ NavigationModel BuildVibeCheckPageNavigationModel()
 
     AddItem(model, NavigationItemSection::kVibeCheckPageControls,
             NavigationItemRole::kVibeCheckPageCard, 0);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -175,10 +170,7 @@ NavigationModel BuildSummarizePageNavigationModel()
             NavigationItemRole::kSummarizePageScrollContainer, 1);
     AddItem(model, NavigationItemSection::kSummarizePageControls,
             NavigationItemRole::kSummarizePageGetSummaryButton, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -192,10 +184,7 @@ NavigationModel BuildNotesPageNavigationModel(int timeline_group_count)
         AddItem(model, NavigationItemSection::kNotesPageTimelineGroups,
                 NavigationItemRole::kNotesPageTimelineGroup, index);
     }
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -209,10 +198,7 @@ NavigationModel BuildTodosPageNavigationModel(int timeline_group_count)
         AddItem(model, NavigationItemSection::kTodosPageTimelineGroups,
                 NavigationItemRole::kTodosPageTimelineGroup, index);
     }
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -226,10 +212,7 @@ NavigationModel BuildFollowUpPageNavigationModel(int timeline_group_count)
         AddItem(model, NavigationItemSection::kFollowUpPageTimelineGroups,
                 NavigationItemRole::kFollowUpPageTimelineGroup, index);
     }
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 
@@ -262,10 +245,7 @@ NavigationModel BuildDetailsPageNavigationModel(bool with_transcribe)
         AddItem(model, NavigationItemSection::kDetailsPageControls,
                 NavigationItemRole::kDetailsPageTranscribeButton, 2);
     }
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSettings, 1);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterWifi, 2);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterSticky, 3);
-    AddItem(model, NavigationItemSection::kFooter, NavigationItemRole::kFooterHome, 0);
+    AddFooterNavigationItems(model);
     return model;
 }
 

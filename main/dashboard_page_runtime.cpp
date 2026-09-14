@@ -9,6 +9,7 @@
 #include "overlay_runtime.h"
 #include "page_navigation/page_focus_projection.h"
 #include "recording_archive_service.h"
+#include "shared_page_interactions.h"
 #include "ui_refresh_runtime.h"
 
 namespace dashboard_page_runtime {
@@ -33,41 +34,6 @@ void AdvanceInteractionGenerationLocked()
     }
 }
 
-footer_runtime::FooterFocusItem FooterItemForSelectedIndex(int selected_index)
-{
-    switch (selected_index) {
-        case 1:
-            return footer_runtime::FooterFocusItem::kSettings;
-        case 2:
-            return footer_runtime::FooterFocusItem::kWifi;
-        case 0:
-            return footer_runtime::FooterFocusItem::kHome;
-        case 3:
-            return footer_runtime::FooterFocusItem::kSticky;
-        default:
-            return footer_runtime::FooterFocusItem::kNone;
-    }
-}
-
-page_navigation::NavigationItemRole FooterRoleForFooterItem(footer_runtime::FooterFocusItem item)
-{
-    switch (item) {
-        case footer_runtime::FooterFocusItem::kSettings:
-            return page_navigation::NavigationItemRole::kFooterSettings;
-        case footer_runtime::FooterFocusItem::kWifi:
-            return page_navigation::NavigationItemRole::kFooterWifi;
-        case footer_runtime::FooterFocusItem::kHome:
-            return page_navigation::NavigationItemRole::kFooterHome;
-        case footer_runtime::FooterFocusItem::kSticky:
-            return page_navigation::NavigationItemRole::kFooterSticky;
-        case footer_runtime::FooterFocusItem::kNone:
-        case footer_runtime::FooterFocusItem::kFolder:
-        case footer_runtime::FooterFocusItem::kMic:
-        default:
-            return page_navigation::NavigationItemRole::kUnknown;
-    }
-}
-
 epaper_ui::DashboardPageState BuildStateLocked()
 {
     return s_coordinator.BuildState();
@@ -75,24 +41,15 @@ epaper_ui::DashboardPageState BuildStateLocked()
 
 footer_runtime::ProjectionState BuildFooterProjectionStateLocked()
 {
-    const page_navigation::PageFocusProjection projection = page_navigation::ProjectPageFocus(
-        s_coordinator.navigation_model(), page_navigation::NavigationItemSection::kDashboardPageMenu,
-        s_coordinator.focus().index(), -1, -1);
-    footer_runtime::ProjectionState state = {};
-    state.focused_item = FooterItemForSelectedIndex(projection.footer_selected_index);
-    return state;
+    return shared_page_interactions::BuildFooterProjectionStateForSection(
+        s_coordinator, page_navigation::NavigationItemSection::kDashboardPageMenu);
 }
 
 bool FooterProjectionChangedForFocusIndexes(int old_focus_index, int new_focus_index)
 {
-    const page_navigation::PageFocusProjection old_projection = page_navigation::ProjectPageFocus(
-        s_coordinator.navigation_model(), page_navigation::NavigationItemSection::kDashboardPageMenu,
-        old_focus_index, -1, -1);
-    const page_navigation::PageFocusProjection new_projection = page_navigation::ProjectPageFocus(
-        s_coordinator.navigation_model(), page_navigation::NavigationItemSection::kDashboardPageMenu,
-        new_focus_index, -1, -1);
-    return FooterItemForSelectedIndex(old_projection.footer_selected_index) !=
-           FooterItemForSelectedIndex(new_projection.footer_selected_index);
+    return shared_page_interactions::FooterProjectionChangedForSection(
+        s_coordinator, page_navigation::NavigationItemSection::kDashboardPageMenu, old_focus_index,
+        new_focus_index);
 }
 
 }  // namespace
@@ -151,7 +108,7 @@ footer_runtime::ProjectionState BuildFooterProjectionState()
 page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem item)
 {
     page_actions::FocusUpdateOutcome result = {};
-    const page_navigation::NavigationItemRole role = FooterRoleForFooterItem(item);
+    const page_navigation::NavigationItemRole role = footer_runtime::FooterRoleForFooterItem(item);
     if (role == page_navigation::NavigationItemRole::kUnknown) {
         return result;
     }

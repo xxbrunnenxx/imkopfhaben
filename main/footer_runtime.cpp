@@ -86,6 +86,41 @@ void AdvanceInteractionGenerationLocked()
 
 }  // namespace
 
+FooterFocusItem FooterItemForSelectedIndex(int selected_index)
+{
+    switch (selected_index) {
+        case 1:
+            return FooterFocusItem::kSettings;
+        case 2:
+            return FooterFocusItem::kWifi;
+        case 0:
+            return FooterFocusItem::kHome;
+        case 3:
+            return FooterFocusItem::kSticky;
+        default:
+            return FooterFocusItem::kNone;
+    }
+}
+
+page_navigation::NavigationItemRole FooterRoleForFooterItem(FooterFocusItem item)
+{
+    switch (item) {
+        case FooterFocusItem::kSettings:
+            return page_navigation::NavigationItemRole::kFooterSettings;
+        case FooterFocusItem::kWifi:
+            return page_navigation::NavigationItemRole::kFooterWifi;
+        case FooterFocusItem::kHome:
+            return page_navigation::NavigationItemRole::kFooterHome;
+        case FooterFocusItem::kSticky:
+            return page_navigation::NavigationItemRole::kFooterSticky;
+        case FooterFocusItem::kNone:
+        case FooterFocusItem::kFolder:
+        case FooterFocusItem::kMic:
+        default:
+            return page_navigation::NavigationItemRole::kUnknown;
+    }
+}
+
 void SetActivateHandler(ActivateHandler handler, void* context)
 {
     std::lock_guard<std::mutex> lock(s_state_mutex);
