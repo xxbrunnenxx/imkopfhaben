@@ -7,6 +7,14 @@ Reihenfolge = ungefähre Priorität.
 
 ## Vor dem nächsten Probelauf klären
 
+- **Portal-Check nach OpenAI-Code-Entfernung noch offen.** Der
+  ungenutzte OpenAI-Provider-Code wurde aus dem Portal-Frontend
+  entfernt (Commit `3781f3b`), Build/Flash bestätigt grün — aber der
+  Besitzer hat das Portal (WLAN-Einrichtung) danach noch nicht selbst
+  live geöffnet und geprüft, ob alles wie gewohnt aussieht/funktioniert
+  (insbesondere: keine OpenAI-Karte mehr, lokale-KI-Feld weiterhin
+  funktionsfähig). Prüfung für die nächsten Tage vom Besitzer
+  angekündigt, noch nicht erledigt.
 - **Kein systemd-Unit für LM Studio — weiterhin offen, heute erneut
   bestätigt.** Kraken wurde zwischenzeitlich neu aufgesetzt; LM Studio
   samt Modell war komplett weg und musste von Hand neu installiert,
