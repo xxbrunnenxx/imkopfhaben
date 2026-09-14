@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "epaper_ui/bitmap_font.h"
+
 namespace epaper_ui {
 
 namespace {
@@ -69,6 +71,31 @@ int ClampPositive(int value)
 int CenterOffset(int container_size, int item_size)
 {
     return std::max(0, (container_size - item_size) / 2);
+}
+
+std::string FitTextToWidth(design::TypographyRole role, std::string_view text, int max_width)
+{
+    if (text.empty() || max_width <= 0) {
+        return {};
+    }
+    if (MeasureText(role, text) <= max_width) {
+        return std::string(text);
+    }
+
+    // Decode forward codepoint-by-codepoint (not shrink-from-the-end byte-by-byte) so the
+    // result always ends on a UTF-8 boundary -- a byte-level cut can land inside a multi-byte
+    // sequence (e.g. an umlaut) and leave a dangling lead byte that renders as '?'.
+    std::string fitted;
+    size_t index = 0;
+    while (index < text.size()) {
+        (void)epaper_font::DecodeUtf8Codepoint(text, index);
+        const std::string_view candidate = text.substr(0, index);
+        if (MeasureText(role, candidate) > max_width) {
+            break;
+        }
+        fitted.assign(candidate.data(), candidate.size());
+    }
+    return fitted;
 }
 
 std::vector<std::string> WrapTextToWidth(design::TypographyRole role,

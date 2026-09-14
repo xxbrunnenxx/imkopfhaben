@@ -5,6 +5,7 @@
 #include <ctime>
 
 #include "project_assets.h"
+#include "timeline_format.h"
 
 namespace {
 
@@ -15,16 +16,6 @@ using page_navigation::NavigationItemRole;
 
 constexpr int kScrollStepPercent = 10;
 constexpr const char* kNoTranscriptMessage = "No transcript available.";
-
-std::string TrimTranscript(const std::string& text)
-{
-    const auto begin = text.find_first_not_of(" \t\r\n");
-    if (begin == std::string::npos) {
-        return {};
-    }
-    const auto end = text.find_last_not_of(" \t\r\n");
-    return text.substr(begin, end - begin + 1);
-}
 
 std::string FormatDateLabel(const RecordingMetadata& metadata)
 {
@@ -47,42 +38,6 @@ std::string FormatDateLabel(const RecordingMetadata& metadata)
         }
     }
     return metadata.created_local_date.empty() ? "Details" : metadata.created_local_date;
-}
-
-std::string FormatTimeLabel(const RecordingEntry& entry)
-{
-    if (entry.metadata.time_valid && entry.metadata.created_unix_seconds > 0) {
-        std::time_t stamp = static_cast<std::time_t>(entry.metadata.created_unix_seconds);
-        std::tm local = {};
-        localtime_r(&stamp, &local);
-        char buffer[16] = {};
-        if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local) > 0) {
-            return buffer;
-        }
-    }
-    return "--:--";
-}
-
-std::string FormatDurationLabel(uint32_t duration_ms)
-{
-    const uint32_t seconds = duration_ms / 1000U;
-    if (seconds < 60U) {
-        return std::to_string(seconds) + "s";
-    }
-    return std::to_string(seconds / 60U) + "m";
-}
-
-std::string TagText(RecordingTag tag)
-{
-    switch (tag) {
-        case RecordingTag::kTask:
-            return "Task";
-        case RecordingTag::kIdea:
-            return "Idea";
-        case RecordingTag::kNote:
-        default:
-            return "Note";
-    }
 }
 
 }  // namespace
@@ -239,7 +194,7 @@ const RecordingEntry* DetailsPageCoordinator::FindEntry(
 
 void DetailsPageCoordinator::ApplyEntry(const RecordingEntry& entry)
 {
-    const std::string transcript = TrimTranscript(entry.transcript_text);
+    const std::string transcript = timeline_format::TrimTranscript(entry.transcript_text);
     has_transcript_ = entry.metadata.has_transcript && !transcript.empty();
     transcript_text_ = transcript;
     title_text_ = FormatDateLabel(entry.metadata);
@@ -252,8 +207,10 @@ void DetailsPageCoordinator::ApplyEntry(const RecordingEntry& entry)
         has_transcript_ ? EmbeddedIconId::kTranscribe : EmbeddedIconId::kAudio);
     recording_header_.tag_icon_asset =
         entry.metadata.follow_up ? project_assets::GetIcon(EmbeddedIconId::kPin) : nullptr;
-    recording_header_.time_text = FormatTimeLabel(entry);
-    recording_header_.minute_seconds_text = FormatDurationLabel(entry.metadata.duration_ms);
-    recording_header_.tag_text = TagText(entry.metadata.tag);
+    recording_header_.time_text = timeline_format::FormatTimeLabel(
+        entry.metadata.time_valid, entry.metadata.created_unix_seconds);
+    recording_header_.minute_seconds_text =
+        timeline_format::FormatDurationLabel(entry.metadata.duration_ms);
+    recording_header_.tag_text = timeline_format::TagText(entry.metadata.tag);
     recording_header_.selected = false;
 }

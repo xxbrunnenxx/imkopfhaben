@@ -31,7 +31,7 @@ void SettingsPageCoordinator::RefreshTimezoneFromService(
     timezone_description_ = timezone_name_;
     for (const timezone_service::TimezoneInfo& info : timezones_) {
         if (info.name == timezone_name_) {
-            timezone_description_ = info.description.empty() ? info.name : info.description;
+            timezone_description_ = timezone_service::DisplayDescription(info);
             break;
         }
     }
@@ -53,9 +53,8 @@ void SettingsPageCoordinator::SetTimezoneByIndex(int index)
         return;
     }
     timezone_name_ = timezones_[static_cast<size_t>(index)].name;
-    timezone_description_ = timezones_[static_cast<size_t>(index)].description.empty()
-                                ? timezones_[static_cast<size_t>(index)].name
-                                : timezones_[static_cast<size_t>(index)].description;
+    timezone_description_ =
+        timezone_service::DisplayDescription(timezones_[static_cast<size_t>(index)]);
 
     timezone_service::SettingsPatch patch = {};
     patch.has_enabled = true;

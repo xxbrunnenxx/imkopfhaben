@@ -6,6 +6,7 @@
 
 #include "esp_random.h"
 #include "generated_epaper_icons.h"
+#include "timeline_format.h"
 
 namespace {
 
@@ -73,29 +74,6 @@ std::string FormatArchiveDurationLabel(uint32_t duration_ms)
     const uint32_t minutes = total_seconds / 60U;
     std::snprintf(buffer, sizeof(buffer), "%um", static_cast<unsigned>(minutes));
     return buffer;
-}
-
-std::string TagTextForRecording(const RecordingMetadata& metadata)
-{
-    switch (metadata.tag) {
-        case RecordingTag::kIdea:
-            return "Idea";
-        case RecordingTag::kTask:
-            return "Task";
-        case RecordingTag::kNote:
-        default:
-            return "Note";
-    }
-}
-
-std::string TrimTranscriptText(const std::string& text)
-{
-    const auto begin = text.find_first_not_of(" \t\r\n");
-    if (begin == std::string::npos) {
-        return {};
-    }
-    const auto end = text.find_last_not_of(" \t\r\n");
-    return text.substr(begin, end - begin + 1);
 }
 
 }  // namespace
@@ -356,8 +334,8 @@ void VibeCheckPageCoordinator::RebuildCardState()
         entry->metadata.has_transcript ? &epaper_icons::kTranscribe : &epaper_icons::kAudio;
     card_state_.header.time_text = FormatArchiveTimeLabel(*entry);
     card_state_.header.minute_seconds_text = FormatArchiveDurationLabel(entry->metadata.duration_ms);
-    card_state_.header.tag_text = TagTextForRecording(entry->metadata);
-    const std::string transcript = TrimTranscriptText(entry->transcript_text);
+    card_state_.header.tag_text = timeline_format::TagText(entry->metadata.tag);
+    const std::string transcript = timeline_format::TrimTranscript(entry->transcript_text);
     card_state_.body_text =
         entry->metadata.has_transcript && !transcript.empty() ? transcript : kAudioOnlyMessage;
 

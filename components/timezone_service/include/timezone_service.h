@@ -23,6 +23,13 @@ struct TimezoneInfo {
     std::string description;
 };
 
+// Display label for a timezone: its description, falling back to the raw IANA name when the
+// description is empty.
+inline const std::string& DisplayDescription(const TimezoneInfo& info)
+{
+    return info.description.empty() ? info.name : info.description;
+}
+
 struct SettingsSnapshot {
     bool enabled = false;
     std::string timezone_name;

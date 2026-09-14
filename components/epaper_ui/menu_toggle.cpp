@@ -33,23 +33,6 @@ design::TypographyRole FitLabelRole(design::TypographyRole preferred_role,
     return kShrinkLadder.back();
 }
 
-std::string FitLabelText(std::string_view text, design::TypographyRole role, int max_width)
-{
-    if (text.empty() || max_width <= 0 || MeasureText(role, text) <= max_width) {
-        return std::string(text);
-    }
-
-    size_t length = text.size();
-    while (length > 0) {
-        std::string_view candidate = text.substr(0, length);
-        if (MeasureText(role, candidate) <= max_width) {
-            return std::string(candidate);
-        }
-        --length;
-    }
-    return {};
-}
-
 }  // namespace
 
 UiRect MenuToggleBounds(int origin_x, int origin_y, const MenuToggleStyle& style)
@@ -120,7 +103,7 @@ void DrawMenuToggle(uint8_t* framebuffer,
                ClampPositive(style.horizontal_padding));
     const design::TypographyRole label_role =
         FitLabelRole(style.role, state.label_text, label_max_width);
-    const std::string label_text = FitLabelText(state.label_text, label_role, label_max_width);
+    const std::string label_text = FitTextToWidth(label_role, state.label_text, label_max_width);
 
     DrawTypographyText(framebuffer,
                        raw_width,

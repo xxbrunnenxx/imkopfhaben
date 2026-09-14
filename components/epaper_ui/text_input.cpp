@@ -31,26 +31,6 @@ std::string BuildDisplayText(const TextInputState& state)
     return display;
 }
 
-std::string FitText(std::string_view text, design::TypographyRole role, int max_width)
-{
-    if (text.empty() || max_width <= 0) {
-        return {};
-    }
-    if (MeasureText(role, text) <= max_width) {
-        return std::string(text);
-    }
-
-    size_t length = text.size();
-    while (length > 0) {
-        std::string_view candidate = text.substr(0, length);
-        if (MeasureText(role, candidate) <= max_width) {
-            return std::string(candidate);
-        }
-        --length;
-    }
-    return {};
-}
-
 UiRect Inset(const UiRect& rect, int inset)
 {
     return {rect.x + inset,
@@ -285,7 +265,7 @@ void DrawTextInput(uint8_t* framebuffer,
             : ClampPositive(style.horizontal_padding) + suffix_reserved;
     const int max_width =
         std::max(0, inner.width - ClampPositive(style.horizontal_padding) - right_inset);
-    const std::string text = FitText(raw_text, role, max_width);
+    const std::string text = FitTextToWidth(role, raw_text, max_width);
     if (text.empty()) {
         return;
     }

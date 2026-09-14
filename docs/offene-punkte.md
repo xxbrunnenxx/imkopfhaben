@@ -39,6 +39,28 @@ Reihenfolge = ungefähre Priorität.
   aber die beiden Pfade haben unterschiedliche Settings-Anwendungslogik
   (maskiertes Secret vs. offene URL) — nur die äußere Hülle wäre sicher
   extrahierbar, kein 1:1-Fix ohne Umbau von `applyProviderSettings`.
+- **Footer-Icon-Entfernungslogik über ~30 Stellen/3 Layer dupliziert**
+  (`components/page_navigation/navigation_model.cpp:74` und die
+  jeweiligen Pro-Seiten-Runtimes). Jede Seite baut ihre
+  Footer-Fokus-Projektion einzeln nach statt über einen gemeinsamen
+  Helfer — echte Duplikation, aber eine saubere Konsolidierung wäre ein
+  größerer Umbau über alle Seiten hinweg, keine minimalinvasive
+  Änderung.
+- **Font-Tabelle deckt Latin-1 0x20–0xFC ab** (`scripts/
+  generate_epaper_fonts.py`, `kCharFirst`/`kCharLast`), 2,44× größer als
+  reines ASCII. Grund: `FindGlyph()` (`components/epaper_ui/
+  bitmap_font.cpp`) indiziert direkt per `codepoint - first_char` in ein
+  zusammenhängendes Array — da die deutschen Umlaute (0xE4–0xFC) weit
+  von ASCII (0x20–0x7E) entfernt liegen, ist die aktuelle Spanne bereits
+  die kleinstmögliche zusammenhängende. Eine echte Verkleinerung
+  bräuchte eine nicht-zusammenhängende Lookup-Tabelle in Generator UND
+  Renderer — größerer Eingriff, kein minimalinvasiver Fix.
+- **`DrawMenuToggle()` berechnet das gefittete Label bei jedem Redraw
+  neu** (`components/epaper_ui/menu_toggle.cpp`), kein Cache. Die
+  Draw-Funktion ist laut Architektur bewusst zustandslos
+  (View-Renderer); ein Cache würde Zustand + Invalidierungslogik in eine
+  bisher reine Renderfunktion bringen, für einen bei kurzen
+  Label-Strings kaum messbaren Gewinn. Bewusst nicht gefixt.
 
 ## Später, nicht dringend
 

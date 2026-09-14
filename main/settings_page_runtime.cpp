@@ -133,18 +133,14 @@ page_actions::FocusMoveOutcome MoveFocus(int delta)
     page_actions::FocusMoveOutcome result = {};
     int old_focus_index = -1;
     int new_focus_index = -1;
-    epaper_ui::SettingsPageState old_state = {};
-    epaper_ui::SettingsPageState new_state = {};
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         old_focus_index = s_coordinator.focus().index();
-        old_state = BuildStateLocked();
         result = settings_page_interactions::HandleMoveFocus(s_coordinator, delta);
         if (!result.handled) {
             return result;
         }
         new_focus_index = s_coordinator.focus().index();
-        new_state = BuildStateLocked();
     }
 
     result.sync_footer_projection =
@@ -174,8 +170,6 @@ page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem
 
     int old_focus_index = -1;
     int new_focus_index = -1;
-    epaper_ui::SettingsPageState old_state = {};
-    epaper_ui::SettingsPageState new_state = {};
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         const int focus_index = s_coordinator.navigation_model().IndexOfRole(role);
@@ -183,12 +177,10 @@ page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem
             return result;
         }
         old_focus_index = s_coordinator.focus().index();
-        old_state = BuildStateLocked();
         if (!s_coordinator.SetFocusIndex(focus_index)) {
             return result;
         }
         new_focus_index = s_coordinator.focus().index();
-        new_state = BuildStateLocked();
     }
 
     result.handled = true;
@@ -220,7 +212,7 @@ esp_err_t ShowTimezoneModal()
         state.selected_index = selected < 0 ? 0 : selected;
         for (const timezone_service::TimezoneInfo& tz : s_coordinator.timezones()) {
             state.items.push_back({
-                .label_text = tz.description.empty() ? tz.name : tz.description,
+                .label_text = timezone_service::DisplayDescription(tz),
             });
         }
         s_timezone_modal_active = true;

@@ -19,6 +19,9 @@ int ClampPositive(int value);
 std::vector<std::string> WrapTextToWidth(design::TypographyRole role,
                                          const std::string& text,
                                          int max_width);
+// Truncates `text` to the longest UTF-8-codepoint-aligned prefix that fits `max_width` for the
+// given typography role (no ellipsis). Returns the whole text unchanged when it already fits.
+std::string FitTextToWidth(design::TypographyRole role, std::string_view text, int max_width);
 int CenterOffset(int container_size, int item_size);
 bool ShouldDrawBlackForTone(int x, int y, uint8_t tone);
 void DrawPortraitPixel(uint8_t* framebuffer,
