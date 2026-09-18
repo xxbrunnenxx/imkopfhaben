@@ -15,16 +15,20 @@ Reihenfolge = ungefähre Priorität.
   (insbesondere: keine OpenAI-Karte mehr, lokale-KI-Feld weiterhin
   funktionsfähig). Prüfung für die nächsten Tage vom Besitzer
   angekündigt, noch nicht erledigt.
-- **Kein systemd-Unit für LM Studio — weiterhin offen, heute erneut
-  bestätigt.** Kraken wurde zwischenzeitlich neu aufgesetzt; LM Studio
-  samt Modell war komplett weg und musste von Hand neu installiert,
-  Modell neu geladen und der Server erneut manuell mit `lms server
-  start --bind 0.0.0.0` gestartet werden. Genau das fragile Verhalten,
-  das dieser Punkt schon vorher beschrieb, jetzt real eingetreten.
-  Für den Prototyp-Testpfad selbst nicht zwingend (die Transkription
-  braucht LM Studio nicht, nur die Chat-Completion/Zusammenfassung).
-  Entwurf liegt in `kraken-arche` PR #1 (gemerged, weiterhin
-  unverifiziert — kein Reboot-Test).
+- **Kein systemd-Unit für LM Studio — bewusst so, per Start-Skript
+  gelöst (Stand 2026-09-18).** Kraken wurde zwischenzeitlich neu
+  aufgesetzt; LM Studio samt Modell war komplett weg und musste von Hand
+  neu installiert, Modell neu geladen und der Server manuell gestartet
+  werden. Entscheidung des Besitzers: **kein Autostart/systemd** — der
+  Pi 5 soll im Ruhezustand lastfrei bleiben. Statt eines Dauerdienstes
+  gibt es jetzt im Notizbuch-Repo (`imkopfhaben-public`)
+  `brain/imkopfhaben-start.sh` (fährt LM Studio :1234 + brain :8000 hoch,
+  wartet bis beide antworten) und `brain/imkopfhaben-stop.sh` (beendet
+  beide, macht den Pi lastfrei). Nach jedem Reboot einmal von Hand
+  starten, Anleitung in `imkopfhaben-public/brain/ANLEITUNG.md`. Der alte
+  `lmstudio-server.service`-Entwurf in `kraken-arche` PR #1 wird damit
+  nicht mehr gebraucht. Für den reinen Transkriptions-Testpfad ist LM
+  Studio ohnehin nicht nötig (nur die Chat-Completion/Zusammenfassung).
 - **Transkriptions-Readiness-Health-Check fehlt.** Prüft aktuell nur "ist
   eine URL konfiguriert", nicht ob der Server wirklich erreichbar ist —
   ein offline Kraken blockiert bis zu 30s pro Versuch statt sofort zu
