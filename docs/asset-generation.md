@@ -94,6 +94,26 @@ So fügst du ein neues Icon hinzu:
 2. Einen Eintrag im `icons`-Array in `assets/epaper_assets.json` ergänzen.
 3. `python3 scripts/generate_epaper_project_assets.py` ausführen.
 
+### Zwei WLAN-Icon-Familien, eine davon mit geteiltem Bild
+
+Es gibt bewusst zwei Sätze WLAN-Icons für zwei verschiedene Oberflächen:
+
+- `kWifi1`–`kWifi4` (`wifi_1.png`–`wifi_4.png`) für die Statusleiste
+  (`status_bar.cpp`, `lock_screen.cpp`). Sie stehen nicht für Feldstärke,
+  sondern für den Verbindungszustand: aus, verbunden, getrennt,
+  Access-Point.
+- `kWbar2`/`kWbar3` (`wifi_2bar.png`/`wifi_3bar.png`) für die Netzwerkliste
+  (`network_item.cpp`). Sie stehen für die Feldstärke eines gefundenen
+  Netzes, und `NetworkSignalStrength` kennt nur `kMedium` und `kStrong`.
+
+`wifi_2.png` und `wifi_3bar.png` sind **byte-identisch, und das ist
+richtig so**: beide zeigen den vollen Funkbogen, einmal als „verbunden"
+in der Statusleiste und einmal als „starkes Signal" in der Liste. Ein
+Dublettenscan meldet sie als Redundanz — sie sind keine. Die beiden
+Namen gehören zu getrennten Familien und dürfen sich unabhängig
+voneinander ändern, deshalb bleiben es zwei Dateien statt einer
+geteilten.
+
 Beispiel:
 
 ```bash
