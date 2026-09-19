@@ -51,6 +51,7 @@
 #include "ui_refresh_runtime.h"
 #include "wifi_service.h"
 #include "dashboard_page_runtime.h"
+#include "device_status_service.h"
 #include "archive_portal.h"
 #include "recording_archive_service.h"
 #include "timeline_format.h"
@@ -1656,6 +1657,52 @@ void InitRecordingSessionService()
     }
 }
 
+// Hintergrund-Task, der die Kennzahlen der Startseite (eigene IP, Brain-Status,
+// Temperaturen) in Ruhe aktualisiert. Bewusst ein eigener Task, weil der
+// Brain-Abruf blockierendes HTTP macht -- das darf nie im UI-/Eingabe-Task
+// laufen. Repaint der Startseite nur, wenn sie gerade sichtbar ist.
+constexpr uint32_t kDeviceStatusTaskStackWords = 6144;
+constexpr TickType_t kDeviceStatusInterval = pdMS_TO_TICKS(30000);
+TaskHandle_t s_device_status_task = nullptr;
+
+void DeviceStatusTask(void*)
+{
+    // Kurz warten, damit WLAN nach dem Start eine Chance hatte, sich zu verbinden.
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    for (;;) {
+        device_status_service::Refresh();
+        if (s_startup_complete.load(std::memory_order_relaxed) &&
+            ScreenActiveForRefresh(display_service::ScreenId::kHome)) {
+            const esp_err_t err = dashboard_page_runtime::UpdateDisplayStateAndRequestRefresh(
+                display_service::RefreshMode::kPartial);
+            if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+                ESP_LOGW(kTag, "Dashboard status refresh failed: %s", esp_err_to_name(err));
+            }
+        }
+        vTaskDelay(kDeviceStatusInterval);
+    }
+}
+
+void InitDeviceStatusService()
+{
+    const esp_err_t err = device_status_service::Init();
+    if (err != ESP_OK) {
+        // Nicht fatal: ohne internen Temperatursensor bleibt nur diese eine Zeile leer.
+        ESP_LOGW(kTag, "Device status service init failed: %s", esp_err_to_name(err));
+    }
+    if (s_device_status_task != nullptr) {
+        return;
+    }
+    const BaseType_t created = xTaskCreatePinnedToCore(
+        DeviceStatusTask, "device_status", kDeviceStatusTaskStackWords, nullptr,
+        followup_task_config::kPrioritySensorPoll, &s_device_status_task,
+        followup_task_config::kAppCore);
+    if (created != pdPASS) {
+        s_device_status_task = nullptr;
+        ESP_LOGW(kTag, "Failed to create device status task");
+    }
+}
+
 void InitFooterRuntime()
 {
     footer_runtime::SetActivateHandler(HandleFooterActivate, nullptr);
@@ -1756,6 +1803,7 @@ void Run()
     InitRecordingService();
     InitTranscriptionService();
     InitRecordingSessionService();
+    InitDeviceStatusService();
     InitFooterRuntime();
     StartShutdownTask();
     InitPowerKeyRuntime();

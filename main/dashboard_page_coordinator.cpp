@@ -1,8 +1,11 @@
 #include "dashboard_page_coordinator.h"
 
 #include <ctime>
+#include <cstdio>
 #include <string>
+#include <vector>
 
+#include "device_status_service.h"
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_timer.h"
@@ -56,6 +59,74 @@ void FillCurrentDate(epaper_ui::CurrentDateState* date)
     std::strftime(date_text, sizeof(date_text), "%b %d, %Y", &local_tm);
     date->weekday_text = weekday;
     date->date_text = date_text;
+}
+
+// Formatiert eine Sekundenzahl kompakt als Laufzeit ("3d 4h", "12h 5m", "7m").
+std::string FormatUptime(double seconds)
+{
+    if (seconds < 0.0) {
+        seconds = 0.0;
+    }
+    const long total = static_cast<long>(seconds);
+    const long days = total / 86400;
+    const long hours = (total % 86400) / 3600;
+    const long minutes = (total % 3600) / 60;
+    char buf[32] = {};
+    if (days > 0) {
+        std::snprintf(buf, sizeof(buf), "%ldd %ldh", days, hours);
+    } else if (hours > 0) {
+        std::snprintf(buf, sizeof(buf), "%ldh %ldm", hours, minutes);
+    } else {
+        std::snprintf(buf, sizeof(buf), "%ldm", minutes);
+    }
+    return buf;
+}
+
+// Baut den Statusblock fuer die Startseite aus dem Geraete-/Brain-Schnappschuss.
+// Bewusst kurze Zeilen (Label: Wert), damit sie in der kleineren Schrift unter
+// das Datum passen. Fehlende Werte werden ausgelassen statt mit Platzhaltern
+// gefuellt.
+std::vector<std::string> BuildInfoLines(const device_status_service::Snapshot& status)
+{
+    std::vector<std::string> lines;
+    char buf[64] = {};
+
+    // Geraet: eigene IP (oder Hinweis, wenn kein Netz).
+    if (status.wifi_connected && !status.device_ip.empty()) {
+        lines.push_back("Geraet: " + status.device_ip);
+    } else {
+        lines.push_back("Geraet: kein WLAN");
+    }
+
+    // Brain: Host und Verbindungszustand.
+    if (!status.brain_host.empty()) {
+        lines.push_back("Brain: " + status.brain_host);
+    }
+    lines.push_back(std::string("Brain-Link: ") +
+                    (status.brain_reachable ? "verbunden" : "getrennt"));
+
+    // Brain-Uptime, nur wenn erreichbar und gemeldet.
+    if (status.brain_reachable && status.brain_uptime_valid) {
+        lines.push_back("Brain-Uptime: " + FormatUptime(status.brain_uptime_seconds));
+    }
+
+    // Temperaturen: ESP32-Chip und Pi 5.
+    if (status.esp_temp_valid) {
+        std::snprintf(buf, sizeof(buf), "Temp ESP32: %.0f C", status.esp_temp_celsius);
+        lines.push_back(buf);
+    }
+    if (status.brain_reachable && status.pi_temp_valid) {
+        std::snprintf(buf, sizeof(buf), "Temp Pi5: %.0f C", status.pi_temp_celsius);
+        lines.push_back(buf);
+    }
+
+    // Sinnvolle Ergaenzung: CPU-Last des Pi, wenn gemeldet.
+    if (status.brain_reachable && status.cpu_load_valid) {
+        std::snprintf(buf, sizeof(buf), "Pi CPU: %.0f%%", status.cpu_load_percent);
+        lines.push_back(buf);
+    }
+
+    return lines;
 }
 
 }  // namespace
@@ -134,9 +205,13 @@ epaper_ui::DashboardPageState DashboardPageCoordinator::BuildState() const
     state.navigation_focus_index = focus_.index();
 
     FillCurrentDate(&state.welcome_message.current_date);
-    // Random per-boot phase, advanced one step per configured interval so it rotates over time.
+    // Startseite zeigt statt eines Spruchs die nuetzlichen Kennzahlen: eigene IP, Brain-IP,
+    // Verbindungszustand, Brain-Uptime, Temperaturen. Der Titeltext bleibt als Rueckfall
+    // gesetzt, falls der Statusblock einmal leer ist.
     state.welcome_message.title_text =
         epaper_ui::WelcomeMessageTitle(welcome_seed_ + WelcomePeriodsSinceEpoch());
+    state.welcome_message.info_lines =
+        BuildInfoLines(device_status_service::GetSnapshot());
 
     // Empty archive: invite the first capture. Otherwise show the task tracker.
     if (archive_.recording_count == 0) {

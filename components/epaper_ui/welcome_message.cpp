@@ -41,6 +41,31 @@ int WelcomeMessageTitleCount()
     return static_cast<int>(kTitles.size());
 }
 
+namespace {
+
+// Height of the status block (info_lines): one info_role line per entry, separated by
+// info_line_gap. Zero when there are no lines.
+int InfoBlockHeight(const WelcomeMessageState& state, const WelcomeMessageStyle& style)
+{
+    if (state.info_lines.empty()) {
+        return 0;
+    }
+    const int line_height = std::max(1, LineHeight(style.info_role));
+    const int count = static_cast<int>(state.info_lines.size());
+    return count * line_height + (count - 1) * ClampPositive(style.info_line_gap);
+}
+
+int InfoBlockWidth(const WelcomeMessageState& state, const WelcomeMessageStyle& style)
+{
+    int width = 0;
+    for (const std::string& line : state.info_lines) {
+        width = std::max(width, MeasureText(style.info_role, line));
+    }
+    return width;
+}
+
+}  // namespace
+
 UiRect WelcomeMessageBounds(int origin_x,
                             int origin_y,
                             const WelcomeMessageState& state,
@@ -50,6 +75,15 @@ UiRect WelcomeMessageBounds(int origin_x,
         CurrentDateBounds(origin_x, origin_y, state.current_date, style.current_date);
     const bool has_date = !state.current_date.weekday_text.empty() ||
                           !state.current_date.date_text.empty();
+
+    // Status block replaces the greeting when info_lines is set.
+    if (!state.info_lines.empty()) {
+        const int info_height = InfoBlockHeight(state, style);
+        const int info_width = InfoBlockWidth(state, style);
+        const int gap = has_date ? ClampPositive(style.section_gap) : 0;
+        return {origin_x, origin_y, std::max(date_bounds.width, info_width),
+                date_bounds.height + gap + info_height};
+    }
 
     const EmbeddedImageAsset* icon = TitleIcon(style);
     const std::vector<std::string> lines =
@@ -90,6 +124,18 @@ void DrawWelcomeMessage(uint8_t* framebuffer,
                           !state.current_date.date_text.empty();
     const int title_y = origin_y + date_bounds.height + (has_date ? ClampPositive(style.section_gap)
                                                                   : 0);
+
+    // Status block: one info_role line per entry, top to bottom, no icon.
+    if (!state.info_lines.empty()) {
+        const int info_line_height = std::max(1, LineHeight(style.info_role));
+        int info_y = title_y;
+        for (const std::string& line : state.info_lines) {
+            DrawTypographyText(framebuffer, raw_width, raw_height, portrait_width, portrait_height,
+                               origin_x, info_y, line, style.info_role, style.info_color);
+            info_y += info_line_height + ClampPositive(style.info_line_gap);
+        }
+        return;
+    }
 
     const EmbeddedImageAsset* icon = TitleIcon(style);
     const std::vector<std::string> lines =

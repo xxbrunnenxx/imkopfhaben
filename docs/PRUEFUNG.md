@@ -234,3 +234,26 @@ zusammenfasst, sondern den Leser anfeuert — Ausrufezeichen, Lob und
 Motivationsformeln statt einer nuechternen Liste. Beides steckt im
 Prompt, nicht im Modell,
 und waere dort zu aendern. Nicht bestellt, deshalb nicht gebaut.
+
+## Startseite: Sprueche durch Kennzahlen ersetzt (19.09.2026)
+
+Statt der rotierenden Sprueche (`What's on your mind?` etc.) zeigt die
+Startseite jetzt einen Statusblock: eigene IP, Brain-Host,
+Verbindungszustand zum Brain, Brain-Uptime, ESP32-Chip-Temperatur,
+Pi-5-Temperatur und Pi-CPU-Last. Werte, die fehlen, werden ausgelassen.
+
+Neu: Komponente `components/device_status_service` (interner S3-Temp-Sensor
++ Abruf von `/api/status` am Brain), Statusblock in
+`components/epaper_ui/welcome_message.cpp` (`info_lines`), Befuellung in
+`main/dashboard_page_coordinator.cpp` (`BuildInfoLines`), Hintergrund-Task
+`DeviceStatusTask` in `main/app_shell.cpp` (30-s-Takt, blockierendes HTTP
+bewusst nicht im UI-Task).
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Firmware baut mit den Aenderungen | `idf.py build` | belegt — `folloup_sticky.bin` 0x378120 Bytes, 56 % frei | 19.09. |
+| Brain liefert die Kennzahlen | `python -c "import pi_status,json; print(json.dumps(pi_status.status()))"` (imkopfhaben-public/brain) | belegt — `pi_uptime_sekunden` 21876, `pi_temperatur_celsius` 46.9, `cpu_last_prozent` 5.3, `ram_prozent` 22.2 | 19.09. |
+| Die Route `/api/status` ist registriert | `python -c "import main; print([r.path for r in main.app.routes])"` | belegt — `/api/status` in der Routenliste, Import ohne Fehler | 19.09. |
+| Sensor-Ausfall ist nicht fatal | `pi_status.py` durchsehen: jede Funktion faengt ab und gibt None | belegt — Statusroute setzt fehlende Werte auf `null`, ESP32 laesst die Zeile weg | 19.09. |
+| Auf der Hardware sichtbar (IP/Temp/Uptime stimmen) | `idf.py -p /dev/ttyACM0 flash`, Startseite ansehen, Werte gegen `hostname -I` / `vcgencmd measure_temp` / `uptime` halten | **offen** — Board beim Bauen aus (`imkopfhaben.local` nicht erreichbar), nicht geflasht | 19.09. |
+| Live-Route am laufenden Brain antwortet | Dienst neu starten, `curl http://127.0.0.1:8000/api/status` | **offen** — laufender Dienst hat den alten Code, nicht eigenmaechtig neu gestartet | 19.09. |
