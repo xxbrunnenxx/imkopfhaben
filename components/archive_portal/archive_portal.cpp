@@ -15,6 +15,12 @@ namespace {
 constexpr const char* kTag = "ArchivePortal";
 constexpr const char* kApiRecordingsUri = "/api/archive/recordings";
 constexpr const char* kApiSummariesUri = "/api/archive/summaries";
+// Einzige schreibende Route hier -- und sie schreibt nichts, sie stoesst an.
+// Sie ist der Handgriff, der die Pruefzeile "eine volle Zusammenfassung geht
+// durch" ueberhaupt erst ohne einen Menschen am Geraet ausfuehrbar macht:
+// vorher musste jemand den Knopf druecken, und danach war der Lauf schon
+// vorbei. Loeschen und Aendern bleiben ausdruecklich draussen.
+constexpr const char* kApiSummarizeUri = "/api/archive/summarize";
 
 // Das Geraet haelt die Zusammenfassungen ohnehin im Schnappschuss; die
 // Aufnahmen kommen frisch von der Karte. Beides landet unveraendert im
@@ -191,6 +197,39 @@ esp_err_t HandleSummaries(httpd_req_t* request)
     return SendJsonResponse(request, 200, root);
 }
 
+// POST /api/archive/summarize?kind=todos|notes
+// Stoesst denselben Lauf an, den der Knopf am Geraet ausloest -- kein eigener
+// Pfad daneben, sondern derselbe RequestSummary()-Aufruf. Antwortet sofort;
+// das Ergebnis kommt ueber /api/archive/summaries, wenn es fertig ist.
+esp_err_t HandleSummarize(httpd_req_t* request)
+{
+    summary_service::SummaryKind kind = summary_service::SummaryKind::kTodos;
+    const size_t query_len = httpd_req_get_url_query_len(request);
+    if (query_len > 0) {
+        std::string query(query_len + 1, '\0');
+        char value[16] = {};
+        if (httpd_req_get_url_query_str(request, query.data(), query.size()) == ESP_OK &&
+            httpd_query_key_value(query.c_str(), "kind", value, sizeof(value)) == ESP_OK &&
+            std::string(value) == "notes") {
+            kind = summary_service::SummaryKind::kNotes;
+        }
+    }
+
+    const bool angenommen = summary_service::RequestSummary(kind);
+    cJSON* root = cJSON_CreateObject();
+    // Abgelehnt heisst fast immer: es laeuft schon einer. Das ist kein Fehler,
+    // sondern die Warteschlange, die ihre Arbeit tut -- deshalb 200 und ein
+    // ehrliches Feld statt eines Fehlercodes.
+    cJSON_AddBoolToObject(root, "angenommen", angenommen);
+    cJSON_AddStringToObject(root, "kind", summary_service::SummaryKindName(kind));
+    const summary_service::Snapshot snapshot = summary_service::GetSnapshot();
+    cJSON_AddBoolToObject(root, "laeuft_bereits", snapshot.request.in_flight);
+
+    ESP_LOGI(kTag, "Summary requested via portal: kind=%s accepted=%d",
+             summary_service::SummaryKindName(kind), angenommen ? 1 : 0);
+    return SendJsonResponse(request, 200, root);
+}
+
 void RegisterRoute(httpd_handle_t server, const httpd_uri_t* handler)
 {
     const esp_err_t err = httpd_register_uri_handler(server, handler);
@@ -221,8 +260,16 @@ void RegisterPortalRoutes(httpd_handle_t server)
         .user_ctx = nullptr,
     };
 
+    httpd_uri_t summarize = {
+        .uri = kApiSummarizeUri,
+        .method = HTTP_POST,
+        .handler = HandleSummarize,
+        .user_ctx = nullptr,
+    };
+
     RegisterRoute(server, &recordings);
     RegisterRoute(server, &summaries);
+    RegisterRoute(server, &summarize);
 }
 
 }  // namespace archive_portal

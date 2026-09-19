@@ -553,6 +553,8 @@ const char* BlockerReasonName(BlockerReason reason)
             return "wifi_access_point";
         case BlockerReason::kTimeSync:
             return "time_sync";
+        case BlockerReason::kSummaryRunning:
+            return "summary_running";
         default:
             return "unknown";
     }

@@ -85,6 +85,16 @@ const char* SegmentLabelForKind(SummaryKind kind)
     return kind == SummaryKind::kTodos ? "Todos" : "Notes";
 }
 
+// Eigenes Label nur fuer den Prompt. SegmentLabelForKind() oben steckt auch in
+// den Statusmeldungen, die am Geraet erscheinen -- und die restliche
+// Oberflaeche ist englisch. Die Anzeige ungefragt umzustellen waere ein
+// zweiter, groesserer Eingriff; bestellt war die Sprache der
+// Zusammenfassung. Deshalb hier getrennt statt dort geaendert.
+const char* PromptLabelForKind(SummaryKind kind)
+{
+    return kind == SummaryKind::kTodos ? "die Aufgaben" : "die Notizen";
+}
+
 // Tag -> bucket mapping mirrors recording_archive_service: Task is a Todo; everything else
 // (Note, Idea) is a Note.
 bool IsTodoRecordingTag(RecordingTag tag)
@@ -134,33 +144,48 @@ bool GeneratePromptTextResult(const std::string& prompt, std::string* text_out,
 
 // --- prompt building -------------------------------------------------------
 
+// Die Anweisung ist deutsch, und das ist kein Geschmack, sondern der Grund,
+// warum die Antwort deutsch wird: das Modell antwortet in der Sprache, in der
+// es angesprochen wird. Solange hier Englisch stand, kamen auf durchweg
+// deutsche Aufnahmen englische Zusammenfassungen zurueck (19.09.2026 am
+// Geraet beobachtet, siehe docs/PRUEFUNG.md). Der Satz "Antworte auf Deutsch"
+// steht trotzdem zusaetzlich drin -- die Transkripte koennen fremdsprachige
+// Brocken enthalten, und daran soll sich die Ausgabesprache nicht aufhaengen.
+//
+// Der aufmunternde Ton ist bewusst raus. Er stand vorher ausdruecklich in der
+// Anweisung ("encouraging and optimistic tone", "celebrates progress") und hat
+// getan, was dort stand: die Zusammenfassung lobte und feuerte an, statt zu
+// berichten. Wer seine eigenen Notizen nachliest, will wissen, was drinsteht,
+// nicht wie gut er sich schlaegt.
 std::string BuildSummaryInstructionText(SummaryKind kind, bool intermediate)
 {
     std::string text;
+    // Gemeinsam fuer alle vier Faelle -- Sprache und Ton haengen nicht daran,
+    // ob gerade Notizen oder Todos, Zwischenschritt oder Endfassung dran sind.
+    text += "Antworte auf Deutsch. Schreibe nuechtern und sachlich: keine "
+            "Anrede, kein Lob, keine Ausrufezeichen, keine Motivation. Gib nur "
+            "wieder, was in den Aufnahmen steht, und erfinde nichts dazu.\n\n";
+
     if (kind == SummaryKind::kNotes) {
         text += intermediate
-                    ? "Summarize the notes captured within the available transcripts. Create a "
-                      "compact intermediate summary that faithfully captures the main themes, "
-                      "decisions, follow-ups, open questions, and ideas. Keep it factual, plain "
-                      "text, and easy to merge later. Avoid markdown tables.\n\n"
-                    : "Summarize the notes captured within the available transcripts. Create a "
-                      "summary capturing the main themes, decisions, follow-ups, open questions, "
-                      "and ideas in plain text. Keep it concise, and write it in an encouraging "
-                      "and optimistic tone so it feels insightful and motivating to look back on. "
-                      "Use short paragraphs and avoid markdown tables.\n\n";
+                    ? "Fasse die Notizen aus den folgenden Aufnahmen zusammen. Schreibe eine "
+                      "knappe Zwischenfassung, die Themen, Entscheidungen, offene Fragen und "
+                      "Ideen treu wiedergibt. Reiner Fliesstext, keine Tabellen, "
+                      "leicht mit weiteren Teilen zusammenzufuehren.\n\n"
+                    : "Fasse die Notizen aus den folgenden Aufnahmen zusammen. Nenne Themen, "
+                      "Entscheidungen, offene Fragen und Ideen. Kurze Absaetze, reiner "
+                      "Fliesstext, keine Tabellen.\n\n";
     } else {
         text += intermediate
-                    ? "Summarize the todos captured within the available transcripts. Create a "
-                      "compact intermediate summary that faithfully captures the priorities, "
-                      "completed work, remaining tasks, and blockers, noting completion state when "
-                      "it is clear from the source. Keep it factual, plain text, and easy to merge "
-                      "later. Avoid markdown tables.\n\n"
-                    : "Summarize the todos captured within the available transcripts. Create a "
-                      "summary of the priorities, completed work, remaining tasks, and any "
-                      "blockers, noting completion state when it is clear from the source. Keep it "
-                      "concise and easy to skim, and write it in an encouraging and optimistic "
-                      "tone that celebrates progress and motivates the next steps. Avoid markdown "
-                      "tables.\n\n";
+                    ? "Fasse die Aufgaben aus den folgenden Aufnahmen zusammen. Schreibe eine "
+                      "knappe Zwischenfassung mit den anstehenden Aufgaben, dem was bereits "
+                      "erledigt ist und dem was blockiert. Den Erledigt-Stand nur dann nennen, "
+                      "wenn er aus der Aufnahme hervorgeht. Reiner Fliesstext, keine "
+                      "Tabellen, leicht mit weiteren Teilen zusammenzufuehren.\n\n"
+                    : "Fasse die Aufgaben aus den folgenden Aufnahmen zusammen. Nenne die "
+                      "anstehenden Aufgaben, was bereits erledigt ist und was blockiert. Den "
+                      "Erledigt-Stand nur dann nennen, wenn er aus der Aufnahme hervorgeht. "
+                      "Halte es kurz und ueberfliegbar, keine Tabellen.\n\n";
     }
     return text;
 }
@@ -170,13 +195,13 @@ void AppendSourceEntriesToPrompt(std::string* prompt, const std::vector<SourceEn
     if (prompt == nullptr) {
         return;
     }
-    prompt->append("Source entries:\n\n");
+    prompt->append("Aufnahmen:\n\n");
     for (size_t index = 0; index < entries.size(); ++index) {
         const SourceEntry& entry = entries[index];
-        prompt->append("Entry ");
+        prompt->append("Aufnahme ");
         prompt->append(std::to_string(index + 1));
         if (entry.part_count > 1) {
-            prompt->append(" (part ");
+            prompt->append(" (Teil ");
             prompt->append(std::to_string(entry.part_index));
             prompt->append("/");
             prompt->append(std::to_string(entry.part_count));
@@ -184,16 +209,16 @@ void AppendSourceEntriesToPrompt(std::string* prompt, const std::vector<SourceEn
         }
         prompt->append(":\n");
         if (!entry.metadata.created_local_date.empty()) {
-            prompt->append("Date: ");
+            prompt->append("Datum: ");
             prompt->append(entry.metadata.created_local_date);
             prompt->append("\n");
         }
         if (IsTodoRecordingTag(entry.metadata.tag)) {
-            prompt->append("Completed: ");
-            prompt->append(entry.metadata.completed ? "Yes" : "No");
+            prompt->append("Erledigt: ");
+            prompt->append(entry.metadata.completed ? "ja" : "nein");
             prompt->append("\n");
         }
-        prompt->append("Transcript:\n");
+        prompt->append("Gesagt:\n");
         prompt->append(entry.text);
         prompt->append("\n\n");
     }
@@ -205,9 +230,9 @@ std::string BuildPromptText(SummaryKind kind, const std::vector<SourceEntry>& en
     prompt.reserve(8192);
     prompt += BuildSummaryInstructionText(kind, false);
     AppendSourceEntriesToPrompt(&prompt, entries);
-    prompt += "Now write the final summary for the ";
-    prompt += SegmentLabelForKind(kind);
-    prompt += ". Put the summary only in the response.";
+    prompt += "Schreibe jetzt die Zusammenfassung fuer ";
+    prompt += PromptLabelForKind(kind);
+    prompt += ". Gib ausschliesslich die Zusammenfassung aus, ohne Vorrede.";
     return prompt;
 }
 
@@ -218,14 +243,14 @@ std::string BuildChunkSummaryPrompt(SummaryKind kind, const std::vector<SourceEn
     prompt.reserve(8192);
     prompt += BuildSummaryInstructionText(kind, true);
     if (chunk_count > 1) {
-        prompt += "This is chunk ";
+        prompt += "Dies ist Teil ";
         prompt += std::to_string(chunk_index);
-        prompt += " of ";
+        prompt += " von ";
         prompt += std::to_string(chunk_count);
         prompt += ".\n\n";
     }
     AppendSourceEntriesToPrompt(&prompt, entries);
-    prompt += "Now write only the compact intermediate summary for this chunk.";
+    prompt += "Schreibe jetzt ausschliesslich die knappe Zwischenfassung fuer diesen Teil.";
     return prompt;
 }
 
@@ -235,16 +260,19 @@ std::string BuildRollupPrompt(SummaryKind kind, const std::vector<std::string>& 
     std::string prompt;
     prompt.reserve(4096);
     prompt += BuildSummaryInstructionText(kind, intermediate);
-    prompt += intermediate ? "Chunk summaries to merge:\n\n" : "Intermediate summaries:\n\n";
+    prompt += intermediate ? "Zusammenzufuehrende Teilfassungen:\n\n" : "Zwischenfassungen:\n\n";
     for (size_t index = 0; index < partial_summaries.size(); ++index) {
-        prompt += intermediate ? "Chunk summary " : "Intermediate summary ";
+        prompt += intermediate ? "Teilfassung " : "Zwischenfassung ";
         prompt += std::to_string(index + 1);
         prompt += ":\n";
         prompt += partial_summaries[index];
         prompt += "\n\n";
     }
-    prompt += intermediate ? "Now write only one compact merged intermediate summary."
-                           : "Now write the final summary only in the response.";
+    prompt += intermediate
+                  ? "Fuehre diese Teilfassungen jetzt zu einer einzigen knappen "
+                    "Zwischenfassung zusammen."
+                  : "Schreibe jetzt die endgueltige Zusammenfassung. Gib ausschliesslich "
+                    "die Zusammenfassung aus, ohne Vorrede.";
     return prompt;
 }
 

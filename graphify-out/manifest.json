@@ -204,16 +204,16 @@
     "semantic_hash": "fcb36c1c974ed1db6f43e514f215be8c"
   },
   "components/device_sleep_service/device_sleep_service.cpp": {
-    "mtime": 1789291667.8801653,
-    "seen": 1789719083.8371742,
-    "ast_hash": "b55a8daf8c93d0c939d4fe73b67fc0b4",
-    "semantic_hash": "b55a8daf8c93d0c939d4fe73b67fc0b4"
+    "mtime": 1789830667.2524698,
+    "seen": 1789831799.6810992,
+    "ast_hash": "d6063b189bcb4a8ca6c3a0303e31321e",
+    "semantic_hash": ""
   },
   "components/device_sleep_service/include/device_sleep_service.h": {
-    "mtime": 1789291667.8801653,
-    "seen": 1789719083.8371758,
-    "ast_hash": "4627c43c90c5710241f27ac1b5ca24b1",
-    "semantic_hash": "4627c43c90c5710241f27ac1b5ca24b1"
+    "mtime": 1789830989.886276,
+    "seen": 1789831799.6811016,
+    "ast_hash": "cdaf9f350ed4b0eb2837149088efd87a",
+    "semantic_hash": ""
   },
   "components/display_service/display_service.cpp": {
     "mtime": 1789800518.8387792,
@@ -1224,10 +1224,10 @@
     "semantic_hash": "85aa19d30104ba95e512331513118b6e"
   },
   "components/summary_service/summary_service.cpp": {
-    "mtime": 1789291667.9118063,
-    "seen": 1789719083.8373826,
-    "ast_hash": "d5d73126e4f05523a8815412dc18dad3",
-    "semantic_hash": "d5d73126e4f05523a8815412dc18dad3"
+    "mtime": 1789830444.6100702,
+    "seen": 1789831799.6815116,
+    "ast_hash": "4262b301e76f7184292ab01d1b003d2b",
+    "semantic_hash": ""
   },
   "components/system_sound_service/include/system_sound_service.h": {
     "mtime": 1789291667.9122758,
@@ -1470,10 +1470,10 @@
     "semantic_hash": "91f5a0f3a51eebe32289ef9f747b36b2"
   },
   "main/device_sleep_runtime.cpp": {
-    "mtime": 1789291667.934529,
-    "seen": 1789719083.837429,
-    "ast_hash": "5e7c8872645496982a63b8f01d35779c",
-    "semantic_hash": "5e7c8872645496982a63b8f01d35779c"
+    "mtime": 1789830667.2527292,
+    "seen": 1789831799.6816185,
+    "ast_hash": "128350b9bb36d2ee5a831149b8af720a",
+    "semantic_hash": ""
   },
   "main/device_sleep_runtime.h": {
     "mtime": 1789291667.934529,
@@ -2664,9 +2664,9 @@
     "semantic_hash": ""
   },
   "docs/offene-punkte.md": {
-    "mtime": 1789829547.3744714,
-    "seen": 1789829564.253654,
-    "ast_hash": "54cdfff0a25852c46c1187c2f4dbf1d8",
+    "mtime": 1789830151.7436075,
+    "seen": 1789831799.682069,
+    "ast_hash": "2e84933ea72bab517c561c78cf11c9fc",
     "semantic_hash": ""
   },
   "docs/queue-architecture.md": {
@@ -3294,9 +3294,9 @@
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1789829477.193594,
-    "seen": 1789829564.2536376,
-    "ast_hash": "335356e1b5f3bd65b0a9f2f951bbf3fd",
+    "mtime": 1789831567.5816283,
+    "seen": 1789831799.6820507,
+    "ast_hash": "93559895782582fb2bd3112dd868b038",
     "semantic_hash": ""
   },
   "docs/VERSIONEN.md": {
@@ -3306,15 +3306,15 @@
     "semantic_hash": ""
   },
   "components/archive_portal/archive_portal.cpp": {
-    "mtime": 1789829242.9426563,
-    "seen": 1789829564.252766,
-    "ast_hash": "7efc8e836efb2305b00db74bf7036563",
+    "mtime": 1789831018.153785,
+    "seen": 1789831799.6810486,
+    "ast_hash": "b9250098cce05008f94d8149e23c6d6c",
     "semantic_hash": ""
   },
   "components/archive_portal/include/archive_portal.h": {
-    "mtime": 1789829203.0261774,
-    "seen": 1789829564.252769,
-    "ast_hash": "acefd9abb7d704573ad95014b3423073",
+    "mtime": 1789831018.1732051,
+    "seen": 1789831799.6810527,
+    "ast_hash": "a940ad0f9b73fa66dd847665a72740ec",
     "semantic_hash": ""
   },
   "scripts/archiv-zeigen.py": {

@@ -45,6 +45,18 @@ enum class BlockerReason : uint8_t {
     kStorageWrite,
     kWifiAccessPoint,
     kTimeSync,
+    // Eine laufende Zusammenfassung ist eine Wartezeit ohne jede Nutzereingabe
+    // und ohne Aufnahme -- von aussen sieht das aus wie Leerlauf, und ohne
+    // diesen Blocker laeuft der Schlaf-Zaehler mitten durch die Antwort.
+    //
+    // Der Display-Schlaf greift real nach 180 s (gemessener Lauf am 19.09.2026:
+    // 92 s, also knapp darunter; der Light-Sleep erst nach 1800 s). Die
+    // Zeitgrenzen stehen in sdkconfig.defaults, nicht in den Vorgabewerten von
+    // Settings weiter unten -- die 30/90 dort werden davon ueberschrieben.
+    // Die Zusammenfassung kann beide Grenzen reissen, seit das Zeitfenster fuer
+    // das Sprachmodell bei 15 Minuten liegt: ein Lauf ueber mehrere Chunks mit
+    // Rollup ist genau dafuer ausgelegt. Siehe docs/PRUEFUNG.md.
+    kSummaryRunning,
 };
 
 struct Settings {

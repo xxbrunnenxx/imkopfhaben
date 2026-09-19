@@ -14,14 +14,19 @@
 // als JSON ueber dieselbe Weboberflaeche, die schon fuer WLAN, Zeitzone
 // und den KI-Server laeuft.
 //
-// Ausdruecklich nur lesend: kein Loeschen, kein Aendern, kein Formatieren.
-// Aendern gehoert ans Geraet, wo der Besitzer sieht, was er anfasst.
+// Lesend, mit einer Ausnahme: /api/archive/summarize stoesst einen
+// Zusammenfass-Lauf an. Das aendert keine Aufnahme, sondern startet genau
+// das, was auch der Knopf am Geraet startet -- und macht die Pruefzeile
+// "eine volle Zusammenfassung geht durch" ohne einen Menschen am Geraet
+// nachvollziehbar. Loeschen, Umtaggen und Formatieren bleiben draussen:
+// die gehoeren ans Geraet, wo der Besitzer sieht, was er anfasst.
 namespace archive_portal {
 
 // Haengt die Routen in den laufenden Portal-Server:
 //   GET /api/archive/recordings  -- alle Aufnahmen mit Metadaten
 //                                   (?transcripts=0 laesst die Texte weg)
 //   GET /api/archive/summaries   -- die gespeicherten Zusammenfassungen
+//   POST /api/archive/summarize  -- stoesst einen Lauf an (?kind=todos|notes)
 void RegisterPortalRoutes(httpd_handle_t server);
 
 }  // namespace archive_portal

@@ -94,7 +94,60 @@ das Transkribieren lief in sein Zeitfenster, sondern das Zusammenfassen.
 | Ein einzelner Chunk allein kann das Fenster sprengen | Prompt auf Chunk-Budget (2500 Token) aufgeblasen, per `curl` an `/v1/chat/completions`, `time` messen | belegt — Lauf ueberschritt 120 s, ohne fertig zu sein. Ein Budget-Chunk liegt rechnerisch bei ~5 min allein fuer das Prompt-Einlesen, und eine Zusammenfassung besteht aus mehreren Chunks plus Rollup | 19.09. |
 | **Mit 900 s Zeitfenster baut und laeuft die Firmware** | `idf.py build`, `idf.py -p /dev/ttyACM0 flash` | belegt — `0x375f40` Bytes, 56 % frei; „Hash of data verified", Board bootet, `Local AI readiness check succeeded: model=google/gemma-4-e2b http=200` | 19.09. |
 | **Eine volle Zusammenfassung am Geraet geht mit dem neuen Fenster durch** | Am Geraet Todos zusammenfassen, dann `curl http://192.168.178.75/api/archive/summaries` und das Server-Log dazu | **belegt** — Lauf 16:46:38 bis 16:48:10, `total time = 91 988 ms` (304 Prompt-, 191 Antwort-Token), kein `Client disconnected`. Ueber die alte 60-s-Grenze hinaus und trotzdem fertig geworden; Ergebnis liegt als `todos` mit `generated 16:48`, 5 Quellen, 5 Transkripte vor | 19.09. |
-| Eine laufende Zusammenfassung haelt das Geraet nicht wach | `GetAutoSleepBlocker` in `main/device_sleep_runtime.cpp` lesen | belegt — die Funktion kennt Aufnahme, Wiedergabe, Speicher, AP-Modus, Zeitsync und Display, aber keinen Zusammenfass-Lauf. Bei 15 min Wartezeit greift der Light-Sleep nach 90 s. **Vorschlag, nicht gebaut:** eigener `BlockerReason` fuer `summary_service` | 19.09. |
+| Eine laufende Zusammenfassung hielt das Geraet nicht wach | `GetAutoSleepBlocker` in `main/device_sleep_runtime.cpp` lesen | belegt — die Funktion kannte Aufnahme, Wiedergabe, Speicher, AP-Modus, Zeitsync und Display, aber keinen Zusammenfass-Lauf. **Behoben:** `BlockerReason::kSummaryRunning`, gespeist aus `request.in_flight` | 19.09. |
+| Die Schlafgrenzen sind 180 s und 1800 s, nicht 30 s und 90 s | Bootlog lesen, gegen `sdkconfig.defaults` halten | belegt — Log: `display_sleep_in=180s light_sleep_in=1800s`, passend zu `CONFIG_FOLLOWUP_AUTO_SLEEP_*_TIMEOUT_SECONDS`. Die Werte `30`/`90` in `struct Settings` (`device_sleep_service.h`) sind blosse Vorgaben und werden ueberschrieben — eine frueher hier notierte 90-s-Aussage stuetzte sich faelschlich auf sie und ist damit widerlegt | 19.09. |
+
+## Sprache und Ton der Zusammenfassung (19.09.2026)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Die englische Ausgabe kam vom Prompt, nicht vom Modell | Anweisung auf Deutsch umschreiben, sonst nichts aendern, neu zusammenfassen | belegt — dasselbe Modell, dieselben Aufnahmen, Antwort jetzt durchgehend deutsch | 19.09. |
+| Der aufmunternde Ton stand ausdruecklich in der Anweisung | Alten Prompt lesen | belegt — „write it in an encouraging and optimistic tone", „celebrates progress and motivates the next steps". Das Modell tat, was dort stand; es war kein Ausrutscher | 19.09. |
+| Ohne diese Vorgaben berichtet es statt anzufeuern | Nach dem Flashen Lauf ausloesen, Ergebnis lesen | belegt — Todo-Fassung 17:20 nennt die offenen Aufgaben, dann zwei nuechterne Saetze zu Erledigt-Stand und Blockaden. Keine Anrede, kein Lob, kein Ausrufezeichen | 19.09. |
+| Umlaute kommen am Geraet richtig an | Zusammenfassung am Display und ueber `/api/archive/summaries` lesen | belegt — `ue`/`ae`/`oe` erscheinen als Umlaute; `DecodeUtf8Codepoint` in `bitmap_font.cpp` dekodiert UTF-8, der Zeichenbereich `0x20`–`0xFC` deckt sie ab | 19.09. |
+| Die Statusmeldungen am Geraet blieben bewusst englisch | `SegmentLabelForKind` gegen `PromptLabelForKind` halten | belegt — getrennte Funktionen: der Prompt ist deutsch, die Oberflaeche unangetastet. Die UI umzustellen war nicht bestellt | 19.09. |
+
+## Schlaf waehrend einer Zusammenfassung (19.09.2026)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| **Der Blocker greift waehrend eines echten Laufs** | Lauf ausloesen, Board-Log auf `Sleep blocker changed` lesen | **belegt** — `none -> summary_running` bei t=58055, `summary_running -> display_refresh` bei t=118055. 60 Sekunden lang gehalten, exakt ueber den Lauf | 19.09. |
+| Der Schlaf-Zaehler sieht den Blocker auch | Log auf `inactivity countdown` pruefen | belegt — `display_sleep_in=180s light_sleep_in=1800s blocked=1 blocker=summary_running`. `blocked=1` heisst: der Zaehler laeuft nicht weiter | 19.09. |
+| Der Blocker haelt nicht laenger als noetig | Uebergang nach dem Lauf pruefen | belegt — faellt unmittelbar nach `Summary todos succeeded` weg, kein Nachhaengen | 19.09. |
+| Beide Arten loesen ihn aus | Notiz- und Todo-Lauf im selben Log | belegt — auch der Notiz-Lauf zeigt `summary_running -> none` bei t=37055 | 19.09. |
+
+## Lauf anstossen, ohne am Geraet zu stehen (19.09.2026)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| `POST /api/archive/summarize` stoesst denselben Lauf an wie der Knopf | `curl -X POST '.../summarize?kind=todos'`, Board-Log lesen | belegt — `ArchivePortal: Summary requested via portal: kind=todos`, danach `SummaryService: Generating todos summary` aus derselben Warteschlange | 19.09. |
+| Ein zweiter Anstoss waehrend eines Laufs kippt nichts um | Anstossen, waehrend schon einer laeuft | belegt — Antwort `{"angenommen":false,"laeuft_bereits":true}`, HTTP 200, der laufende Lauf lief unbeirrt zu Ende. Abgelehnt ist hier kein Fehler, sondern die Warteschlange | 19.09. |
+| Die Route aendert keine Aufnahme | `archive_portal.cpp` durchsehen | belegt — ruft ausschliesslich `RequestSummary()`; kein `DeleteRecording`, kein `MarkRecording*`, kein `ResetForFormat` | 19.09. |
+
+## Mitschrift auf dem Pi (19.09.2026)
+
+Die Mitschrift (`imkopfhaben-public/brain/mitschrift.py`) greift jedes
+Transkript dort ab, wo es entsteht. Ihr Versprechen: sie darf die
+Transkription unter **keinen** Umstaenden umwerfen.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Sie schreibt beim Entstehen mit, nicht auf Nachfrage | Aufnahme machen, danach `/api/mitschrift` lesen, ohne das Geraet zu fragen | belegt — Eintrag von 16:58 erschien ohne jede Abfrage des Geraets | 19.09. |
+| Ein kaputter Ablageort wirft die Transkription nicht um | `ORDNER` auf einen unbeschreibbaren Pfad zeigen lassen, mitschreiben | belegt — kein Wurf, Meldung `[mitschrift] konnte nicht schreiben: FileNotFoundError` im Log, Bestand unveraendert. Das ist das Kernversprechen des Moduls | 19.09. |
+| Leere Eingaben legen nichts an | `''`, `'   '` und `None` uebergeben | belegt — kein Wurf, Eintragszahl bleibt bei 8 | 19.09. |
+| Eine kaputte Zeile kostet eine Zeile, nicht die Datei | Zwei unparsbare Zeilen anhaengen, dann lesen | belegt — 8 Eintraege gelesen, die kaputten uebersprungen. Genau der Fall, fuer den JSONL gewaehlt wurde | 19.09. |
+| `?seit=` filtert wie beschrieben | Route ohne Filter, mit Vergangenheits- und mit Zukunftswert | belegt — 8 / 8 / 0 | 19.09. |
+| Der Nachtrag traegt nichts doppelt nach | `mitschrift-nachholen.py` zweimal laufen lassen | belegt — zweiter Lauf: „0 nachgetragen, 8 waren schon da". Der erste Anlauf verglich auf den Zeitpunkt und erzeugte eine Dublette (Geraet stempelt den Aufnahmebeginn, die Mitschrift das Ende der Transkription); seither wird nur der Wortlaut verglichen | 19.09. |
+
+## Notizinhalte gehoeren nicht auf GitHub (19.09.2026)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| In keiner getrackten Datei steht ein Notizinhalt | `git grep` nach Wortlauten aus den Aufnahmen, in beiden Repos | belegt — keine Treffer. Vier Stellen in der Doku, die ich selbst eingetragen hatte, sind entfernt | 19.09. |
+| Der `.gitignore`-Riegel greift auf Geraeteinhalte | `git check-ignore -v --stdin` mit acht Beispielpfaden, ohne Dateien anzulegen | belegt — alle acht ignoriert, je mit Regelzeile: `transkripte*`, `aufnahmen/`, `mitschrift/`, `notizen/`, `zusammenfassungen/`, `archive-*.json`, `recordings-*.json`, `*.wav` | 19.09. |
+| Der Riegel faengt keine Quelldateien mit ein | Dieselbe Pruefung mit `docs/PRUEFUNG.md`, `main/app_shell.cpp`, `brain/mitschrift.py` | belegt — keine davon ignoriert. Ein zu grober Riegel waere schlimmer als keiner | 19.09. |
+| Die Ablage liegt ausserhalb der Repos | Ort der Mitschrift pruefen | belegt — `~/imkopfhaben-mitschrift/`, in keinem Repo enthalten. Der Ablageort ist der erste Riegel, `.gitignore` der zweite | 19.09. |
+| **Ein Zitat steht bereits auf GitHub** | `git grep` im Stand von `origin` | **widerlegt fuer die Historie** — `docs/PRUEFUNG.md` Zeile 68 im Commit `3697c8a` enthaelt einen Transkript-Wortlaut. Lokal entfernt, auf GitHub steht er noch. Bereinigung braucht History-Rewrite und Force-Push: **Entscheidung des Besitzers, nicht eigenmaechtig gemacht** | 19.09. |
 
 ## Startskript auf Kraken (brain)
 
@@ -163,7 +216,12 @@ ihn vom E-Paper abzutippen.
 | Die Zusammenfassungen sind von aussen lesbar | `curl http://192.168.178.75/api/archive/summaries` | belegt — HTTP 200, `notes` und `todos` je mit Volltext und Herkunft (`source_item_count`, `transcript_item_count`, `truncated`, `chunked`, `window_days`) | 19.09. |
 | Die Route zeigt den frischen Stand, nicht den Stand vom Booten | Am Geraet neu zusammenfassen, dann Route lesen | belegt — `RefreshCachedSummaries()` laeuft vor dem Ausliefern; der 16:48-Lauf erschien ohne Neustart | 19.09. |
 | Der zusaetzliche Handler-Platz reicht | `config.max_uri_handlers` von 24 auf 28, flashen, alle Routen abfragen | belegt — keine `Failed to register archive route`-Zeile im Log, WLAN-, Zeit- und KI-Routen antworten weiterhin | 19.09. |
-| Die Routen sind nur lesend | `archive_portal.cpp` durchsehen | belegt — ausschliesslich `HTTP_GET`; `DeleteRecording`, `MarkRecording*` und `ResetForFormat` werden nicht aufgerufen | 19.09. |
+| Die Routen aendern keine Aufnahme | `archive_portal.cpp` durchsehen | belegt — nur `HTTP_GET` plus das anstossende `POST /summarize`; `DeleteRecording`, `MarkRecording*` und `ResetForFormat` werden nirgends aufgerufen | 19.09. |
+| Falsche HTTP-Methoden prallen ab | `POST` auf `/recordings`, `GET` auf `/summarize`, `DELETE` auf `/recordings` | belegt — alle drei HTTP 405. Eine Leseroute nimmt kein Schreiben an und umgekehrt | 19.09. |
+| `?transcripts=` verhaelt sich wie dokumentiert | Sieben Varianten durchprobieren | belegt — ohne Query, `=1`, `=ja` und ein unbekannter Parameter liefern Transkripte; `=0`, `=false`, `=nein` lassen sie weg. Ausgewertet wird das erste Zeichen (`0`/`f`/`n`), das ist die ganze Regel | 19.09. |
+| Die Zusammenfassung gibt jede Quelle wieder | Jede Todo-Aufnahme mit ihren Stichworten in der Fassung suchen | belegt — 5 von 5 wiederzufinden, jede mit mehreren Stichworten. Keine Aufnahme unter den Tisch gefallen | 19.09. |
+| Die Herkunftsangabe stimmt mit dem Archiv ueberein | `metadata.source_item_count` gegen die gezaehlten Todo-Aufnahmen halten | belegt — Fassung sagt 5 von 5, Archiv hat 5 Todo-Aufnahmen, alle mit Transkript | 19.09. |
+| Ton und Sprache halten auch messbar | Beide Fassungen auf Ausrufezeichen, englische Brocken und Umlaute pruefen | belegt — je 0 Ausrufezeichen, keine englischen Wortbrocken, Umlaute vorhanden. Nicht nur gelesen, sondern gezaehlt | 19.09. |
 
 **Befund aus dem ersten Blick auf den Inhalt, nicht gefixt (Vorschlag):**
 Die Zusammenfassungen kommen **auf Englisch** zurueck, obwohl jede Quelle

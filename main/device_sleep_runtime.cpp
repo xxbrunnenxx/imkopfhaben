@@ -24,6 +24,7 @@
 #include "waveshare_board_config.h"
 #include "playback_service.h"
 #include "storage_service.h"
+#include "summary_service.h"
 #include "timezone_service.h"
 #include "wifi_service.h"
 
@@ -162,6 +163,13 @@ device_sleep_service::BlockerReason GetAutoSleepBlocker(void*)
 
     if (timezone_service::IsSyncInProgress()) {
         return device_sleep_service::BlockerReason::kTimeSync;
+    }
+
+    // Vor dem Display-Refresh abgefragt, weil eine Zusammenfassung Minuten
+    // dauern kann, ein Refresh nur Sekunden -- und die laengere Wartezeit ist
+    // die, die den Schlaf zuverlaessig verhindern muss.
+    if (summary_service::GetSnapshot().request.in_flight) {
+        return device_sleep_service::BlockerReason::kSummaryRunning;
     }
 
     if (display_service::IsRefreshInProgress()) {
