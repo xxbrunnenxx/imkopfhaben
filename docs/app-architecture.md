@@ -1474,9 +1474,28 @@ Ganzbildschirm-Partial über `RefreshPartialFullScreen()` ansteuert. Das
 Differential-Waveform bewegt physisch nur die Pixel, die sich
 unterscheiden, ein Ganzbildschirm-Partial aktualisiert also weiterhin
 nur das geänderte Element, ohne Blitzen. Wird ein Partial-Refresh
-angefordert, bevor ein Basisbild existiert, nach Sleep/Timeout oder
-nach dem Partial-Refresh-Limit, fällt der Treiber zurück auf
-`RefreshFullBase()`.
+angefordert, bevor ein Basisbild existiert oder nach Sleep/Timeout,
+fällt der Treiber zurück auf `RefreshFullBase()`.
+
+**Zwei Schwellen für die Ghosting-Auffrischung (seit v0.1).** Eine Folge
+von Partials lässt das Bild verblassen, weil unveränderte Pixel gar nicht
+angesteuert werden. Früher erzwang der Treiber deshalb nach
+`kMaxPartialRefreshesBeforeFlush` Partials sofort einen
+`RefreshFullBase()` — beim Durchscrollen einer Liste ist diese Schwelle
+in Sekunden erreicht, der 2,1-s-Voll-Refresh landete also mitten in der
+Bewegung und wirkte wie ein Blitzlicht. Jetzt gilt:
+
+- `kMaxPartialRefreshesBeforeFlush` (8) markiert den Flush nur als
+  **fällig**; `DeferredFlushPending()` meldet das nach außen. Der
+  `display_service` fährt ihn, sobald die Kommando-Queue 2,5 s ruhig
+  bleibt — im Leerlauf also, nicht während der Bedienung.
+- `kMaxPartialRefreshesHardCap` (60) ist die harte Grenze: dort wird auch
+  mitten in der Bewegung geflusht, damit ein Dauerstrom von Partials das
+  Bild nicht beliebig verblassen lässt.
+
+Ein Screenwechsel setzt den Zähler ohnehin zurück, ein fälliger Flush
+entfällt dann. Belegt in `docs/PRUEFUNG.md`, maschinell abgesichert durch
+`scripts/flush-politik-test.sh`.
 
 > **Fenster-/Regions-Partial-Refresh wird auf diesem SSD1677
 > (GDEM0397T81) Panel NICHT unterstützt.** Die Master-Aktivierung
@@ -1503,8 +1522,11 @@ es verwaltet `SPI3_HOST` selbst, nur-schreibend ohne MISO.
 Noch nicht aus Folloup portiert:
 
 - Aufwach-API und Display-Aufwach-Policy
-- Fast-Refresh-/Basis-Pfad
 - logisch-zu-roh-Display-View-Abstraktion
+
+(Der Fast-Refresh-/Basis-Pfad ist seit v0.1 in Gebrauch: `RefreshFastBase()`
+fährt dasselbe Vollbild auf der schnellen OTP-Waveform, 1,71 s statt
+2,11 s. `display_service::SetCurrentScreen` nutzt ihn für Screenwechsel.)
 
 (Eine zurückgehaltene View-Dirty-Region-/Fenster-Partial-Refresh-Policy
 wird absichtlich **nicht** verfolgt: das SSD1677-Panel kann kein
@@ -1525,6 +1547,14 @@ Aktueller Umfang:
 - rendert den Start-Splash mit `RefreshFullBase()`
 - besitzt die aktuelle Portrait-Framebuffer-Surface und deren
   Refresh-Policy
+- setzt die Refresh-Politik für Screenwechsel zentral in
+  `SetCurrentScreen()` (seit v0.1): eine `kFull`-Anforderung läuft als
+  `kFast`, jede achte bleibt `kFull` als Ghosting-Flush. Der Eingriff
+  sitzt bewusst an dieser einen Stelle statt an den rund 20
+  `Show…Screen`-Aufrufern
+- fährt die aufgeschobene Ghosting-Auffrischung, wenn die Kommando-Queue
+  2,5 s ruhig bleibt. Der begrenzte Queue-Wait ist nur scharf, solange
+  ein Flush aussteht, damit ein ruhiges Gerät nicht dauernd geweckt wird
 - rendert den aktuellen aktiven Bildschirm (das Dashboard, Onboarding,
   eine Feature-Seite oder den Sperrbildschirm) zusammen mit dem
   passenden UI-Chrome
