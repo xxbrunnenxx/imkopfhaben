@@ -672,10 +672,10 @@
     "semantic_hash": "a895b66235655f9e3fdd8d0a1acd7d29"
   },
   "components/epaper_ui/include/epaper_ui/welcome_message.h": {
-    "mtime": 1789291667.8916063,
-    "seen": 1789719083.8372755,
-    "ast_hash": "01be7c13a3b7e9e902f244160c6f1173",
-    "semantic_hash": "01be7c13a3b7e9e902f244160c6f1173"
+    "mtime": 1789848578.9922886,
+    "seen": 1789848926.608171,
+    "ast_hash": "4cd028426d8ed740d95ed80b8d9639d5",
+    "semantic_hash": ""
   },
   "components/epaper_ui/include/epaper_ui/wifi_page.h": {
     "mtime": 1789291667.8916063,
@@ -918,10 +918,10 @@
     "semantic_hash": "48d14b3280ddec9944712aed77e717af"
   },
   "components/epaper_ui/welcome_message.cpp": {
-    "mtime": 1789291667.891877,
-    "seen": 1789719083.837323,
-    "ast_hash": "e82e0dc5dd1e93436665a952a7c1454c",
-    "semantic_hash": "e82e0dc5dd1e93436665a952a7c1454c"
+    "mtime": 1789848603.3677807,
+    "seen": 1789848926.608255,
+    "ast_hash": "02ed1bf1d5dbaaea4352d5cbd4d8ffa3",
+    "semantic_hash": ""
   },
   "components/epaper_ui/wifi_page.cpp": {
     "mtime": 1789291667.891877,
@@ -1362,9 +1362,9 @@
     "semantic_hash": "abf94b93506797d849bffe9285f1db32"
   },
   "main/app_shell.cpp": {
-    "mtime": 1789829247.5667121,
-    "seen": 1789829564.2531984,
-    "ast_hash": "19fdb270f34420b273b9c33392dbc82b",
+    "mtime": 1789848718.9267056,
+    "seen": 1789848926.60841,
+    "ast_hash": "8d74a6cc59b757b1b5cbaea57d99fb5e",
     "semantic_hash": ""
   },
   "main/app_shell.h": {
@@ -1398,10 +1398,10 @@
     "semantic_hash": "1500ef685bf33b2589b6d5b22c30c147"
   },
   "main/dashboard_page_coordinator.cpp": {
-    "mtime": 1789291667.934529,
-    "seen": 1789719083.8374155,
-    "ast_hash": "8ebbd7f1290842f55807cd7db825c519",
-    "semantic_hash": "8ebbd7f1290842f55807cd7db825c519"
+    "mtime": 1789848645.2593908,
+    "seen": 1789848926.608422,
+    "ast_hash": "a7d9094badca2bbdec394aef6102a895",
+    "semantic_hash": ""
   },
   "main/dashboard_page_coordinator.h": {
     "mtime": 1789291667.934529,
@@ -2682,9 +2682,9 @@
     "semantic_hash": ""
   },
   "main/CMakeLists.txt": {
-    "mtime": 1789829256.750823,
-    "seen": 1789829564.25366,
-    "ast_hash": "2ab29b2158321ade6066c3d69b562c86",
+    "mtime": 1789848654.3364818,
+    "seen": 1789848926.6088746,
+    "ast_hash": "da3b094bd52397d834936c52e4bd8c9b",
     "semantic_hash": ""
   },
   "scripts/README.md": {
@@ -3294,9 +3294,9 @@
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1789831567.5816283,
-    "seen": 1789831799.6820507,
-    "ast_hash": "93559895782582fb2bd3112dd868b038",
+    "mtime": 1789848879.5292997,
+    "seen": 1789848926.6088514,
+    "ast_hash": "e81e742f4df0ae71665336ff198d06ee",
     "semantic_hash": ""
   },
   "docs/VERSIONEN.md": {
@@ -3327,6 +3327,24 @@
     "mtime": 1789829192.7884893,
     "seen": 1789829564.2535603,
     "ast_hash": "e2e36095addee60eb635c1a0f3c58918",
+    "semantic_hash": ""
+  },
+  "components/device_status_service/device_status_service.cpp": {
+    "mtime": 1789848545.7523172,
+    "seen": 1789848926.6080039,
+    "ast_hash": "2b732ec3342729e589e3126735926381",
+    "semantic_hash": ""
+  },
+  "components/device_status_service/include/device_status_service.h": {
+    "mtime": 1789848511.3526378,
+    "seen": 1789848926.6080065,
+    "ast_hash": "ce7d04344c6a8f9bdfd02318ef34df0e",
+    "semantic_hash": ""
+  },
+  "components/device_status_service/CMakeLists.txt": {
+    "mtime": 1789848548.925256,
+    "seen": 1789848926.6087897,
+    "ast_hash": "ab8a00f3bb8b63ab8ea555f27c838d82",
     "semantic_hash": ""
   }
 }
