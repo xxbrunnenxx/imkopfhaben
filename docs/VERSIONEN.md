@@ -52,6 +52,14 @@ alten Zustand in 7 Fällen durch, taugt also als Regressionsschutz.
   `kMaxPartialRefreshesHardCap` in `ssd1677_driver.cpp` die Stellschraube
   (aktuell 60).
 
+**Zum Board-Stand beim Taggen:** Die Firmware dieses Standes lief zuvor
+nachweislich (`verify_flash` „digest matched", 3 min Dauerbetrieb ohne
+Voll-Refresh). Beim Setzen des Tags war das Gerät nach 30 min Inaktivität
+planmäßig im Light-Sleep (`LIGHT_SLEEP_TIMEOUT_SECONDS=1800`), die
+USB-Brücke schweigt dann und meldet beim DTR/RTS-Zugriff `Errno 71`. Das
+ist kein Fehler des Standes; nach einem Tastendruck am Gerät antwortet der
+Port wieder.
+
 **Stand:** Zweig `folloup-waveshare`. Der Zweig liegt 94 Commits vor
 `origin/main`; von den 8 Commits auf `main` sind 5 inhaltlich hier
 enthalten, 3 nicht (`70e7ed7` oben, `be7f0d9` und `cd44bb2` sind hier
