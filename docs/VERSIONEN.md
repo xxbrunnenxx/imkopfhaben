@@ -38,6 +38,30 @@ Besitzer-Urteil nach längerer Nutzung: **„bislang nix festgestellt."**
 durch `scripts/flush-politik-test.sh` (23 Fälle). Die Suite fällt gegen den
 alten Zustand in 7 Fällen durch, taugt also als Regressionsschutz.
 
+**Wie die Ursache gefunden wurde** (weil der erste Verdacht falsch war)
+
+Der erste Eingriff galt den Screenwechseln — richtig, aber nicht die
+Ursache des gemeldeten Blitzens. Erst ein serieller Mitschnitt *während*
+der Besitzer das Gerät benutzte, zeigte es: im ganzen Fenster gab es
+keinen einzigen Screenwechsel. Alle Kommandos waren
+`mode=partial scope=region source=dashboard_page` — Scrollen mit der
+DOWN-Taste. Genau ein Voll-Refresh, `busy=2108938us` bei t=119264, direkt
+nach sechs Partials à ~510 ms.
+
+Das war der Beleg, dass der erzwungene Flush im Partial-Pfad schuld war
+und nicht der Screenwechsel. Die `refresh metrics` des Treibers trennen
+die drei Fälle eindeutig und taugen deshalb als Messinstrument:
+
+| Waveform | `busy` |
+|---|---|
+| voll (mode-1) | ~2 109 000 µs |
+| schnell (OTP) | ~1 709 000 µs |
+| partial | ~510 000 µs |
+
+Merksatz: bei einer Beschwerde über das Anzeigeverhalten zuerst
+mitschneiden, während das Gerät benutzt wird. Der Log nennt Waveform,
+Bildschirm und Auslöser pro Ansteuerung; Raten kostet mehr Zeit als Messen.
+
 **Bekannte Lücken dieses Standes**
 
 - **Der Light-Sleep-Button-Fix von `main` fehlt hier** (Commit `70e7ed7`).

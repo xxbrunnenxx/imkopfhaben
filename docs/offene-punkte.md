@@ -57,97 +57,15 @@ Reihenfolge = ungefähre Priorität.
   Review-Funde daran (Deadlock, Race) sind in PR #3 gefixt.
 - Kein `transcribe_url`-Feld in der Portal-UI (nur `base_url` editierbar).
 
-## Refresh-Politik bei Screenwechseln (2026-09-19)
+## Display-Refresh (erledigt, siehe `docs/VERSIONEN.md`)
 
-- **Gebaut, geflasht, Logik geprüft — Augenschein am Gerät noch offen.**
-  Screenwechsel laufen jetzt auf der schnellen OTP-Wellenform (`kFast`)
-  statt der mode-1-Vollwellenform; jeder achte Wechsel bleibt `kFull` als
-  Ghosting-Flush. Eingriff zentral in `SetCurrentScreen`
-  (`components/display_service/display_service.cpp`), nicht an den 20
-  Aufrufstellen.
-- Geprüft: Build grün, Flash auf `/dev/ttyACM0` verifiziert (Hash ok),
-  Bootlog zeigt den ersten Wechsel erwartungsgemäß als `mode=full`, die
-  Politik selbst per Host-Testprogramm (8er-Zyklus, `kPartial`/`kFast`
-  bleiben unverändert).
-- **Ungeprüft:** wie die Folgewechsel am echten Panel aussehen. Screens
-  wechseln nur per physischem Tastendruck, ferngesteuert nicht auslösbar
-  — im 5-Minuten-Leerlauf-Mitschnitt kam kein einziger Screenwechsel vor.
-  Der Besitzer muss einmal durch die Menüs gehen und sagen, ob das
-  Blitzen weg ist und ob nach ~8 Wechseln genug Ghosting weggeht. Falls
-  zu viel Ghosting bleibt: `kGhostFlushEveryNScreenChanges` verkleinern.
+Das Blitzen des Panels ist mit **v0.1** behoben und vom Besitzer im
+Betrieb bestätigt. Die Beschreibung des Standes steht in
+`docs/VERSIONEN.md`, die Belege in `docs/PRUEFUNG.md`, der
+Regressionsschutz in `scripts/flush-politik-test.sh`.
 
-### Nachtrag 2026-09-19: der gemeldete Blitz kam woanders her
-
-Der Besitzer hat das Gerät benutzt, während ein 5-Minuten-Mitschnitt
-lief, und meldete weiterhin Blitzen. Der Mitschnitt zeigt warum — es war
-**nicht** der Screenwechsel-Pfad:
-
-- Im ganzen Nutzungsfenster gab es **keinen einzigen Screenwechsel**.
-  Alle Display-Kommandos: `mode=partial scope=region
-  source=dashboard_page` (Scrollen mit der DOWN-Taste im Dashboard).
-- Genau **ein** Voll-Refresh, bei Zeitstempel 119264:
-  `busy=2108938us` — die 2,1 s. Direkt davor sechs Partials à ~510 ms.
-- Ursache: `RefreshPartialFullScreen` in
-  `components/epaper_panel/ssd1677_driver.cpp`. Nach
-  `kMaxPartialRefreshesBeforeFlush = 8` Partials erzwingt
-  `CanPartialRefresh` einen `RefreshFullBase()` gegen das Verblassen.
-  Beim Durchscrollen einer Liste ist diese Schwelle in Sekunden erreicht.
-
-Die heutige `SetCurrentScreen`-Änderung bleibt richtig und wirksam (sie
-nimmt das Blitzen beim Seitenwechsel), trifft dieses Blitzen aber nicht.
-
-**Offen — Entscheidung des Besitzers**, weil es ein echter Kompromiss ist
-(Blitzen gegen Kontrast):
-
-1. Schwelle hochsetzen (z. B. 8 → 20): seltener Blitzen, dafür wird das
-   Bild zwischendurch sichtbar blasser.
-2. Flush auf die schnelle Wellenform legen: aus 2,1 s werden ~0,8 s,
-   klärt aber weniger gründlich. Der Kommentar im Treiber rät davon ab,
-   weil `kFast` auf diesem Panel bei geringerem Kontrast landet und ein
-   verblasstes Bild damit nicht wieder aufgefrischt wird.
-3. Flush verschieben statt auslösen: beim Scrollen weiterzählen, aber den
-   Voll-Refresh erst fahren, wenn der Nutzer kurz nichts tut. Dann blitzt
-   es nie mitten in der Bewegung. Aufwendiger, aber der einzige Weg, der
-   beides behält.
-
-### Gelöst 2026-09-19: Flush wartet auf den Leerlauf
-
-Umgesetzt wurde Variante 3. Zwei Schwellen statt einer:
-
-- `kMaxPartialRefreshesBeforeFlush = 8` markiert den Flush nur noch als
-  **fällig** (`EpaperPanel::DeferredFlushPending()`), erzwingt ihn nicht.
-- `kMaxPartialRefreshesHardCap = 60` ist die harte Grenze, ab der auch
-  mitten in der Bewegung geflusht wird, damit ein Dauerstrom von
-  Partials das Bild nicht beliebig verblassen lässt.
-- `DisplayTask` wartet nicht mehr `portMAX_DELAY` auf die Queue, sondern
-  2,5 s. Läuft der Wartezeitraum leer ab und ist ein Flush fällig, wird
-  er dort gefahren — im Leerlauf, nicht während des Scrollens.
-
-**Gemessen am Gerät (Mitschnitt /tmp/v2.txt, Besitzer hat live bedient):**
-
-| | vorher | nachher |
-|---|---|---|
-| Screenwechsel | 2,11 s (`full`) | 1,71 s (`fast`) |
-| Scrollschritt | 0,51 s | 0,51 s |
-| Blitz mitten im Scrollen | ja | keiner |
-
-Im Mitschnitt liefen acht Partials am Stück (t=24516..34256) — genau die
-Konstellation, die vorher den 2,1-s-Blitz auslöste. Diesmal kam keiner.
-Sechs echte Screenwechsel (Lockscreen an/aus, VibeCheck, Summarize,
-2× Home) fuhren alle als `mode=fast`. Besitzer-Urteil: "sieht gut aus,
-ich hab noch keinen unerwünschten refresh gehabt."
-
-**Anmerkung für später:** `kFast` spart auf diesem Panel nur ~0,4 s
-(1,71 s statt 2,11 s). Der spürbare Gewinn kommt weniger aus der Dauer
-als daraus, dass der unerwartete Flush mitten in der Bewegung weg ist.
-Falls das Bild bei langem Scrollen doch zu blass wird, ist
-`kMaxPartialRefreshesHardCap` die Stellschraube (60 herunter).
-
-**Nachtrag gleicher Tag:** Der Leerlauf-Flush ist jetzt auch **auf der
-Hardware belegt** (`Deferred ghosting flush: idle after 4 partials`,
-2,5 s nach dem letzten Partial) — nachgewiesen über eine temporär auf 3
-gesenkte Schwelle, danach zurückgebaut und gegengeprüft. Zusätzlich
-gefunden und behoben: `DisplayTask` wartet nur noch begrenzt, **wenn ein
-Flush aussteht**; sonst blockiert es unbegrenzt wie zuvor, damit ein
-ruhiges Gerät nicht alle 2,5 s geweckt wird. Die Fälle der
-Zustandsmaschine stehen als `scripts/flush-politik-test.sh` im Repo.
+Offen bleibt daraus nur eine Geschmacksfrage: ob das Bild bei sehr langem
+Scrollen zu blass wird. Das entscheidet das Auge am Gerät, nicht eine
+Messung. Stellschraube ist `kMaxPartialRefreshesHardCap` in
+`components/epaper_panel/ssd1677_driver.cpp` (aktuell 60, kleiner =
+häufiger auffrischen).
