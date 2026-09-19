@@ -52,13 +52,17 @@ alten Zustand in 7 Fällen durch, taugt also als Regressionsschutz.
   `kMaxPartialRefreshesHardCap` in `ssd1677_driver.cpp` die Stellschraube
   (aktuell 60).
 
-**Zum Board-Stand beim Taggen:** Die Firmware dieses Standes lief zuvor
-nachweislich (`verify_flash` „digest matched", 3 min Dauerbetrieb ohne
-Voll-Refresh). Beim Setzen des Tags war das Gerät nach 30 min Inaktivität
-planmäßig im Light-Sleep (`LIGHT_SLEEP_TIMEOUT_SECONDS=1800`), die
-USB-Brücke schweigt dann und meldet beim DTR/RTS-Zugriff `Errno 71`. Das
-ist kein Fehler des Standes; nach einem Tastendruck am Gerät antwortet der
-Port wieder.
+**Zum Board-Stand beim Taggen:** Die Firmware dieses Standes ist per
+`verify_flash` gegen das Board bestätigt („digest matched"), im Betrieb
+laufen nur Teilbild-Refreshes à 0,51 s, kein Voll-Refresh, kein Absturz.
+
+Direkt nach dem Taggen schwieg die serielle Ausgabe eine Weile. Erste
+Vermutung war der Light-Sleep nach 1800 s — **das war falsch.** Das Board
+hing im Bootloader, nachdem DTR/RTS-Reset-Versuche über die USB-JTAG-Brücke
+mit `Errno 71` abgebrochen waren. Ein `--after hard_reset` startet es
+wieder. Merksatz fürs nächste Mal: bei plötzlicher Stille am ESP32-S3 mit
+USB-JTAG zuerst `esptool ... chip_id` fragen — meldet es „Staying in
+bootloader", ist das die Erklärung, nicht der Schlafmodus.
 
 **Stand:** Zweig `folloup-waveshare`. Der Zweig liegt 94 Commits vor
 `origin/main`; von den 8 Commits auf `main` sind 5 inhaltlich hier
