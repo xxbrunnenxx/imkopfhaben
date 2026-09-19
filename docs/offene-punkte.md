@@ -56,3 +56,22 @@ Reihenfolge = ungefähre Priorität.
   wurde noch nicht gezielt durchgespielt. Code-seitig verifiziert,
   Review-Funde daran (Deadlock, Race) sind in PR #3 gefixt.
 - Kein `transcribe_url`-Feld in der Portal-UI (nur `base_url` editierbar).
+
+## Refresh-Politik bei Screenwechseln (2026-09-19)
+
+- **Gebaut, geflasht, Logik geprüft — Augenschein am Gerät noch offen.**
+  Screenwechsel laufen jetzt auf der schnellen OTP-Wellenform (`kFast`)
+  statt der mode-1-Vollwellenform; jeder achte Wechsel bleibt `kFull` als
+  Ghosting-Flush. Eingriff zentral in `SetCurrentScreen`
+  (`components/display_service/display_service.cpp`), nicht an den 20
+  Aufrufstellen.
+- Geprüft: Build grün, Flash auf `/dev/ttyACM0` verifiziert (Hash ok),
+  Bootlog zeigt den ersten Wechsel erwartungsgemäß als `mode=full`, die
+  Politik selbst per Host-Testprogramm (8er-Zyklus, `kPartial`/`kFast`
+  bleiben unverändert).
+- **Ungeprüft:** wie die Folgewechsel am echten Panel aussehen. Screens
+  wechseln nur per physischem Tastendruck, ferngesteuert nicht auslösbar
+  — im 5-Minuten-Leerlauf-Mitschnitt kam kein einziger Screenwechsel vor.
+  Der Besitzer muss einmal durch die Menüs gehen und sagen, ob das
+  Blitzen weg ist und ob nach ~8 Wechseln genug Ghosting weggeht. Falls
+  zu viel Ghosting bleibt: `kGhostFlushEveryNScreenChanges` verkleinern.
