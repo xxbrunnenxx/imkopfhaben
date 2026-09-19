@@ -1153,6 +1153,10 @@ void DisplayTask(void*)
                 s_current_screen.store(command.screen, std::memory_order_relaxed);
             }
             ESP_LOGI(kTag, "Display command suppressed while display sleeping");
+            // flush_due is deliberately left as-is here. Sleeping clears the panel's
+            // counter, so DeferredFlushDueLocked() is already false; the stale flag costs
+            // at most one extra timeout, which then clears it. Re-arming inside this
+            // branch would be dead code dressed up as caution.
             continue;
         }
 

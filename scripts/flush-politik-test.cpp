@@ -116,6 +116,16 @@ int main()
         t.display_sleeping = false; t.panel.Wake();
         Check("Nach dem Aufwachen: kein Altlast-Flush (Zaehler war zurueck)", t.IdleTimeout(), false);
     }
+    {   // Der Sleeping-Zweig in DisplayTask setzt flush_due NICHT neu, sondern macht
+        // nur `continue`. Dieser Fall belegt, dass sich das nach einem einzigen
+        // Timeout selbst heilt und das Geraet danach wieder unbegrenzt blockiert.
+        Task t; for (int i = 0; i < 8; i++) t.PartialCommand();
+        Check("Vor dem Schlaf: begrenzter Wait scharf", !t.BlocksForever(), true);
+        t.display_sleeping = true; t.panel.Sleep();
+        Check("Kommando im Schlaf laesst flush_due stehen", !t.BlocksForever(), true);
+        Check("Erster Timeout im Schlaf: kein Flush", t.IdleTimeout(), false);
+        Check("...und danach wieder unbegrenzt blockiert", t.BlocksForever(), true);
+    }
     {   // Scrollen mit Pausen: nie ein Blitz mitten in der Bewegung, ueber viele Runden.
         Task t; bool blitz = false; int fluesche = 0;
         for (int runde = 0; runde < 20; runde++) {
