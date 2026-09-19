@@ -109,3 +109,36 @@ nimmt das Blitzen beim Seitenwechsel), trifft dieses Blitzen aber nicht.
    Voll-Refresh erst fahren, wenn der Nutzer kurz nichts tut. Dann blitzt
    es nie mitten in der Bewegung. Aufwendiger, aber der einzige Weg, der
    beides behält.
+
+### Gelöst 2026-09-19: Flush wartet auf den Leerlauf
+
+Umgesetzt wurde Variante 3. Zwei Schwellen statt einer:
+
+- `kMaxPartialRefreshesBeforeFlush = 8` markiert den Flush nur noch als
+  **fällig** (`EpaperPanel::DeferredFlushPending()`), erzwingt ihn nicht.
+- `kMaxPartialRefreshesHardCap = 60` ist die harte Grenze, ab der auch
+  mitten in der Bewegung geflusht wird, damit ein Dauerstrom von
+  Partials das Bild nicht beliebig verblassen lässt.
+- `DisplayTask` wartet nicht mehr `portMAX_DELAY` auf die Queue, sondern
+  2,5 s. Läuft der Wartezeitraum leer ab und ist ein Flush fällig, wird
+  er dort gefahren — im Leerlauf, nicht während des Scrollens.
+
+**Gemessen am Gerät (Mitschnitt /tmp/v2.txt, Besitzer hat live bedient):**
+
+| | vorher | nachher |
+|---|---|---|
+| Screenwechsel | 2,11 s (`full`) | 1,71 s (`fast`) |
+| Scrollschritt | 0,51 s | 0,51 s |
+| Blitz mitten im Scrollen | ja | keiner |
+
+Im Mitschnitt liefen acht Partials am Stück (t=24516..34256) — genau die
+Konstellation, die vorher den 2,1-s-Blitz auslöste. Diesmal kam keiner.
+Sechs echte Screenwechsel (Lockscreen an/aus, VibeCheck, Summarize,
+2× Home) fuhren alle als `mode=fast`. Besitzer-Urteil: "sieht gut aus,
+ich hab noch keinen unerwünschten refresh gehabt."
+
+**Anmerkung für später:** `kFast` spart auf diesem Panel nur ~0,4 s
+(1,71 s statt 2,11 s). Der spürbare Gewinn kommt weniger aus der Dauer
+als daraus, dass der unerwartete Flush mitten in der Bewegung weg ist.
+Falls das Bild bei langem Scrollen doch zu blass wird, ist
+`kMaxPartialRefreshesHardCap` die Stellschraube (60 herunter).

@@ -1095,6 +1095,11 @@ esp_err_t SleepPanelLocked(const char* reason)
     return ESP_OK;
 }
 
+// How long the command queue must stay quiet before a due ghosting flush is driven.
+// Long enough that it never lands between two keypresses of a scroll (observed repeat
+// interval is ~1.1 s), short enough that the user has stopped looking for a reaction.
+constexpr TickType_t kDeferredFlushIdleTicks = pdMS_TO_TICKS(2500);
+
 void DisplayTask(void*)
 {
     DisplayCommand command = {};
@@ -1102,7 +1107,24 @@ void DisplayTask(void*)
     command.screen = ScreenId::kHome;
     command.refresh_request.refresh_mode = RefreshMode::kPartial;
     while (true) {
-        if (xQueueReceive(s_command_queue, &command, portMAX_DELAY) != pdTRUE) {
+        if (xQueueReceive(s_command_queue, &command, kDeferredFlushIdleTicks) != pdTRUE) {
+            // Queue went quiet. If a run of partials left the screen faded, this is the
+            // moment to re-drive it: the flash costs 2.1 s, but nobody is mid-gesture.
+            std::lock_guard<std::mutex> lock(s_panel_mutex);
+            if (s_display_sleeping) {
+                continue;
+            }
+            EpaperPanel& panel = Panel();
+            if (!panel.DeferredFlushPending()) {
+                continue;
+            }
+            ESP_LOGI(kTag, "Deferred ghosting flush: idle after %d partials",
+                     panel.partial_refresh_count());
+            RefreshBusyGuard refresh_busy;
+            const esp_err_t flush_err = panel.RefreshFullBase();
+            if (flush_err != ESP_OK) {
+                ESP_LOGW(kTag, "Deferred ghosting flush failed: %s", esp_err_to_name(flush_err));
+            }
             continue;
         }
 

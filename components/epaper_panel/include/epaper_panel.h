@@ -68,6 +68,10 @@ public:
     bool base_image_initialized() const { return base_image_initialized_; }
     bool wake_refresh_pending() const { return wake_refresh_pending_; }
     int partial_refresh_count() const { return partial_refresh_count_; }
+    // True once enough partials have accumulated that the fade is becoming visible and a
+    // full re-drive is due. The drive itself is deliberately NOT forced here: the caller
+    // picks an idle moment for it, so the 2.1 s flash never interrupts a scroll.
+    bool DeferredFlushPending() const;
     bool RequiresBaseRefresh() const;
     bool CanPartialRefresh(int max_partial_refreshes) const;
 

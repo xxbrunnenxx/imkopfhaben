@@ -11,10 +11,17 @@
 namespace {
 
 constexpr const char* kTag = "Ssd1677";
-// Consecutive differential updates before the panel is re-driven in full. 20 was long
-// enough for the fade to become obvious; the flush is now on the fast waveform, so a
-// tighter budget costs little.
+// Consecutive differential updates before the panel wants a full re-drive. The fade
+// becomes obvious beyond this, so it stays the point at which a flush is *due*.
+// It is no longer the point at which one is forced: driving the 2.1 s full waveform
+// the moment the counter trips lands the flash in the middle of a scroll, which is
+// exactly what it looks like to the user -- a camera flash while holding a key. The
+// flush is deferred to the next idle moment instead (see DeferredFlushPending).
 constexpr int kMaxPartialRefreshesBeforeFlush = 8;
+// Hard ceiling for a deferred flush. Past this the fade wins over the interruption and
+// the flush happens immediately, even mid-scroll. Sized so a fast scroll can run a good
+// while without a flash, but a pathological "never idle" stream still gets cleaned up.
+constexpr int kMaxPartialRefreshesHardCap = 60;
 // Display Update Control 2 (0x22) sequences, matching the `followup` esp-epaper driver
 // that is proven on this panel: 0xF7 drives the mode-1 full waveform, 0xFF the mode-2
 // differential waveform used for partials.
@@ -245,6 +252,12 @@ esp_err_t EpaperPanel::RefreshFullBaseInternal(bool fast)
     return ESP_OK;
 }
 
+bool EpaperPanel::DeferredFlushPending() const
+{
+    return state_ == EpaperPanelState::kActive && base_image_initialized_ &&
+           partial_refresh_count_ >= kMaxPartialRefreshesBeforeFlush;
+}
+
 esp_err_t EpaperPanel::RefreshPartialFullScreen()
 {
     // A differential update only drives pixels where 0x24 != 0x26, so everything that did
@@ -252,7 +265,12 @@ esp_err_t EpaperPanel::RefreshPartialFullScreen()
     // lighter across a run of partials. Periodically re-drive every pixel to restore it.
     // Use the mode-1 full waveform, not the fast one: fast flashes but settles at lower
     // contrast on this panel, so it cannot be used to restore a faded screen.
-    if (!CanPartialRefresh(kMaxPartialRefreshesBeforeFlush)) {
+    //
+    // The flush is due after kMaxPartialRefreshesBeforeFlush, but firing it right then
+    // puts a 2.1 s flash in the middle of whatever the user is doing. So past the soft
+    // threshold the partial is allowed to continue and the flush is only *marked* due;
+    // the display service drives it once input goes quiet. Only the hard cap forces it.
+    if (!CanPartialRefresh(kMaxPartialRefreshesHardCap)) {
         return RefreshFullBase();
     }
     if (framebuffer_ == nullptr || previous_framebuffer_ == nullptr) {
