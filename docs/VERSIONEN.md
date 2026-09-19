@@ -93,3 +93,20 @@ bootloader", ist das die Erklärung, nicht der Schlafmodus.
 enthalten, 3 nicht (`70e7ed7` oben, `be7f0d9` und `cd44bb2` sind hier
 bereits anders gelöst — `sdkconfig` ist auch in diesem Zweig ignoriert und
 enthält keine Zugangsdaten).
+
+## Nächster Einstieg (Stand 19.09.2026, 10:18)
+
+Alles erledigt und gepusht. `v0.1` = `b0306dd`, Board trägt genau diesen
+Build, Arbeitsbaum sauber, Graph aktuell.
+
+Zwei Dinge liegen bereit, beide **nicht bestellt**, also nicht gebaut:
+
+1. **Light-Sleep-Button-Fix von `main` fehlt** (`70e7ed7`). Doppelklick
+   auf die Power-Taste wird nach dem Aufwachen als einfacher Klick
+   gemeldet, Entsperrgeste im Uhrmodus greift dann nicht.
+   Handgriff: `git cherry-pick 70e7ed7`, bauen, flashen, am Gerät prüfen.
+2. **Ghosting bei sehr langem Scrollen** — Geschmacksfrage, braucht das
+   Auge des Besitzers. Stellschraube `kMaxPartialRefreshesHardCap` in
+   `components/epaper_panel/ssd1677_driver.cpp` (60, kleiner = häufiger).
+
+Vor jeder Änderung: `./scripts/flush-politik-test.sh` (läuft ohne Board).
