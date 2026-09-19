@@ -42,7 +42,8 @@ print('\n'.join(l for l in iter(lambda: s.readline().decode('utf8','replace').rs
 | Ein ruhiges Gerät wird nicht alle 2,5 s geweckt | `scripts/flush-politik-test.sh` | belegt — ohne fälligen Flush blockiert `DisplayTask` unbegrenzt wie zuvor | 19.09. |
 | **Aufgeschobener Flush feuert auf der Hardware** | Schwelle temporär auf 3, flashen, Log lesen | **belegt** — `Deferred ghosting flush: idle after 4 partials` bei t=18136, letzter Partial bei t=15636: exakt 2,5 s Ruhe davor. Schwelle danach auf 8 zurückgesetzt, neu geflasht, gegengeprüft (kein Flush mehr) | 19.09. |
 | Geflashte Firmware entspricht dem gebauten Stand | `esptool verify_flash 0x20000 build/folloup_sticky.bin` | belegt — „verify OK (digest matched)" | 19.09. |
-| Test läuft aus einem frischen Klon | `git clone` in leeres Verzeichnis, dann `scripts/flush-politik-test.sh` | belegt — alle Fälle grün, keine Abhängigkeit von meiner Arbeitskopie | 19.09. |
+| Test läuft aus einem frischen Klon | `git clone` in leeres Verzeichnis, dann `scripts/flush-politik-test.sh` | belegt — alle 23 Fälle grün, keine Abhängigkeit von meiner Arbeitskopie | 19.09. |
+| Gerät blitzt im laufenden Betrieb nicht mehr | 3 min Mitschnitt, `busy>1,5s` suchen | belegt — kein einziger Voll-Refresh, kein Absturz | 19.09. |
 | Stale `flush_due` im Displayschlaf heilt sich selbst | `scripts/flush-politik-test.sh` | belegt — kostet höchstens einen zusätzlichen Timeout, danach blockiert die Aufgabe wieder unbegrenzt | 19.09. |
 | Keine Reste der Prüf-Schwelle im Baum | `grep -rn TEMP-PRUEFUNG` ohne `build`/`.git` | belegt — kein Treffer; Schwellen stehen auf 8 und 60 | 19.09. |
 

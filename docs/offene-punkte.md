@@ -149,5 +149,5 @@ Hardware belegt** (`Deferred ghosting flush: idle after 4 partials`,
 gesenkte Schwelle, danach zurückgebaut und gegengeprüft. Zusätzlich
 gefunden und behoben: `DisplayTask` wartet nur noch begrenzt, **wenn ein
 Flush aussteht**; sonst blockiert es unbegrenzt wie zuvor, damit ein
-ruhiges Gerät nicht alle 2,5 s geweckt wird. Vierzehn Fälle der
+ruhiges Gerät nicht alle 2,5 s geweckt wird. Die Fälle der
 Zustandsmaschine stehen als `scripts/flush-politik-test.sh` im Repo.
