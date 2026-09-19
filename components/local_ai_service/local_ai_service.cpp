@@ -49,8 +49,18 @@ constexpr const char* kPortalApiSettingsResetUri = "/api/settings/local_ai/reset
 constexpr const char* kPortalApiRuntimeUri = "/api/runtime/local_ai";
 constexpr size_t kMaxPortalPayloadLen = 512;
 constexpr int kAuthTimeoutMs = 5000;      // LAN round-trip, not a WAN one -- keep this tight
-constexpr int kGenerateTimeoutMs = 60000;  // reasoning_effort=none keeps this well under budget
-                                            // in practice, but leave headroom for a cold model
+// 60 s waren zu knapp -- dieselbe Klasse wie beim Transkribieren unten, nur
+// eine Etage hoeher. gemma-4-e2b auf Krakens Pi-5-CPU schafft gemessene
+// ~8,6 Token/s beim Prompt-Einlesen und ~5,8 Token/s beim Schreiben. Eine
+// Todo-Zusammenfassung mit 266 Token Prompt und ~180 Token Antwort braucht
+// damit 31 s + 31 s und lief am 19.09.2026 um 16:31 Uhr genau auf der
+// 60-Sekunden-Marke in den Abbruch ("Client disconnected. Stopping
+// generation..." im LM-Studio-Log), obwohl der Server die Antwort schon
+// fast fertig hatte. Die Zusammenfassung rollt ausserdem ueber mehrere
+// Chunks plus Rollup, jeder Schritt ein eigener Aufruf. Reichlich bemessen,
+// weil nur ein Fehlschlag Zeit kostet: eine gelungene Antwort kommt,
+// sobald sie fertig ist.
+constexpr int kGenerateTimeoutMs = 300000;
 // 30 s waren zu knapp: faster-whisper "medium" auf Krakens Pi-5-CPU (int8,
 // 4 Threads) braucht fuer eine 9-Sekunden-Aufnahme gemessene ~65 s, also ein
 // Vielfaches der Echtzeit. Das Geraet brach mitten in einer laufenden,
