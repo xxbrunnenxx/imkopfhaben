@@ -2400,9 +2400,9 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1789291667.8738909,
-    "seen": 1789798845.9278224,
-    "ast_hash": "f90183c86a868a06ebcc17b951afca3d",
+    "mtime": 1789804622.4866135,
+    "seen": 1789804678.5806582,
+    "ast_hash": "294f9fe31d0b6305ead62c7f2f0c3cbc",
     "semantic_hash": ""
   },
   "CMakeLists.txt": {
@@ -2628,9 +2628,9 @@
     "semantic_hash": ""
   },
   "docs/app-architecture.md": {
-    "mtime": 1789318608.088611,
-    "seen": 1789798845.9278758,
-    "ast_hash": "b474194347e0e24963a673f27fa10dfc",
+    "mtime": 1789804599.5347328,
+    "seen": 1789804678.5807533,
+    "ast_hash": "16aeb15e8a0f63f0d863d4487ccc7523",
     "semantic_hash": ""
   },
   "docs/asset-generation.md": {
@@ -2664,9 +2664,9 @@
     "semantic_hash": ""
   },
   "docs/offene-punkte.md": {
-    "mtime": 1789800404.875071,
-    "seen": 1789800422.2660875,
-    "ast_hash": "8171424ea87c9786832d13a323d3e2aa",
+    "mtime": 1789804639.7975197,
+    "seen": 1789804678.5807667,
+    "ast_hash": "86d193269e48e0eaad90a7fbaefd598f",
     "semantic_hash": ""
   },
   "docs/queue-architecture.md": {
@@ -3282,21 +3282,27 @@
     "semantic_hash": ""
   },
   "scripts/flush-politik-test.cpp": {
-    "mtime": 1789800513.8354394,
-    "seen": 1789800715.8798304,
-    "ast_hash": "76f78cba63db86d8c95e1bcc8956e158",
+    "mtime": 1789800798.5920825,
+    "seen": 1789804678.580498,
+    "ast_hash": "12efc894b353ecc9832fd1ae43fe5805",
     "semantic_hash": ""
   },
   "scripts/flush-politik-test.sh": {
-    "mtime": 1789799619.1294532,
-    "seen": 1789799642.4749289,
-    "ast_hash": "904a7b6fa3c7bd2f047de863e109b5e4",
+    "mtime": 1789800816.7910001,
+    "seen": 1789804678.5805016,
+    "ast_hash": "44e62027a4a39ba6e049a9b75868838a",
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1789800693.3968227,
-    "seen": 1789800715.880064,
-    "ast_hash": "3c705151b4de61d5ff64bb7a2e3edbc5",
+    "mtime": 1789801309.9231088,
+    "seen": 1789804678.5807486,
+    "ast_hash": "d34a042cc123882a3add90a6e8b79080",
+    "semantic_hash": ""
+  },
+  "docs/VERSIONEN.md": {
+    "mtime": 1789804654.7633176,
+    "seen": 1789804678.580751,
+    "ast_hash": "d0b5e9b33a122e3f38d34d42d9e9bc92",
     "semantic_hash": ""
   }
 }
