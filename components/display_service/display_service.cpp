@@ -1486,6 +1486,30 @@ esp_err_t SetStickyNoteState(const epaper_ui::StickyNoteState& state)
     return ESP_OK;
 }
 
+// Every screen change used to drive the mode-1 full waveform: ~2.1 s of hard
+// black/white flashing on each navigation step, which reads as a camera flash when
+// walking through menus. The fast OTP waveform writes the very same frame and seeds
+// both RAM planes (see RefreshFullBaseInternal), so the partial path stays valid
+// afterwards -- it just clears accumulated ghosting less thoroughly. So: routine
+// screen changes run fast, and every kGhostFlushEveryNScreenChanges-th one is kept on
+// the full waveform as the periodic ghosting flush.
+namespace {
+constexpr uint32_t kGhostFlushEveryNScreenChanges = 8;
+std::atomic<uint32_t> s_screen_change_count{0};
+
+RefreshMode ScreenChangeRefreshMode(RefreshMode requested)
+{
+    if (requested != RefreshMode::kFull) {
+        return requested;
+    }
+    const uint32_t index = s_screen_change_count.fetch_add(1, std::memory_order_relaxed);
+    if (index % kGhostFlushEveryNScreenChanges == 0) {
+        return RefreshMode::kFull;
+    }
+    return RefreshMode::kFast;
+}
+}  // namespace
+
 esp_err_t SetCurrentScreen(ScreenId screen, RefreshMode refresh_mode, const char* source)
 {
     if (!s_initialized || s_command_queue == nullptr) {
@@ -1495,7 +1519,7 @@ esp_err_t SetCurrentScreen(ScreenId screen, RefreshMode refresh_mode, const char
     DisplayCommand command = {};
     command.type = DisplayCommandType::kSetScreen;
     command.screen = screen;
-    command.refresh_request.refresh_mode = refresh_mode;
+    command.refresh_request.refresh_mode = ScreenChangeRefreshMode(refresh_mode);
     SetCommandSource(command, source);
     return EnqueueDisplayCommand(command);
 }
