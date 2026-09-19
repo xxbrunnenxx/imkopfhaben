@@ -46,6 +46,24 @@ print('\n'.join(l for l in iter(lambda: s.readline().decode('utf8','replace').rs
 | Stale `flush_due` im Displayschlaf heilt sich selbst | `scripts/flush-politik-test.sh` | belegt — kostet höchstens einen zusätzlichen Timeout, danach blockiert die Aufgabe wieder unbegrenzt | 19.09. |
 | Keine Reste der Prüf-Schwelle im Baum | `grep -rn TEMP-PRUEFUNG` ohne `build`/`.git` | belegt — kein Treffer; Schwellen stehen auf 8 und 60 | 19.09. |
 
+## Taugt der Test etwas? (Gegenprobe)
+
+Ein Test, der nicht fehlschlagen kann, belegt nichts. Die Suite wurde
+**nach** dem Code geschrieben, lief also nie gegen das alte Verhalten —
+deshalb nachgeholt:
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Die Suite schlägt gegen den **alten** Zustand an | Modell auf eine Schwelle und sofortigen Flush zurückgesetzt | belegt — 7 Fälle rot, darunter „20 Runden mit Pause: Blitz in der Bewegung = ja" und „200 Partials: 22 erzwungene Blitze" statt 3. Genau das gemeldete Symptom | 19.09. |
+| Verstellen der weichen Schwelle fällt auf | Mutation 8 → 9 | belegt — erkannt | 19.09. |
+| Verstellen der harten Grenze fällt auf | Mutation 60 → 61 und 60 → 59 | belegt — beide erkannt. **War zuvor widerlegt:** die Erwartung stand als `kMaxPartialRefreshesHardCap + 1` da und passte sich jeder Änderung selbst an. Jetzt als Zahl festgenagelt | 19.09. |
+| Verschobene Vergleichsgrenzen fallen auf | Mutation `>=` → `>` und `<` → `<=` | belegt — beide erkannt | 19.09. |
+| Auseinanderlaufen von Test und Treiber fällt auf | im Klon Treiber auf 12 setzen, Test unverändert lassen | belegt — Abbruch mit „ABGLEICH FEHLGESCHLAGEN: weiche Schwelle ist im Code 12, im Test 8" | 19.09. |
+
+Der Abgleich läuft bei jedem Testaufruf mit: weicht eine Konstante im
+Treiber von der im Testmodell ab, bricht das Skript ab, statt still etwas
+anderes zu bestätigen als das, was auf dem Gerät läuft.
+
 ## Was bewusst ungeprüft blieb
 
 - **Ghosting nach längerem Scrollen.** Ob das Bild bei aufgeschobenem

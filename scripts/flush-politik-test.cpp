@@ -62,6 +62,13 @@ struct Task {
 };
 
 static int g_rc = 0;
+static void CheckZahl(const char* was, int ist, int erwartet)
+{
+    printf("%-58s %-5d (erwartet %d)%s\n", was, ist, erwartet,
+           ist == erwartet ? "" : "   <-- FEHLSCHLAG");
+    if (ist != erwartet) g_rc = 1;
+}
+
 static void Check(const char* was, bool ist, bool erwartet)
 {
     printf("%-58s %-5s (erwartet %s)%s\n", was, ist ? "ja" : "nein", erwartet ? "ja" : "nein",
@@ -73,12 +80,17 @@ int main()
 {
     printf("== Panel-Zaehllogik ==\n");
     {   // Dauerscrollen ohne Pause: erzwungener Blitz erst an der harten Grenze.
+        // Die Erwartung steht bewusst als Zahl da und nicht als
+        // kMaxPartialRefreshesHardCap + 1: sonst passt sie sich jeder Aenderung der
+        // Konstante an und der Fall kann gar nicht mehr fehlschlagen. Ein
+        // Mutationstest hat genau das aufgedeckt (60 -> 61 blieb unbemerkt).
         Panel p; int first = -1;
         for (int i = 1; i <= 100; i++) if (p.Partial() && first < 0) first = i;
-        printf("%-58s %-5d (erwartet %d)%s\n", "Dauerscrollen: erster erzwungener Blitz bei Partial",
-               first, kMaxPartialRefreshesHardCap + 1,
-               first == kMaxPartialRefreshesHardCap + 1 ? "" : "   <-- FEHLSCHLAG");
-        if (first != kMaxPartialRefreshesHardCap + 1) g_rc = 1;
+        CheckZahl("Dauerscrollen: erster erzwungener Blitz bei Partial", first, 61);
+    }
+    {   // Die beiden Schwellen selbst festnageln, damit ein Verstellen auffaellt.
+        CheckZahl("Weiche Schwelle (Flush faellig ab)", kMaxPartialRefreshesBeforeFlush, 8);
+        CheckZahl("Harte Grenze (Flush erzwungen ab)", kMaxPartialRefreshesHardCap, 60);
     }
     {   // Der gemeldete Fall: acht Partials am Stueck. Vorher blitzte es beim neunten.
         Panel p; bool blitz = false;
@@ -133,16 +145,12 @@ int main()
             if (t.IdleTimeout()) fluesche++;
         }
         Check("20 Runden a 8 Partials mit Pause: Blitz in der Bewegung", blitz, false);
-        printf("%-58s %-5d (erwartet 20)%s\n", "20 Runden: Fluesche im Leerlauf", fluesche,
-               fluesche == 20 ? "" : "   <-- FEHLSCHLAG");
-        if (fluesche != 20) g_rc = 1;
+        CheckZahl("20 Runden: Fluesche im Leerlauf", fluesche, 20);
     }
     {   // Pathologischer Fall: nie Ruhe. Die harte Grenze muss trotzdem greifen.
         Task t; int blitze = 0;
         for (int i = 0; i < 200; i++) if (t.PartialCommand()) blitze++;
-        printf("%-58s %-5d (erwartet 3)%s\n", "200 Partials ohne jede Pause: erzwungene Blitze",
-               blitze, blitze == 3 ? "" : "   <-- FEHLSCHLAG");
-        if (blitze != 3) g_rc = 1;
+        CheckZahl("200 Partials ohne jede Pause: erzwungene Blitze", blitze, 3);
     }
 
     printf(g_rc ? "\nFEHLSCHLAG\n" : "\nALLE GRUEN\n");
