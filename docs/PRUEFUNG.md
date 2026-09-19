@@ -47,6 +47,29 @@ print('\n'.join(l for l in iter(lambda: s.readline().decode('utf8','replace').rs
 | Stale `flush_due` im Displayschlaf heilt sich selbst | `scripts/flush-politik-test.sh` | belegt — kostet höchstens einen zusätzlichen Timeout, danach blockiert die Aufgabe wieder unbegrenzt | 19.09. |
 | Keine Reste der Prüf-Schwelle im Baum | `grep -rn TEMP-PRUEFUNG` ohne `build`/`.git` | belegt — kein Treffer; Schwellen stehen auf 8 und 60 | 19.09. |
 
+## KI-Stern in der Statusleiste (19.09.2026)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Der Stern haengt an `local_ai_service.runtime.ready` | `status_bar_runtime.cpp:64`, `show_ai_icon = wifi.connected && ready` | belegt — Code gelesen, einzige Setzstelle | 19.09. |
+| Der Stern fehlte, weil im NVS eine veraltete Server-Adresse stand | Bootlog lesen | belegt — `base_url=http://192.168.0.146:1234/v1/ source=nvs`, Kraken ist `192.168.178.215`; Folge: `transport_error ESP_ERR_HTTP_CONNECT` | 19.09. |
+| Die veraltete Adresse war im WLAN-Betrieb gar nicht korrigierbar | `curl http://192.168.178.75/api/settings/local_ai` vor dem Fix | belegt — Exit 7, Verbindung verweigert; `StartConfigPortal()` lief nur im AP-Modus, und es gibt kein Feld dafuer auf der Einstellungsseite des Geraets | 19.09. |
+| Die Weboberflaeche laeuft jetzt auch im WLAN-Betrieb | `curl http://192.168.178.75/api/settings/local_ai` nach dem Fix | belegt — HTTP 200 mit vollem Einstellungs-JSON | 19.09. |
+| Zuruecksetzen auf den eingebauten Standard heilt den Stern | `curl -X POST .../api/settings/local_ai/reset`, dann Runtime lesen | belegt — `base_url_source=built_in`, `http://kraken.local:1234/v1/`, danach `ready=true`, `Connected to google/gemma-4-e2b`, HTTP 200 | 19.09. |
+| Ohne Server meldet das Geraet ehrlich `ready=false` | `imkopfhaben-stop.sh`, dann Readiness erneut ausloesen | belegt — `ready=false`, `Local AI server unreachable` | 19.09. |
+| **Der Stern kommt von selbst zurueck, ohne Neustart und ohne WLAN-Ereignis** | Server aus -> `ready=false`, Server per `imkopfhaben-start.sh` hoch, 70 s warten, Runtime lesen | **belegt** — `ready=true`, `Connected to google/gemma-4-e2b`. Das ist der Beweis fuer den neuen 60-s-Readiness-Timer; vorher lief die Pruefung nur einmal pro WLAN-Ereignis | 19.09. |
+| Firmware mit beiden Fixes baut und laeuft | `idf.py build`, `idf.py -p /dev/ttyACM0 flash` | belegt — `0x375f40` Bytes, 56 % frei; „Hash of data verified", Board bootet und verbindet sich | 19.09. |
+| Captive-DNS bleibt dem AP-Modus vorbehalten | `StartConfigPortal(captive_dns)`, Aufrufstellen gelesen | belegt — nur `EnterAccessPointModeNow` und der AP-Zweig uebergeben `true` | 19.09. |
+
+## Startskript auf Kraken (brain)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| `imkopfhaben-start.sh` kehrte nie zur Konsole zurueck | Skript starten, `ps --ppid` pruefen | belegt — Subshell wartete auf uvicorn, Skript hing nach „bereit" ueber 10 min; Dienste liefen dabei laengst | 19.09. |
+| Nach dem Fix kehrt es zurueck | `timeout 120 ./imkopfhaben-start.sh; echo $?` | belegt — `EXIT=0`, beide Dienste bereit gemeldet | 19.09. |
+| `lms load` scheiterte direkt nach `lms server start` | Skript auf kaltem Server starten | belegt — `Text file busy`, Abbruch; jetzt 5 Versuche mit 5 s Abstand | 19.09. |
+| `/api/transcribe-raw` nimmt einen rohen WAV-Body an, wie die Firmware ihn schickt | 1-s-Sinus-WAV per `curl --data-binary` an die LAN-IP | belegt — HTTP 200, `{"transcript":""}` (leer ist korrekt, ein Sinuston ist keine Sprache) | 19.09. |
+
 ## Taugt der Test etwas? (Gegenprobe)
 
 Ein Test, der nicht fehlschlagen kann, belegt nichts. Die Suite wurde

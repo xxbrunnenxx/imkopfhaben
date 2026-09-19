@@ -105,6 +105,15 @@ std::string s_last_model_resource_name;
 std::string s_last_model_display_name;
 std::string s_last_error_code;
 std::string s_last_error_message;
+esp_timer_handle_t s_readiness_timer = nullptr;
+
+// Die Readiness-Pruefung lief bisher nur einmal pro WLAN-Ereignis. War der lokale
+// KI-Server beim Verbinden noch nicht da (oder unter einer anderen Adresse), blieb
+// der Stern in der Statusleiste dauerhaft aus, bis jemand das Geraet neu startete
+// -- live beobachtet 19.09.2026. Ein flacher Wiederholungsversuch schliesst das:
+// er laeuft nur, solange nicht authentifiziert, und ShouldStartAuthenticationLocked()
+// haelt ihn von einer laufenden Anfrage fern.
+constexpr uint64_t kReadinessRetryIntervalUs = 60ULL * 1000ULL * 1000ULL;
 
 std::string TrimCopy(std::string value)
 {
@@ -614,6 +623,33 @@ void MaybeBeginAuthentication()
     }
 }
 
+void OnReadinessRetryTimer(void*)
+{
+    MaybeBeginAuthentication();
+}
+
+void EnsureReadinessRetryTimer()
+{
+    if (s_readiness_timer != nullptr) {
+        return;
+    }
+    const esp_timer_create_args_t args = {
+        .callback = OnReadinessRetryTimer,
+        .arg = nullptr,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "local_ai_readiness",
+        .skip_unhandled_events = true,
+    };
+    if (esp_timer_create(&args, &s_readiness_timer) != ESP_OK) {
+        ESP_LOGW(kTag, "Readiness retry timer could not be created");
+        s_readiness_timer = nullptr;
+        return;
+    }
+    if (esp_timer_start_periodic(s_readiness_timer, kReadinessRetryIntervalUs) != ESP_OK) {
+        ESP_LOGW(kTag, "Readiness retry timer could not be started");
+    }
+}
+
 std::string ReadRequestBody(httpd_req_t* request)
 {
     if (request == nullptr || request->content_len <= 0) {
@@ -1068,6 +1104,7 @@ esp_err_t Init()
              UrlSourceName(snapshot.settings.base_url_source),
              snapshot.settings.base_url.empty() ? "<none>" : snapshot.settings.base_url.c_str());
     Notify();
+    EnsureReadinessRetryTimer();
     MaybeBeginAuthentication();
     return ESP_OK;
 }

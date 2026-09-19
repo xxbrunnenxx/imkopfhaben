@@ -861,7 +861,10 @@ esp_err_t HandlePortalDisconnect(httpd_req_t* request)
     return SendJsonResponse(request, 200, root);
 }
 
-void StartConfigPortal()
+// captive_dns nur im AP-Modus: im WLAN-Betrieb wuerde ein eigener DNS-Server auf
+// Port 53 nur mit dem Router konkurrieren. Dort ist die Oberflaeche schlicht unter
+// der DHCP-Adresse des Geraets erreichbar.
+void StartConfigPortal(bool captive_dns)
 {
     if (s_portal_server != nullptr) {
         return;
@@ -937,7 +940,9 @@ void StartConfigPortal()
     // Make it a real captive portal: redirect any unrecognised request (OS connectivity probes,
     // unknown hosts resolved to us by the DNS server below) to the portal root.
     httpd_register_err_handler(s_portal_server, HTTPD_404_NOT_FOUND, HandleCaptivePortalRedirect);
-    StartCaptiveDns();
+    if (captive_dns) {
+        StartCaptiveDns();
+    }
 
     PortalRouteRegistrar registrar = nullptr;
     void* context = nullptr;
@@ -1153,7 +1158,7 @@ void EnterAccessPointModeNow()
         s_ap_url = IpInfoToUrl(s_ap_netif);
     }
 
-    StartConfigPortal();
+    StartConfigPortal(/*captive_dns=*/true);
     Notify(State::kAccessPointMode, GetUiState().ap_ssid);
 }
 
@@ -1184,8 +1189,12 @@ void StartStationAttempt(bool allow_ap_fallback)
             return;
         }
 
+        // Im WLAN-Betrieb bleibt die Weboberflaeche erreichbar (nur der
+        // Captive-DNS wird abgeschaltet) -- sonst kaeme man an Einstellungen wie
+        // die Adresse des lokalen KI-Servers nach dem Verbinden nicht mehr heran.
         if (!access_point_mode) {
-            StopConfigPortal();
+            StopCaptiveDns();
+            StartConfigPortal(/*captive_dns=*/false);
         }
         CheckOrAbort(esp_timer_stop(s_connect_timer), "esp_timer_stop");
         {
@@ -1220,16 +1229,18 @@ void StartStationAttempt(bool allow_ap_fallback)
         }
 
         if (access_point_mode) {
-            StartConfigPortal();
+            StartConfigPortal(/*captive_dns=*/true);
             Notify(State::kAccessPointMode, ap_ssid);
         } else {
+            StartConfigPortal(/*captive_dns=*/false);
             Notify(State::kDisconnected, "NO_CREDENTIALS");
         }
         return;
     }
 
     if (!access_point_mode) {
-        StopConfigPortal();
+        StopCaptiveDns();
+        StartConfigPortal(/*captive_dns=*/false);
     }
     CheckOrAbort(esp_timer_stop(s_connect_timer), "esp_timer_stop");
     {
@@ -1272,7 +1283,9 @@ void StartStationAttempt(bool allow_ap_fallback)
     }
 
     if (access_point_mode) {
-        StartConfigPortal();
+        StartConfigPortal(/*captive_dns=*/true);
+    } else {
+        StartConfigPortal(/*captive_dns=*/false);
     }
     Notify(State::kConnecting, credentials.ssid);
     ESP_ERROR_CHECK(esp_timer_start_once(s_connect_timer, kConnectTimeoutSec * 1000000ULL));

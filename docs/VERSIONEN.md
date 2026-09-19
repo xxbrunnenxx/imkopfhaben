@@ -62,6 +62,35 @@ Merksatz: bei einer Beschwerde über das Anzeigeverhalten zuerst
 mitschneiden, während das Gerät benutzt wird. Der Log nennt Waveform,
 Bildschirm und Auslöser pro Ansteuerung; Raten kostet mehr Zeit als Messen.
 
+**Nachtrag 19.09.2026 — zwei Fehler beim ersten Anschluss an Kraken**
+
+Nach dem Taggen wurde das Board erstmals gegen die laufenden Kraken-Dienste
+gehalten. Der KI-Stern in der Statusleiste, der „verbunden mit Brain und
+Sprachmodell" anzeigt, blieb aus. Zwei Ursachen, beide behoben und in
+`docs/PRUEFUNG.md` belegt:
+
+1. **Veraltete Serveradresse im NVS, unerreichbar zum Korrigieren.** Das
+   Board fragte `http://192.168.0.146:1234/v1/` ab, Kraken liegt unter
+   `192.168.178.215` (`kraken.local`). Schlimmer als der falsche Wert war,
+   dass er sich nicht ändern ließ: `StartConfigPortal()` lief **nur im
+   AP-Modus**, und auf der Einstellungsseite des Geräts gibt es kein Feld
+   dafür. Ein Gerät im WLAN hatte damit keinen Weg zu seinen eigenen
+   Einstellungen. Die Weboberfläche läuft jetzt auch im Stationsbetrieb
+   unter der DHCP-Adresse des Geräts; der Captive-DNS bleibt dem AP-Modus
+   vorbehalten, damit im Heimnetz nichts mit dem Router konkurriert.
+2. **Die Readiness-Prüfung lief nur einmal pro WLAN-Ereignis.** War der
+   lokale KI-Server beim Verbinden noch nicht oben, blieb der Stern bis zum
+   nächsten Neustart aus — der Normalfall, weil die Kraken-Dienste bewusst
+   von Hand gestartet werden. Jetzt läuft alle 60 s ein flacher
+   Wiederholungsversuch, solange nicht verbunden. Live belegt: Server aus →
+   `ready=false`, Server hoch, 70 s warten → `ready=true` ohne Neustart und
+   ohne WLAN-Ereignis.
+
+Auf Kraken fielen dabei zwei Fehler im Startskript auf
+(`imkopfhaben-public`, Commit `2953a54`): es kehrte nie zur Konsole zurück,
+weil die Subshell auf uvicorn wartete, und es brach mit „Text file busy" ab,
+wenn `lms load` zu dicht auf `lms server start` folgte.
+
 **Bekannte Lücken dieses Standes**
 
 - **Der Light-Sleep-Button-Fix von `main` fehlt hier** (Commit `70e7ed7`).
