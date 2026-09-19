@@ -1100,24 +1100,35 @@ esp_err_t SleepPanelLocked(const char* reason)
 // interval is ~1.1 s), short enough that the user has stopped looking for a reaction.
 constexpr TickType_t kDeferredFlushIdleTicks = pdMS_TO_TICKS(2500);
 
+// True while a run of partials has left a flush due. Only then does the task use a
+// bounded queue wait; otherwise it blocks forever as before, so an idle device is not
+// woken every 2.5 s for a check that can have no work.
+bool DeferredFlushDueLocked()
+{
+    if (s_display_sleeping) {
+        return false;
+    }
+    return Panel().DeferredFlushPending();
+}
+
 void DisplayTask(void*)
 {
     DisplayCommand command = {};
     command.type = DisplayCommandType::kSetScreen;
     command.screen = ScreenId::kHome;
     command.refresh_request.refresh_mode = RefreshMode::kPartial;
+    bool flush_due = false;
     while (true) {
-        if (xQueueReceive(s_command_queue, &command, kDeferredFlushIdleTicks) != pdTRUE) {
-            // Queue went quiet. If a run of partials left the screen faded, this is the
-            // moment to re-drive it: the flash costs 2.1 s, but nobody is mid-gesture.
+        const TickType_t wait_ticks = flush_due ? kDeferredFlushIdleTicks : portMAX_DELAY;
+        if (xQueueReceive(s_command_queue, &command, wait_ticks) != pdTRUE) {
+            // Queue stayed quiet with a flush outstanding. Drive it now: the flash costs
+            // 2.1 s, but nobody is mid-gesture, which is the whole point of deferring it.
             std::lock_guard<std::mutex> lock(s_panel_mutex);
-            if (s_display_sleeping) {
+            if (!DeferredFlushDueLocked()) {
+                flush_due = false;
                 continue;
             }
             EpaperPanel& panel = Panel();
-            if (!panel.DeferredFlushPending()) {
-                continue;
-            }
             ESP_LOGI(kTag, "Deferred ghosting flush: idle after %d partials",
                      panel.partial_refresh_count());
             RefreshBusyGuard refresh_busy;
@@ -1125,6 +1136,7 @@ void DisplayTask(void*)
             if (flush_err != ESP_OK) {
                 ESP_LOGW(kTag, "Deferred ghosting flush failed: %s", esp_err_to_name(flush_err));
             }
+            flush_due = DeferredFlushDueLocked();
             continue;
         }
 
@@ -1184,6 +1196,10 @@ void DisplayTask(void*)
             ESP_LOGW(kTag, "Display refresh failed (mode=%s): %s",
                      RefreshModeName(command.refresh_request.refresh_mode), esp_err_to_name(err));
         }
+        // Re-arm the bounded wait only while a flush is actually outstanding. A screen
+        // change or forced flush resets the counter, which clears this again -- that is
+        // why a user who navigates away never sees a deferred flash at all.
+        flush_due = DeferredFlushDueLocked();
     }
 }
 

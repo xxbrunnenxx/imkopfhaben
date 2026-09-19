@@ -142,3 +142,12 @@ ich hab noch keinen unerwünschten refresh gehabt."
 als daraus, dass der unerwartete Flush mitten in der Bewegung weg ist.
 Falls das Bild bei langem Scrollen doch zu blass wird, ist
 `kMaxPartialRefreshesHardCap` die Stellschraube (60 herunter).
+
+**Nachtrag gleicher Tag:** Der Leerlauf-Flush ist jetzt auch **auf der
+Hardware belegt** (`Deferred ghosting flush: idle after 4 partials`,
+2,5 s nach dem letzten Partial) — nachgewiesen über eine temporär auf 3
+gesenkte Schwelle, danach zurückgebaut und gegengeprüft. Zusätzlich
+gefunden und behoben: `DisplayTask` wartet nur noch begrenzt, **wenn ein
+Flush aussteht**; sonst blockiert es unbegrenzt wie zuvor, damit ein
+ruhiges Gerät nicht alle 2,5 s geweckt wird. Vierzehn Fälle der
+Zustandsmaschine stehen als `scripts/flush-politik-test.sh` im Repo.
