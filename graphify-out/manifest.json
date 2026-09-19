@@ -672,9 +672,9 @@
     "semantic_hash": "a895b66235655f9e3fdd8d0a1acd7d29"
   },
   "components/epaper_ui/include/epaper_ui/welcome_message.h": {
-    "mtime": 1789848578.9922886,
-    "seen": 1789848926.608171,
-    "ast_hash": "4cd028426d8ed740d95ed80b8d9639d5",
+    "mtime": 1789849522.0436606,
+    "seen": 1789849753.5751138,
+    "ast_hash": "5b1bd23f965467d34f370d14e2ba6793",
     "semantic_hash": ""
   },
   "components/epaper_ui/include/epaper_ui/wifi_page.h": {
@@ -918,9 +918,9 @@
     "semantic_hash": "48d14b3280ddec9944712aed77e717af"
   },
   "components/epaper_ui/welcome_message.cpp": {
-    "mtime": 1789848603.3677807,
-    "seen": 1789848926.608255,
-    "ast_hash": "02ed1bf1d5dbaaea4352d5cbd4d8ffa3",
+    "mtime": 1789849531.8835726,
+    "seen": 1789849753.575209,
+    "ast_hash": "0a61534232c98ffc47ad7df21c436c8d",
     "semantic_hash": ""
   },
   "components/epaper_ui/wifi_page.cpp": {
@@ -1398,9 +1398,9 @@
     "semantic_hash": "1500ef685bf33b2589b6d5b22c30c147"
   },
   "main/dashboard_page_coordinator.cpp": {
-    "mtime": 1789848645.2593908,
-    "seen": 1789848926.608422,
-    "ast_hash": "a7d9094badca2bbdec394aef6102a895",
+    "mtime": 1789849553.267476,
+    "seen": 1789849753.5754051,
+    "ast_hash": "16279a7b74109dfa1ef61c5d3dd3f21c",
     "semantic_hash": ""
   },
   "main/dashboard_page_coordinator.h": {
@@ -3294,9 +3294,9 @@
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1789848879.5292997,
-    "seen": 1789848926.6088514,
-    "ast_hash": "e81e742f4df0ae71665336ff198d06ee",
+    "mtime": 1789849739.4377043,
+    "seen": 1789849753.5758657,
+    "ast_hash": "1a3f7cd95a7f8407e7b4dba79a75fae1",
     "semantic_hash": ""
   },
   "docs/VERSIONEN.md": {

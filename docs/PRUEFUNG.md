@@ -257,3 +257,5 @@ bewusst nicht im UI-Task).
 | Sensor-Ausfall ist nicht fatal | `pi_status.py` durchsehen: jede Funktion faengt ab und gibt None | belegt — Statusroute setzt fehlende Werte auf `null`, ESP32 laesst die Zeile weg | 19.09. |
 | Auf der Hardware sichtbar (IP/Temp/Uptime stimmen) | `idf.py -p /dev/ttyACM0 flash`, Startseite ansehen, Werte gegen `hostname -I` / `vcgencmd measure_temp` / `uptime` halten | **offen** — Board beim Bauen aus (`imkopfhaben.local` nicht erreichbar), nicht geflasht | 19.09. |
 | Live-Route am laufenden Brain antwortet | Dienst neu starten, `curl http://127.0.0.1:8000/api/status` | **offen** — laufender Dienst hat den alten Code, nicht eigenmaechtig neu gestartet | 19.09. |
+| Statusblock draengt die Menuepunkte nicht nach unten | Startseite am Geraet ansehen | belegt — nach Umbau auf zwei Spalten (kleinste Schrift 22 px, kurze Labels) stehen die Werte in zwei Spalten unter dem Datum, Todos wieder an gewohnter Stelle | 19.09. |
+| Board erreicht /api/status nach Dienst-Neustart | Boot-Log 40 s lesen, auf `Brain-Status HTTP` achten | belegt — 0 Fehlerzeilen (404 verschwand nach Neustart von imkopfhaben-brain), Route liefert HTTP 200 | 19.09. |

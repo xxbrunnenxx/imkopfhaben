@@ -91,38 +91,37 @@ std::vector<std::string> BuildInfoLines(const device_status_service::Snapshot& s
     std::vector<std::string> lines;
     char buf[64] = {};
 
+    // Kurze Labels, damit zwei Spalten a 22 px in die Seitenbreite passen. Reihenfolge:
+    // erste Haelfte steht links, der Rest rechts (siehe welcome_message.cpp).
+
     // Geraet: eigene IP (oder Hinweis, wenn kein Netz).
     if (status.wifi_connected && !status.device_ip.empty()) {
-        lines.push_back("Geraet: " + status.device_ip);
+        lines.push_back("IP " + status.device_ip);
     } else {
-        lines.push_back("Geraet: kein WLAN");
+        lines.push_back("kein WLAN");
     }
 
-    // Brain: Host und Verbindungszustand.
-    if (!status.brain_host.empty()) {
-        lines.push_back("Brain: " + status.brain_host);
-    }
-    lines.push_back(std::string("Brain-Link: ") +
-                    (status.brain_reachable ? "verbunden" : "getrennt"));
+    // Verbindungszustand zum Brain.
+    lines.push_back(std::string("Brain ") + (status.brain_reachable ? "OK" : "weg"));
 
     // Brain-Uptime, nur wenn erreichbar und gemeldet.
     if (status.brain_reachable && status.brain_uptime_valid) {
-        lines.push_back("Brain-Uptime: " + FormatUptime(status.brain_uptime_seconds));
+        lines.push_back("up " + FormatUptime(status.brain_uptime_seconds));
     }
 
     // Temperaturen: ESP32-Chip und Pi 5.
     if (status.esp_temp_valid) {
-        std::snprintf(buf, sizeof(buf), "Temp ESP32: %.0f C", status.esp_temp_celsius);
+        std::snprintf(buf, sizeof(buf), "ESP %.0fC", status.esp_temp_celsius);
         lines.push_back(buf);
     }
     if (status.brain_reachable && status.pi_temp_valid) {
-        std::snprintf(buf, sizeof(buf), "Temp Pi5: %.0f C", status.pi_temp_celsius);
+        std::snprintf(buf, sizeof(buf), "Pi5 %.0fC", status.pi_temp_celsius);
         lines.push_back(buf);
     }
 
     // Sinnvolle Ergaenzung: CPU-Last des Pi, wenn gemeldet.
     if (status.brain_reachable && status.cpu_load_valid) {
-        std::snprintf(buf, sizeof(buf), "Pi CPU: %.0f%%", status.cpu_load_percent);
+        std::snprintf(buf, sizeof(buf), "CPU %.0f%%", status.cpu_load_percent);
         lines.push_back(buf);
     }
 

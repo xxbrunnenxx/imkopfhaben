@@ -43,25 +43,47 @@ int WelcomeMessageTitleCount()
 
 namespace {
 
-// Height of the status block (info_lines): one info_role line per entry, separated by
-// info_line_gap. Zero when there are no lines.
+// Zeilen pro Spalte bei zweispaltigem Satz: die erste Haelfte links, der Rest rechts.
+int InfoRowsPerColumn(const WelcomeMessageState& state)
+{
+    const int count = static_cast<int>(state.info_lines.size());
+    return (count + 1) / 2;  // aufrunden: bei ungerader Zahl steht links eine mehr
+}
+
+// Height of the status block (info_lines): laid out in two columns, so the height is
+// rows-per-column lines separated by info_line_gap. Zero when there are no lines.
 int InfoBlockHeight(const WelcomeMessageState& state, const WelcomeMessageStyle& style)
 {
     if (state.info_lines.empty()) {
         return 0;
     }
     const int line_height = std::max(1, LineHeight(style.info_role));
-    const int count = static_cast<int>(state.info_lines.size());
-    return count * line_height + (count - 1) * ClampPositive(style.info_line_gap);
+    const int rows = InfoRowsPerColumn(state);
+    return rows * line_height + (rows - 1) * ClampPositive(style.info_line_gap);
 }
 
+// Full width of the two-column block: left column width + gap + right column width.
 int InfoBlockWidth(const WelcomeMessageState& state, const WelcomeMessageStyle& style)
 {
-    int width = 0;
-    for (const std::string& line : state.info_lines) {
-        width = std::max(width, MeasureText(style.info_role, line));
+    const int count = static_cast<int>(state.info_lines.size());
+    if (count == 0) {
+        return 0;
     }
-    return width;
+    const int rows = InfoRowsPerColumn(state);
+    int left = 0;
+    int right = 0;
+    for (int i = 0; i < count; ++i) {
+        const int w = MeasureText(style.info_role, state.info_lines[i]);
+        if (i < rows) {
+            left = std::max(left, w);
+        } else {
+            right = std::max(right, w);
+        }
+    }
+    if (right == 0) {
+        return left;
+    }
+    return left + ClampPositive(style.info_column_gap) + right;
 }
 
 }  // namespace
@@ -125,14 +147,29 @@ void DrawWelcomeMessage(uint8_t* framebuffer,
     const int title_y = origin_y + date_bounds.height + (has_date ? ClampPositive(style.section_gap)
                                                                   : 0);
 
-    // Status block: one info_role line per entry, top to bottom, no icon.
+    // Status block: two columns. First half of the entries goes into the left column, the rest
+    // into the right, each top to bottom. Halves the height so the menu below stays put.
     if (!state.info_lines.empty()) {
         const int info_line_height = std::max(1, LineHeight(style.info_role));
-        int info_y = title_y;
-        for (const std::string& line : state.info_lines) {
+        const int row_step = info_line_height + ClampPositive(style.info_line_gap);
+        const int count = static_cast<int>(state.info_lines.size());
+        const int rows = InfoRowsPerColumn(state);
+
+        // Left column width drives where the right column starts.
+        int left_width = 0;
+        for (int i = 0; i < rows && i < count; ++i) {
+            left_width = std::max(left_width, MeasureText(style.info_role, state.info_lines[i]));
+        }
+        const int right_x = origin_x + left_width + ClampPositive(style.info_column_gap);
+
+        for (int i = 0; i < count; ++i) {
+            const bool left = i < rows;
+            const int col_x = left ? origin_x : right_x;
+            const int row = left ? i : (i - rows);
+            const int line_y = title_y + row * row_step;
             DrawTypographyText(framebuffer, raw_width, raw_height, portrait_width, portrait_height,
-                               origin_x, info_y, line, style.info_role, style.info_color);
-            info_y += info_line_height + ClampPositive(style.info_line_gap);
+                               col_x, line_y, state.info_lines[i], style.info_role,
+                               style.info_color);
         }
         return;
     }

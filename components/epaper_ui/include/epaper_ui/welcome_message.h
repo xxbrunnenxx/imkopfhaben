@@ -38,6 +38,7 @@ struct WelcomeMessageStyle {
     design::TypographyRole info_role = design::TypographyRole::kBody;
     uint8_t info_color = design::color::kBlack;
     int info_line_gap = design::spacing::k4;
+    int info_column_gap = design::spacing::k24;
 };
 
 // Returns the title variant text for a rotating greeting, indexed by seed.
