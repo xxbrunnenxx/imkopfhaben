@@ -9292,7 +9292,7 @@
       "file_type": "code",
       "norm_label": "enterdisplaysleep()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1628"
+      "source_location": "L1632"
     },
     {
       "id": "components_display_service_display_service_enterlightsleep",
@@ -9304,7 +9304,7 @@
       "file_type": "code",
       "norm_label": "enterlightsleep()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1643"
+      "source_location": "L1647"
     },
     {
       "id": "components_display_service_display_service_getcurrentscreen",
@@ -9316,7 +9316,7 @@
       "file_type": "code",
       "norm_label": "getcurrentscreen()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1312"
+      "source_location": "L1316"
     },
     {
       "id": "components_display_service_display_service_init",
@@ -9328,7 +9328,7 @@
       "file_type": "code",
       "norm_label": "init()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1272"
+      "source_location": "L1276"
     },
     {
       "id": "components_display_service_display_service_isinitialized",
@@ -9340,7 +9340,7 @@
       "file_type": "code",
       "norm_label": "isinitialized()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1297"
+      "source_location": "L1301"
     },
     {
       "id": "components_display_service_display_service_isrefreshinprogress",
@@ -9352,7 +9352,7 @@
       "file_type": "code",
       "norm_label": "isrefreshinprogress()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1692"
+      "source_location": "L1696"
     },
     {
       "id": "components_display_service_display_service_mergeoverlayrefreshpolicy",
@@ -9364,7 +9364,7 @@
       "file_type": "code",
       "norm_label": "mergeoverlayrefreshpolicy()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1257"
+      "source_location": "L1261"
     },
     {
       "id": "components_display_service_display_service_mergerefreshmode",
@@ -9376,7 +9376,7 @@
       "file_type": "code",
       "norm_label": "mergerefreshmode()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1237"
+      "source_location": "L1241"
     },
     {
       "id": "components_display_service_display_service_mergerefreshrequest",
@@ -9388,7 +9388,7 @@
       "file_type": "code",
       "norm_label": "mergerefreshrequest()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1243"
+      "source_location": "L1247"
     },
     {
       "id": "components_display_service_display_service_overlayrefreshpolicyname",
@@ -9412,7 +9412,7 @@
       "file_type": "code",
       "norm_label": "portraitheight()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1307"
+      "source_location": "L1311"
     },
     {
       "id": "components_display_service_display_service_portraitwidth",
@@ -9424,7 +9424,7 @@
       "file_type": "code",
       "norm_label": "portraitwidth()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1302"
+      "source_location": "L1306"
     },
     {
       "id": "components_display_service_display_service_recoverafterlightsleep",
@@ -9436,7 +9436,7 @@
       "file_type": "code",
       "norm_label": "recoverafterlightsleep()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1677"
+      "source_location": "L1681"
     },
     {
       "id": "components_display_service_display_service_refreshbusyguard_refreshbusyguard",
@@ -9460,7 +9460,7 @@
       "file_type": "code",
       "norm_label": "refreshcurrentscreen()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1602"
+      "source_location": "L1606"
     },
     {
       "id": "components_display_service_display_service_refreshscopename",
@@ -9484,7 +9484,7 @@
       "file_type": "code",
       "norm_label": "requestoverlayrefresh()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1565"
+      "source_location": "L1569"
     },
     {
       "id": "components_display_service_display_service_requestrefreshcurrentscreen",
@@ -9496,7 +9496,7 @@
       "file_type": "code",
       "norm_label": "requestrefreshcurrentscreen()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1579"
+      "source_location": "L1583"
     },
     {
       "id": "components_display_service_display_service_screenchangerefreshmode",
@@ -9508,7 +9508,7 @@
       "file_type": "code",
       "norm_label": "screenchangerefreshmode()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1538"
+      "source_location": "L1542"
     },
     {
       "id": "components_display_service_display_service_setadvancedpagestate",
@@ -9520,7 +9520,7 @@
       "file_type": "code",
       "norm_label": "setadvancedpagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1350"
+      "source_location": "L1354"
     },
     {
       "id": "components_display_service_display_service_setcardmodalstate",
@@ -9532,7 +9532,7 @@
       "file_type": "code",
       "norm_label": "setcardmodalstate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1483"
+      "source_location": "L1487"
     },
     {
       "id": "components_display_service_display_service_setcommandsource",
@@ -9556,7 +9556,7 @@
       "file_type": "code",
       "norm_label": "setcurrentscreen()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1551"
+      "source_location": "L1555"
     },
     {
       "id": "components_display_service_display_service_setdashboardpagestate",
@@ -9568,7 +9568,7 @@
       "file_type": "code",
       "norm_label": "setdashboardpagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1373"
+      "source_location": "L1377"
     },
     {
       "id": "components_display_service_display_service_setdetailspagestate",
@@ -9580,7 +9580,7 @@
       "file_type": "code",
       "norm_label": "setdetailspagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1450"
+      "source_location": "L1454"
     },
     {
       "id": "components_display_service_display_service_setfollowuppagestate",
@@ -9592,7 +9592,7 @@
       "file_type": "code",
       "norm_label": "setfollowuppagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1428"
+      "source_location": "L1432"
     },
     {
       "id": "components_display_service_display_service_setglobalfooterstate",
@@ -9604,7 +9604,7 @@
       "file_type": "code",
       "norm_label": "setglobalfooterstate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1328"
+      "source_location": "L1332"
     },
     {
       "id": "components_display_service_display_service_setkeyboardstate",
@@ -9616,7 +9616,7 @@
       "file_type": "code",
       "norm_label": "setkeyboardstate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1472"
+      "source_location": "L1476"
     },
     {
       "id": "components_display_service_display_service_setlockscreenstate",
@@ -9628,7 +9628,7 @@
       "file_type": "code",
       "norm_label": "setlockscreenstate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1461"
+      "source_location": "L1465"
     },
     {
       "id": "components_display_service_display_service_setnotespagestate",
@@ -9640,7 +9640,7 @@
       "file_type": "code",
       "norm_label": "setnotespagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1406"
+      "source_location": "L1410"
     },
     {
       "id": "components_display_service_display_service_setonboardingpagestate",
@@ -9652,7 +9652,7 @@
       "file_type": "code",
       "norm_label": "setonboardingpagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1439"
+      "source_location": "L1443"
     },
     {
       "id": "components_display_service_display_service_setselectmodalstate",
@@ -9664,7 +9664,7 @@
       "file_type": "code",
       "norm_label": "setselectmodalstate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1494"
+      "source_location": "L1498"
     },
     {
       "id": "components_display_service_display_service_setsettingspagestate",
@@ -9676,7 +9676,7 @@
       "file_type": "code",
       "norm_label": "setsettingspagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1339"
+      "source_location": "L1343"
     },
     {
       "id": "components_display_service_display_service_setstatusbarstate",
@@ -9688,7 +9688,7 @@
       "file_type": "code",
       "norm_label": "setstatusbarstate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1317"
+      "source_location": "L1321"
     },
     {
       "id": "components_display_service_display_service_setstickynotestate",
@@ -9700,7 +9700,7 @@
       "file_type": "code",
       "norm_label": "setstickynotestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1516"
+      "source_location": "L1520"
     },
     {
       "id": "components_display_service_display_service_setsummarizepagestate",
@@ -9712,7 +9712,7 @@
       "file_type": "code",
       "norm_label": "setsummarizepagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1395"
+      "source_location": "L1399"
     },
     {
       "id": "components_display_service_display_service_settoaststate",
@@ -9724,7 +9724,7 @@
       "file_type": "code",
       "norm_label": "settoaststate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1505"
+      "source_location": "L1509"
     },
     {
       "id": "components_display_service_display_service_settodospagestate",
@@ -9736,7 +9736,7 @@
       "file_type": "code",
       "norm_label": "settodospagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1417"
+      "source_location": "L1421"
     },
     {
       "id": "components_display_service_display_service_setvibecheckpagestate",
@@ -9748,7 +9748,7 @@
       "file_type": "code",
       "norm_label": "setvibecheckpagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1384"
+      "source_location": "L1388"
     },
     {
       "id": "components_display_service_display_service_setwifipagestate",
@@ -9760,7 +9760,7 @@
       "file_type": "code",
       "norm_label": "setwifipagestate()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1361"
+      "source_location": "L1365"
     },
     {
       "id": "components_display_service_display_service_sleeppanellocked",
@@ -9784,7 +9784,7 @@
       "file_type": "code",
       "norm_label": "startdisplaytask()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1206"
+      "source_location": "L1210"
     },
     {
       "id": "components_display_service_display_service_wakedisplay",
@@ -9796,7 +9796,7 @@
       "file_type": "code",
       "norm_label": "wakedisplay()",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1658"
+      "source_location": "L1662"
     },
     {
       "id": "main_dashboard_page_coordinator_dashboardpagecoordinator_dashboardpagecoordinator",
@@ -68038,7 +68038,7 @@
       "node_kind": "heading",
       "norm_label": "was bewusst ungepruft blieb",
       "source_file": "docs/PRUEFUNG.md",
-      "source_location": "L45"
+      "source_location": "L49"
     },
     {
       "id": "docs_pruefung_wie_der_hardware_nachweis_gefuehrt_wurde_handgriff_zum_wiederholen",
@@ -68050,7 +68050,7 @@
       "node_kind": "heading",
       "norm_label": "wie der hardware-nachweis gefuehrt wurde (handgriff zum wiederholen)",
       "source_file": "docs/PRUEFUNG.md",
-      "source_location": "L52"
+      "source_location": "L56"
     },
     {
       "id": "main_wifi_page_coordinator_wifipagecoordinator_selectednetworkssid",
@@ -88829,7 +88829,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1162",
+      "source_location": "L1166",
       "weight": 1.0
     },
     {
@@ -88841,7 +88841,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1164",
+      "source_location": "L1168",
       "weight": 1.0
     },
     {
@@ -88853,7 +88853,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1166",
+      "source_location": "L1170",
       "weight": 1.0
     },
     {
@@ -88865,7 +88865,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1168",
+      "source_location": "L1172",
       "weight": 1.0
     },
     {
@@ -88877,7 +88877,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1170",
+      "source_location": "L1174",
       "weight": 1.0
     },
     {
@@ -88889,7 +88889,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1172",
+      "source_location": "L1176",
       "weight": 1.0
     },
     {
@@ -88901,7 +88901,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1174",
+      "source_location": "L1178",
       "weight": 1.0
     },
     {
@@ -88913,7 +88913,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1176",
+      "source_location": "L1180",
       "weight": 1.0
     },
     {
@@ -88925,7 +88925,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1178",
+      "source_location": "L1182",
       "weight": 1.0
     },
     {
@@ -88937,7 +88937,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1180",
+      "source_location": "L1184",
       "weight": 1.0
     },
     {
@@ -88949,7 +88949,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1182",
+      "source_location": "L1186",
       "weight": 1.0
     },
     {
@@ -88961,7 +88961,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1184",
+      "source_location": "L1188",
       "weight": 1.0
     },
     {
@@ -88973,7 +88973,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1187",
+      "source_location": "L1191",
       "weight": 1.0
     },
     {
@@ -88985,7 +88985,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1191",
+      "source_location": "L1195",
       "weight": 1.0
     },
     {
@@ -88997,7 +88997,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1192",
+      "source_location": "L1196",
       "weight": 1.0
     },
     {
@@ -89093,7 +89093,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1638",
+      "source_location": "L1642",
       "weight": 1.0
     },
     {
@@ -89105,7 +89105,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1653",
+      "source_location": "L1657",
       "weight": 1.0
     },
     {
@@ -89117,7 +89117,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1286",
+      "source_location": "L1290",
       "weight": 1.0
     },
     {
@@ -89129,7 +89129,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1290",
+      "source_location": "L1294",
       "weight": 1.0
     },
     {
@@ -89141,7 +89141,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1246",
+      "source_location": "L1250",
       "weight": 1.0
     },
     {
@@ -89153,7 +89153,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1684",
+      "source_location": "L1688",
       "weight": 1.0
     },
     {
@@ -89165,7 +89165,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1615",
+      "source_location": "L1619",
       "weight": 1.0
     },
     {
@@ -89177,7 +89177,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1618",
+      "source_location": "L1622",
       "weight": 1.0
     },
     {
@@ -89597,7 +89597,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1575",
+      "source_location": "L1579",
       "weight": 1.0
     },
     {
@@ -89609,7 +89609,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1576",
+      "source_location": "L1580",
       "weight": 1.0
     },
     {
@@ -89621,7 +89621,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1589",
+      "source_location": "L1593",
       "weight": 1.0
     },
     {
@@ -89633,7 +89633,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1590",
+      "source_location": "L1594",
       "weight": 1.0
     },
     {
@@ -89645,7 +89645,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1560",
+      "source_location": "L1564",
       "weight": 1.0
     },
     {
@@ -89657,7 +89657,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1561",
+      "source_location": "L1565",
       "weight": 1.0
     },
     {
@@ -89669,7 +89669,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1562",
+      "source_location": "L1566",
       "weight": 1.0
     },
     {
@@ -89681,7 +89681,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1669",
+      "source_location": "L1673",
       "weight": 1.0
     },
     {
@@ -177988,7 +177988,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1257",
+      "source_location": "L1261",
       "weight": 1.0
     },
     {
@@ -178000,7 +178000,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1237",
+      "source_location": "L1241",
       "weight": 1.0
     },
     {
@@ -178012,7 +178012,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1243",
+      "source_location": "L1247",
       "weight": 1.0
     },
     {
@@ -178036,7 +178036,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1602",
+      "source_location": "L1606",
       "weight": 1.0
     },
     {
@@ -178048,7 +178048,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1621",
+      "source_location": "L1625",
       "weight": 1.0
     },
     {
@@ -178132,7 +178132,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1565",
+      "source_location": "L1569",
       "weight": 1.0
     },
     {
@@ -178144,7 +178144,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1579",
+      "source_location": "L1583",
       "weight": 1.0
     },
     {
@@ -178156,7 +178156,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1593",
+      "source_location": "L1597",
       "weight": 1.0
     },
     {
@@ -178168,7 +178168,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1538",
+      "source_location": "L1542",
       "weight": 1.0
     },
     {
@@ -178180,7 +178180,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1350",
+      "source_location": "L1354",
       "weight": 1.0
     },
     {
@@ -178192,7 +178192,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1483",
+      "source_location": "L1487",
       "weight": 1.0
     },
     {
@@ -178216,7 +178216,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1551",
+      "source_location": "L1555",
       "weight": 1.0
     },
     {
@@ -178228,7 +178228,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1551",
+      "source_location": "L1555",
       "weight": 1.0
     },
     {
@@ -178240,7 +178240,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1373",
+      "source_location": "L1377",
       "weight": 1.0
     },
     {
@@ -178252,7 +178252,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1450",
+      "source_location": "L1454",
       "weight": 1.0
     },
     {
@@ -178264,7 +178264,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1428",
+      "source_location": "L1432",
       "weight": 1.0
     },
     {
@@ -178276,7 +178276,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1328",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -178288,7 +178288,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1472",
+      "source_location": "L1476",
       "weight": 1.0
     },
     {
@@ -178300,7 +178300,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1461",
+      "source_location": "L1465",
       "weight": 1.0
     },
     {
@@ -178312,7 +178312,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1406",
+      "source_location": "L1410",
       "weight": 1.0
     },
     {
@@ -178324,7 +178324,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1439",
+      "source_location": "L1443",
       "weight": 1.0
     },
     {
@@ -178336,7 +178336,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1494",
+      "source_location": "L1498",
       "weight": 1.0
     },
     {
@@ -178348,7 +178348,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1339",
+      "source_location": "L1343",
       "weight": 1.0
     },
     {
@@ -178360,7 +178360,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1317",
+      "source_location": "L1321",
       "weight": 1.0
     },
     {
@@ -178372,7 +178372,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1516",
+      "source_location": "L1520",
       "weight": 1.0
     },
     {
@@ -178384,7 +178384,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1395",
+      "source_location": "L1399",
       "weight": 1.0
     },
     {
@@ -178396,7 +178396,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1505",
+      "source_location": "L1509",
       "weight": 1.0
     },
     {
@@ -178408,7 +178408,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1417",
+      "source_location": "L1421",
       "weight": 1.0
     },
     {
@@ -178420,7 +178420,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1384",
+      "source_location": "L1388",
       "weight": 1.0
     },
     {
@@ -178432,7 +178432,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1361",
+      "source_location": "L1365",
       "weight": 1.0
     },
     {
@@ -195148,7 +195148,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1628",
+      "source_location": "L1632",
       "weight": 1.0
     },
     {
@@ -195160,7 +195160,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1643",
+      "source_location": "L1647",
       "weight": 1.0
     },
     {
@@ -195172,7 +195172,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1312",
+      "source_location": "L1316",
       "weight": 1.0
     },
     {
@@ -195184,7 +195184,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1272",
+      "source_location": "L1276",
       "weight": 1.0
     },
     {
@@ -195196,7 +195196,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1677",
+      "source_location": "L1681",
       "weight": 1.0
     },
     {
@@ -195208,7 +195208,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1602",
+      "source_location": "L1606",
       "weight": 1.0
     },
     {
@@ -195268,7 +195268,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1565",
+      "source_location": "L1569",
       "weight": 1.0
     },
     {
@@ -195280,7 +195280,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1579",
+      "source_location": "L1583",
       "weight": 1.0
     },
     {
@@ -195292,7 +195292,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1350",
+      "source_location": "L1354",
       "weight": 1.0
     },
     {
@@ -195304,7 +195304,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1483",
+      "source_location": "L1487",
       "weight": 1.0
     },
     {
@@ -195316,7 +195316,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1551",
+      "source_location": "L1555",
       "weight": 1.0
     },
     {
@@ -195328,7 +195328,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1373",
+      "source_location": "L1377",
       "weight": 1.0
     },
     {
@@ -195340,7 +195340,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1450",
+      "source_location": "L1454",
       "weight": 1.0
     },
     {
@@ -195352,7 +195352,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1428",
+      "source_location": "L1432",
       "weight": 1.0
     },
     {
@@ -195364,7 +195364,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1328",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -195376,7 +195376,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1472",
+      "source_location": "L1476",
       "weight": 1.0
     },
     {
@@ -195388,7 +195388,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1461",
+      "source_location": "L1465",
       "weight": 1.0
     },
     {
@@ -195400,7 +195400,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1406",
+      "source_location": "L1410",
       "weight": 1.0
     },
     {
@@ -195412,7 +195412,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1439",
+      "source_location": "L1443",
       "weight": 1.0
     },
     {
@@ -195424,7 +195424,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1494",
+      "source_location": "L1498",
       "weight": 1.0
     },
     {
@@ -195436,7 +195436,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1339",
+      "source_location": "L1343",
       "weight": 1.0
     },
     {
@@ -195448,7 +195448,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1317",
+      "source_location": "L1321",
       "weight": 1.0
     },
     {
@@ -195460,7 +195460,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1516",
+      "source_location": "L1520",
       "weight": 1.0
     },
     {
@@ -195472,7 +195472,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1395",
+      "source_location": "L1399",
       "weight": 1.0
     },
     {
@@ -195484,7 +195484,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1505",
+      "source_location": "L1509",
       "weight": 1.0
     },
     {
@@ -195496,7 +195496,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1417",
+      "source_location": "L1421",
       "weight": 1.0
     },
     {
@@ -195508,7 +195508,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1384",
+      "source_location": "L1388",
       "weight": 1.0
     },
     {
@@ -195520,7 +195520,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1361",
+      "source_location": "L1365",
       "weight": 1.0
     },
     {
@@ -195544,7 +195544,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1206",
+      "source_location": "L1210",
       "weight": 1.0
     },
     {
@@ -195556,7 +195556,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1658",
+      "source_location": "L1662",
       "weight": 1.0
     },
     {
@@ -212725,7 +212725,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1206",
+      "source_location": "L1210",
       "weight": 1.0
     },
     {
@@ -212736,7 +212736,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1237",
+      "source_location": "L1241",
       "weight": 1.0
     },
     {
@@ -212747,7 +212747,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1243",
+      "source_location": "L1247",
       "weight": 1.0
     },
     {
@@ -212758,7 +212758,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1257",
+      "source_location": "L1261",
       "weight": 1.0
     },
     {
@@ -212769,18 +212769,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1272",
-      "weight": 1.0
-    },
-    {
-      "source": "components_display_service_display_service",
-      "target": "components_display_service_display_service_isinitialized",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1297",
+      "source_location": "L1276",
       "weight": 1.0
     },
     {
@@ -212796,13 +212785,24 @@
     },
     {
       "source": "components_display_service_display_service",
+      "target": "components_display_service_display_service_isinitialized",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "components/display_service/display_service.cpp",
+      "source_location": "L1301",
+      "weight": 1.0
+    },
+    {
+      "source": "components_display_service_display_service",
       "target": "components_display_service_display_service_portraitwidth",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1302",
+      "source_location": "L1306",
       "weight": 1.0
     },
     {
@@ -212813,7 +212813,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1307",
+      "source_location": "L1311",
       "weight": 1.0
     },
     {
@@ -212824,7 +212824,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1312",
+      "source_location": "L1316",
       "weight": 1.0
     },
     {
@@ -212835,7 +212835,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1317",
+      "source_location": "L1321",
       "weight": 1.0
     },
     {
@@ -212846,7 +212846,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1328",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -212857,7 +212857,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1339",
+      "source_location": "L1343",
       "weight": 1.0
     },
     {
@@ -212868,7 +212868,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1350",
+      "source_location": "L1354",
       "weight": 1.0
     },
     {
@@ -212879,7 +212879,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1361",
+      "source_location": "L1365",
       "weight": 1.0
     },
     {
@@ -212890,7 +212890,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1373",
+      "source_location": "L1377",
       "weight": 1.0
     },
     {
@@ -212901,7 +212901,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1384",
+      "source_location": "L1388",
       "weight": 1.0
     },
     {
@@ -212912,7 +212912,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1395",
+      "source_location": "L1399",
       "weight": 1.0
     },
     {
@@ -212923,7 +212923,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1406",
+      "source_location": "L1410",
       "weight": 1.0
     },
     {
@@ -212934,7 +212934,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1417",
+      "source_location": "L1421",
       "weight": 1.0
     },
     {
@@ -212945,7 +212945,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1428",
+      "source_location": "L1432",
       "weight": 1.0
     },
     {
@@ -212956,7 +212956,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1439",
+      "source_location": "L1443",
       "weight": 1.0
     },
     {
@@ -212967,7 +212967,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1450",
+      "source_location": "L1454",
       "weight": 1.0
     },
     {
@@ -212989,7 +212989,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1461",
+      "source_location": "L1465",
       "weight": 1.0
     },
     {
@@ -213000,7 +213000,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1472",
+      "source_location": "L1476",
       "weight": 1.0
     },
     {
@@ -213011,7 +213011,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1483",
+      "source_location": "L1487",
       "weight": 1.0
     },
     {
@@ -213022,7 +213022,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1494",
+      "source_location": "L1498",
       "weight": 1.0
     },
     {
@@ -213033,7 +213033,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1505",
+      "source_location": "L1509",
       "weight": 1.0
     },
     {
@@ -213044,7 +213044,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1516",
+      "source_location": "L1520",
       "weight": 1.0
     },
     {
@@ -213055,7 +213055,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1538",
+      "source_location": "L1542",
       "weight": 1.0
     },
     {
@@ -213066,7 +213066,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1551",
+      "source_location": "L1555",
       "weight": 1.0
     },
     {
@@ -213077,7 +213077,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1565",
+      "source_location": "L1569",
       "weight": 1.0
     },
     {
@@ -213088,7 +213088,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1579",
+      "source_location": "L1583",
       "weight": 1.0
     },
     {
@@ -213099,7 +213099,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1602",
+      "source_location": "L1606",
       "weight": 1.0
     },
     {
@@ -213110,7 +213110,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1628",
+      "source_location": "L1632",
       "weight": 1.0
     },
     {
@@ -213121,7 +213121,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1643",
+      "source_location": "L1647",
       "weight": 1.0
     },
     {
@@ -213132,7 +213132,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1658",
+      "source_location": "L1662",
       "weight": 1.0
     },
     {
@@ -213143,7 +213143,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1677",
+      "source_location": "L1681",
       "weight": 1.0
     },
     {
@@ -213154,7 +213154,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1692",
+      "source_location": "L1696",
       "weight": 1.0
     },
     {
@@ -230523,7 +230523,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/PRUEFUNG.md",
-      "source_location": "L45",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -230534,7 +230534,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/PRUEFUNG.md",
-      "source_location": "L52",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -248413,7 +248413,7 @@
       "confidence_score": 0.8,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1283",
+      "source_location": "L1287",
       "weight": 1.0
     },
     {
@@ -256237,7 +256237,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "components/display_service/display_service.cpp",
-      "source_location": "L1282",
+      "source_location": "L1286",
       "weight": 1.0
     },
     {
@@ -268398,5 +268398,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4ce6c9980ff4eca9b240d1198331fecec1d8712e"
+  "built_at_commit": "1bc6f66edb9ab2d23bba1f2f012990aa14a4235a"
 }

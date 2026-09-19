@@ -1,7 +1,7 @@
 # Graph Report - imkopfhaben-esp32  (2026-09-19)
 
 ## Corpus Check
-- 397 files · ~1,494,374 words
+- 397 files · ~1,494,607 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 37 file(s) not represented in the graph (top: .css 16, .ttf 9, (none) 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4ce6c998`
+- Built from commit: `1bc6f66e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1829,7 +1829,7 @@ Nodes (4): string, UiState, RefreshFromService, SelectedNetworkSsid
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `UiRect` connect `UiRect` to `TimeInputState`, `overlay_runtime.cpp`, `TodosPageState`, `SelectModalState`, `DrawToggle`, `Layout`, `StickyNoteStyle`, `DrawGlobalFooter`, `Layout`, `KeyboardStyle`, `DrawButton`, `cstdint`, `CompletionBannerStyle`, `GlobalFooterState`, `carousel.cpp`, `LayoutGridStyle`, `SegmentControlState`, `DrawDashboardPage`, `WelcomeMessageStyle`, `timeline_list.cpp`, `ScrollContainerStyle`, `TextInputState`, `ProgressBarStyle`, `TimelineListState`, `algorithm`, `VibeCardState`, `WifiPageState`, `PasswordInputStyle`, `SettingsPageState`, `ClampPositive`, `Layout`, `RenderGroup`, `VibeCardLayout`, `CarouselControlRects`, `notes_page.cpp`, `CardModalState`, `ListItemState`, `SelectInputState`, `FollowUpPageState`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
 - **Why does `RenderSnapshot` connect `RenderSnapshot` to `SummarizePageState`, `overlay_runtime.cpp`, `TodosPageState`, `LockScreenState`, `SelectModalState`, `display_service.cpp`, `DrawButton`, `NotesPageState`, `GlobalFooterState`, `DrawDashboardPage`, `StatusBarState`, `KeyboardState`, `VibeCardState`, `WifiPageState`, `StickyNoteState`, `SettingsPageState`, `OnboardingPageState`, `DisplayTask`, `DetailsPageState`, `CardModalState`, `FollowUpPageState`?**
   _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **Why does `ScrollContainerStyle` connect `ScrollContainerStyle` to `SummarizePageState`, `DetailsPageState`, `StickyNoteStyle`, `cstdint`?**
