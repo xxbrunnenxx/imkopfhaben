@@ -61,6 +61,18 @@ print('\n'.join(l for l in iter(lambda: s.readline().decode('utf8','replace').rs
 | Firmware mit beiden Fixes baut und laeuft | `idf.py build`, `idf.py -p /dev/ttyACM0 flash` | belegt — `0x375f40` Bytes, 56 % frei; „Hash of data verified", Board bootet und verbindet sich | 19.09. |
 | Captive-DNS bleibt dem AP-Modus vorbehalten | `StartConfigPortal(captive_dns)`, Aufrufstellen gelesen | belegt — nur `EnterAccessPointModeNow` und der AP-Zweig uebergeben `true` | 19.09. |
 
+## Transkription bricht ab (19.09.2026)
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Der Brain-Server ist nicht schuld | `brain.log` zur Fehlschlagszeit lesen | belegt — alle Anfragen HTTP 200, Whisper lieferte korrekten Text (`'Letztes Transkript failed.'`) | 19.09. |
+| Das Geraet brach nach exakt 30 s ab | Board-Log, Abstand `Starting local transcription` zu `Local transcription failed` | belegt — t=605668 bis t=635938, 30 270 ms; `kTranscribeTimeoutMs` war 30 000 | 19.09. |
+| Der Server ist langsamer als das Zeitfenster | 9-s-WAV per `curl` an `/api/transcribe-raw`, `time` messen | belegt — 64,96 s. faster-whisper `medium`, int8, 4 Threads auf Pi-5-CPU laeuft weit ueber Echtzeit | 19.09. |
+| Der Abbruch traf eine laufende, gelungene Transkription | Server-Log gegen Geraete-Fehler halten | belegt — Server rechnete zu Ende und antwortete 200, das Geraet hatte die Verbindung da schon aufgegeben: `Failed fetching local transcription response headers` | 19.09. |
+| **Mit 300 s Zeitfenster geht die Transkription durch** | Flashen, aufnehmen, Log lesen | **belegt** — `Local transcription succeeded: chars=88 clip_ms=5040 total_elapsed_ms=28867`, danach `transcript_saved=1`, Datei `/sdcard/recordings/rec_49_626130.txt` | 19.09. |
+| Erklaert, warum es mal ging und mal nicht | Laufzeiten vergleichen | belegt — 28,9 s fuer eine 5-s-Aufnahme lagen knapp unter der alten 30-s-Grenze, laengere Aufnahmen darueber. Kein Wackelkontakt, ein Grenzfall | 19.09. |
+| Leere Transkripte sind jetzt nachhoerbar statt zu raten | `brain.log` und `~/transcribe_fehlschlaege/` | belegt — Route loggt Bytes/Rate/Kanaele/Bits/Dauer und legt das Audio bei leerem Ergebnis ab | 19.09. |
+
 ## Startskript auf Kraken (brain)
 
 | Behauptung | Handgriff | Ergebnis | Datum |

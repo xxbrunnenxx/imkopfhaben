@@ -51,7 +51,14 @@ constexpr size_t kMaxPortalPayloadLen = 512;
 constexpr int kAuthTimeoutMs = 5000;      // LAN round-trip, not a WAN one -- keep this tight
 constexpr int kGenerateTimeoutMs = 60000;  // reasoning_effort=none keeps this well under budget
                                             // in practice, but leave headroom for a cold model
-constexpr int kTranscribeTimeoutMs = 30000;
+// 30 s waren zu knapp: faster-whisper "medium" auf Krakens Pi-5-CPU (int8,
+// 4 Threads) braucht fuer eine 9-Sekunden-Aufnahme gemessene ~65 s, also ein
+// Vielfaches der Echtzeit. Das Geraet brach mitten in einer laufenden,
+// erfolgreichen Transkription ab ("Failed fetching local transcription
+// response headers"), der Server rechnete die Antwort danach ins Leere --
+// live beobachtet 19.09.2026. Reichlich bemessen, weil hier nur ein
+// Fehlschlag Zeit kostet: eine gelungene Antwort kommt, sobald sie fertig ist.
+constexpr int kTranscribeTimeoutMs = 300000;
 constexpr uint32_t kAuthTaskStackWords = 8192;
 
 // Mandatory for the default model: without this, gemma-4-e2b spends most of its output budget
