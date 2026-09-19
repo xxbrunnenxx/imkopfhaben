@@ -11,8 +11,11 @@ Reihenfolge = ungefähre Priorität.
 - **Zusammenfassungen antworten auf Englisch, im Ton eines Cheerleaders.**
   Beim ersten Blick auf den Inhalt aufgefallen (19.09.2026, über die neuen
   Archiv-Routen): Quellen sind durchweg deutsch, die Zusammenfassung kommt
-  englisch zurück und feuert an statt zusammenzufassen („What an exciting
-  set of tasks we have here!", „You've got this!"). Ursache steckt im
+  englisch zurück und feuert den Leser an, statt zusammenzufassen —
+  Ausrufezeichen, Lob und Motivationsformeln statt einer nüchternen
+  Liste. (Wortlaut hier bewusst nicht wiedergegeben: er besteht aus den
+  Notizinhalten des Besitzers, und dieses Repo liegt auf GitHub.)
+  Ursache steckt im
   Prompt, nicht im Modell: `BuildSummaryInstructionText` in
   `components/summary_service/summary_service.cpp` ist englisch formuliert
   und verlangt unter anderem „priorities, completed work, remaining tasks,

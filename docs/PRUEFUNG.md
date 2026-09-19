@@ -10,6 +10,13 @@ Refresh-Änderungen belegt werden mussten.
 
 **Ergebnis-Werte:** `belegt` · `offen` · `widerlegt`
 
+**Keine Notizinhalte in diesem Repo.** Das Repo liegt auf GitHub, die
+Aufnahmen des Besitzers gehoeren nicht dorthin. Belege beschreiben
+deshalb, *dass* ein Text korrekt ankam, in welcher Laenge und mit
+welchem Zeitverhalten — nie *was* darin stand. Wer einen Wortlaut zum
+Nachvollziehen braucht, liest ihn am Geraet oder in der lokalen
+Mitschrift auf Kraken (`~/imkopfhaben-mitschrift/`, nicht versioniert).
+
 Handgriff für alle Log-Belege (Board an `/dev/ttyACM0`):
 
 ```sh
@@ -65,7 +72,7 @@ print('\n'.join(l for l in iter(lambda: s.readline().decode('utf8','replace').rs
 
 | Behauptung | Handgriff | Ergebnis | Datum |
 |---|---|---|---|
-| Der Brain-Server ist nicht schuld | `brain.log` zur Fehlschlagszeit lesen | belegt — alle Anfragen HTTP 200, Whisper lieferte korrekten Text (`'Letztes Transkript failed.'`) | 19.09. |
+| Der Brain-Server ist nicht schuld | `brain.log` zur Fehlschlagszeit lesen | belegt — alle Anfragen HTTP 200, Whisper lieferte einen korrekten, vollstaendigen Text zurueck (Wortlaut hier bewusst nicht wiedergegeben, siehe Hinweis am Dateikopf) | 19.09. |
 | Das Geraet brach nach exakt 30 s ab | Board-Log, Abstand `Starting local transcription` zu `Local transcription failed` | belegt — t=605668 bis t=635938, 30 270 ms; `kTranscribeTimeoutMs` war 30 000 | 19.09. |
 | Der Server ist langsamer als das Zeitfenster | 9-s-WAV per `curl` an `/api/transcribe-raw`, `time` messen | belegt — 64,96 s. faster-whisper `medium`, int8, 4 Threads auf Pi-5-CPU laeuft weit ueber Echtzeit | 19.09. |
 | Der Abbruch traf eine laufende, gelungene Transkription | Server-Log gegen Geraete-Fehler halten | belegt — Server rechnete zu Ende und antwortete 200, das Geraet hatte die Verbindung da schon aufgegeben: `Failed fetching local transcription response headers` | 19.09. |
@@ -163,6 +170,7 @@ Die Zusammenfassungen kommen **auf Englisch** zurueck, obwohl jede Quelle
 deutsch ist — die Prompts in `summary_service.cpp`
 (`BuildSummaryInstructionText`) sind englisch formuliert und das Modell
 antwortet in der Sprache der Anweisung. Dazu ein Ton, der nicht
-zusammenfasst, sondern anfeuert („What an exciting set of tasks we have
-here!", „You've got this!"). Beides steckt im Prompt, nicht im Modell,
+zusammenfasst, sondern den Leser anfeuert — Ausrufezeichen, Lob und
+Motivationsformeln statt einer nuechternen Liste. Beides steckt im
+Prompt, nicht im Modell,
 und waere dort zu aendern. Nicht bestellt, deshalb nicht gebaut.
