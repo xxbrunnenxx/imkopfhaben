@@ -75,3 +75,37 @@ Reihenfolge = ungefähre Priorität.
   Der Besitzer muss einmal durch die Menüs gehen und sagen, ob das
   Blitzen weg ist und ob nach ~8 Wechseln genug Ghosting weggeht. Falls
   zu viel Ghosting bleibt: `kGhostFlushEveryNScreenChanges` verkleinern.
+
+### Nachtrag 2026-09-19: der gemeldete Blitz kam woanders her
+
+Der Besitzer hat das Gerät benutzt, während ein 5-Minuten-Mitschnitt
+lief, und meldete weiterhin Blitzen. Der Mitschnitt zeigt warum — es war
+**nicht** der Screenwechsel-Pfad:
+
+- Im ganzen Nutzungsfenster gab es **keinen einzigen Screenwechsel**.
+  Alle Display-Kommandos: `mode=partial scope=region
+  source=dashboard_page` (Scrollen mit der DOWN-Taste im Dashboard).
+- Genau **ein** Voll-Refresh, bei Zeitstempel 119264:
+  `busy=2108938us` — die 2,1 s. Direkt davor sechs Partials à ~510 ms.
+- Ursache: `RefreshPartialFullScreen` in
+  `components/epaper_panel/ssd1677_driver.cpp`. Nach
+  `kMaxPartialRefreshesBeforeFlush = 8` Partials erzwingt
+  `CanPartialRefresh` einen `RefreshFullBase()` gegen das Verblassen.
+  Beim Durchscrollen einer Liste ist diese Schwelle in Sekunden erreicht.
+
+Die heutige `SetCurrentScreen`-Änderung bleibt richtig und wirksam (sie
+nimmt das Blitzen beim Seitenwechsel), trifft dieses Blitzen aber nicht.
+
+**Offen — Entscheidung des Besitzers**, weil es ein echter Kompromiss ist
+(Blitzen gegen Kontrast):
+
+1. Schwelle hochsetzen (z. B. 8 → 20): seltener Blitzen, dafür wird das
+   Bild zwischendurch sichtbar blasser.
+2. Flush auf die schnelle Wellenform legen: aus 2,1 s werden ~0,8 s,
+   klärt aber weniger gründlich. Der Kommentar im Treiber rät davon ab,
+   weil `kFast` auf diesem Panel bei geringerem Kontrast landet und ein
+   verblasstes Bild damit nicht wieder aufgefrischt wird.
+3. Flush verschieben statt auslösen: beim Scrollen weiterzählen, aber den
+   Voll-Refresh erst fahren, wenn der Nutzer kurz nichts tut. Dann blitzt
+   es nie mitten in der Bewegung. Aufwendiger, aber der einzige Weg, der
+   beides behält.
