@@ -972,10 +972,10 @@
     "semantic_hash": "f60e7de81bdf77e2444a4337375d983c"
   },
   "components/local_ai_service/local_ai_service.cpp": {
-    "mtime": 1789291667.8981082,
-    "seen": 1789719083.8373334,
-    "ast_hash": "b294ad6883f7106ed4998e4f0db0c470",
-    "semantic_hash": "b294ad6883f7106ed4998e4f0db0c470"
+    "mtime": 1789814999.9546363,
+    "seen": 1789815447.3509471,
+    "ast_hash": "e7a6a59ff1e34c953c021d00106664f1",
+    "semantic_hash": ""
   },
   "components/page_navigation/include/page_navigation/navigation_input_controller.h": {
     "mtime": 1789291667.8987315,
@@ -1308,10 +1308,10 @@
     "semantic_hash": "f52340b2c6bc4a69b8a658bd94b746cf"
   },
   "components/wifi_service/wifi_service.cpp": {
-    "mtime": 1789291667.914386,
-    "seen": 1789719083.8373983,
-    "ast_hash": "6d2371759f78332485c0159e9f2000cf",
-    "semantic_hash": "6d2371759f78332485c0159e9f2000cf"
+    "mtime": 1789814978.1929169,
+    "seen": 1789815447.3510616,
+    "ast_hash": "dc692f2d00669f8fed2a714567819497",
+    "semantic_hash": ""
   },
   "main/advanced_page_coordinator.cpp": {
     "mtime": 1789311890.812405,
@@ -3294,15 +3294,15 @@
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1789801309.9231088,
-    "seen": 1789804678.5807486,
-    "ast_hash": "d34a042cc123882a3add90a6e8b79080",
+    "mtime": 1789815319.1347673,
+    "seen": 1789815447.3515058,
+    "ast_hash": "923853720055b0f237e8f4b6dddeacac",
     "semantic_hash": ""
   },
   "docs/VERSIONEN.md": {
-    "mtime": 1789804654.7633176,
-    "seen": 1789804678.580751,
-    "ast_hash": "d0b5e9b33a122e3f38d34d42d9e9bc92",
+    "mtime": 1789815348.5920892,
+    "seen": 1789815447.3515074,
+    "ast_hash": "8b6a5f48da9ef4d85bd48d61d3ec5d97",
     "semantic_hash": ""
   }
 }
