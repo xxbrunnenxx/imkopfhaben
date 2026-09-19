@@ -143,7 +143,9 @@ Transkription unter **keinen** Umstaenden umwerfen.
 
 | Behauptung | Handgriff | Ergebnis | Datum |
 |---|---|---|---|
-| In keiner getrackten Datei steht ein Notizinhalt | `git grep` nach Wortlauten aus den Aufnahmen, in beiden Repos | belegt — keine Treffer. Vier Stellen in der Doku, die ich selbst eingetragen hatte, sind entfernt | 19.09. |
+| In keiner getrackten Datei steht ein Notizinhalt | Jede 3-Wort-Folge aus **allen** Aufnahmen der Mitschrift gegen den Commit-Stand beider Repos halten (`git grep -ilF`) | belegt — 7 Treffer, alle nachgesehen und alle unverfaenglich: gewoehnliche Wortfolgen wie „auf dem Geraet" oder „die SD-Karte auf" in technischem Zusammenhang, kein Zitat. Eine Einzelwortsuche allein taugt dafuer nicht: sie schlaegt bei Fachwoertern wie „Aufnahmen" 67-mal an, ohne dass ein Notizinhalt dasteht | 19.09. |
+| Auch verdaechtige Einzelwoerter sind harmlos | `Lautstaerker` und `Notizbuch` im Zusammenhang lesen | belegt — „Ausgabe-Lautstaerkeregelung" beschreibt die Hardware, „Notizbuch-Repo" ist ein Projektname. Beide standen schon vor den Aufnahmen da | 19.09. |
+| Die Doku-Stellen, die ich selbst eingetragen hatte, sind weg | `git grep` nach den vier bekannten Zitaten | belegt — keine Treffer mehr im Arbeitsstand beider Repos | 19.09. |
 | Der `.gitignore`-Riegel greift auf Geraeteinhalte | `git check-ignore -v --stdin` mit acht Beispielpfaden, ohne Dateien anzulegen | belegt — alle acht ignoriert, je mit Regelzeile: `transkripte*`, `aufnahmen/`, `mitschrift/`, `notizen/`, `zusammenfassungen/`, `archive-*.json`, `recordings-*.json`, `*.wav` | 19.09. |
 | Der Riegel faengt keine Quelldateien mit ein | Dieselbe Pruefung mit `docs/PRUEFUNG.md`, `main/app_shell.cpp`, `brain/mitschrift.py` | belegt — keine davon ignoriert. Ein zu grober Riegel waere schlimmer als keiner | 19.09. |
 | Die Ablage liegt ausserhalb der Repos | Ort der Mitschrift pruefen | belegt — `~/imkopfhaben-mitschrift/`, in keinem Repo enthalten. Der Ablageort ist der erste Riegel, `.gitignore` der zweite | 19.09. |
