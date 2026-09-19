@@ -872,8 +872,9 @@ void StartConfigPortal(bool captive_dns)
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     // Root + WiFi API (scan/configure/status/disconnect) + portal assets (index.js/index.css) plus
-    // the timezone_service and local_ai_service portal routes registered via the registrar below.
-    config.max_uri_handlers = 24;
+    // the timezone_service, local_ai_service and archive_portal portal routes registered via the
+    // registrar below.
+    config.max_uri_handlers = 28;
     config.lru_purge_enable = true;
 
     esp_err_t err = httpd_start(&s_portal_server, &config);

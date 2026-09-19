@@ -51,6 +51,7 @@
 #include "ui_refresh_runtime.h"
 #include "wifi_service.h"
 #include "dashboard_page_runtime.h"
+#include "archive_portal.h"
 #include "recording_archive_service.h"
 #include "timeline_format.h"
 #include "vibe_check_page_runtime.h"
@@ -1156,6 +1157,7 @@ void RegisterWifiBackendRoutes(httpd_handle_t server, void*)
 {
     timezone_service::RegisterPortalRoutes(server);
     local_ai_service::RegisterPortalRoutes(server);
+    archive_portal::RegisterPortalRoutes(server);
 }
 
 void HandleLocalAiEvent(const local_ai_service::Event& event, void*)

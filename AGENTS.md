@@ -29,6 +29,7 @@ Ordner nutzen, keinen neuen anlegen.
 | `docs/local-ai-service.md` | Der KI-Server im Heimnetz |
 | `docs/auto-sleep.md` | Schlaf-Stufen und Zeitgrenzen |
 | `scripts/flush-politik-test.sh` | Host-Test der Refresh-/Flush-Politik. Läuft ohne Board, gleicht seine Konstanten mit dem Treiber ab und bricht bei Abweichung ab |
+| `scripts/archiv-zeigen.py` | Zeigt Aufnahmen und Zusammenfassungen des laufenden Geräts lesbar an. Nur lesend, braucht ein erreichbares Board |
 
 Geprüft wird, statt behauptet. Was nicht gelaufen ist, wird als ungelaufen
 gekennzeichnet — auch wenn es sicher aussieht. Wer eine Lücke nennt, nennt

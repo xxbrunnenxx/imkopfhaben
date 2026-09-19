@@ -54,3 +54,23 @@ python3 scripts/generate_epaper_fonts.py \
 
 Generierte Asset-Dateien nach dem Einspielen nicht von Hand bearbeiten.
 Stattdessen die Quell-PNG-/TTF-Dateien aktualisieren und neu generieren.
+
+## Ins Archiv schauen
+
+`archiv-zeigen.py` holt die Aufnahmen und die beiden Zusammenfassungen vom
+laufenden Gerät und schreibt sie lesbar untereinander — die Transkripte
+mit Uhrzeit, Tag und Dauer, darunter die Zusammenfassungen samt Herkunft
+(wie viele Aufnahmen eingeflossen sind, ob gekürzt oder gechunkt wurde).
+So lässt sich beurteilen, ob eine Zusammenfassung zu ihren Quellen passt,
+ohne sie vom E-Paper abzutippen.
+
+```bash
+scripts/archiv-zeigen.py                  # Standardadresse
+scripts/archiv-zeigen.py 192.168.178.75   # oder eine andere
+```
+
+Es liest nur. Die zugrunde liegenden Routen sind
+`GET /api/archive/recordings` und `GET /api/archive/summaries`, beschrieben
+in `docs/app-architecture.md`. Anders als die Asset-Generatoren oben
+braucht dieses Skript kein macOS — nur die Python-Standardbibliothek und
+ein erreichbares Gerät.

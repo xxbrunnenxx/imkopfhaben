@@ -996,6 +996,27 @@ Aktuelle Zeit-Backend-Routen, registriert auf demselben HTTP-Server:
 - `GET /api/runtime/time`
 - `GET /api/timezone/list`
 
+Aktuelle Archiv-Backend-Routen, ebenfalls auf demselben HTTP-Server
+(`components/archive_portal`):
+
+- `GET /api/archive/recordings` — alle Aufnahmen der SD-Karte mit
+  Metadaten (Tag, Dauer, Datum, `completed`/`follow_up`) und
+  Transkripttext, dazu die aggregierten Zählungen. `?transcripts=0`
+  lässt die Texte weg und spart damit pro Aufnahme einen eigenen
+  SD-Lesevorgang.
+- `GET /api/archive/summaries` — die gespeicherten Notiz- und
+  Todo-Zusammenfassungen im Volltext, je mit ihrer Herkunft (wie viele
+  Aufnahmen eingeflossen sind, wie viele davon ein Transkript hatten, ob
+  gekürzt oder gechunkt wurde, welches Zeitfenster galt) und dem Zustand
+  eines eventuell laufenden oder gescheiterten Laufs.
+
+Beide sind **ausschließlich lesend**. Der Grund für ihre Existenz ist
+Prüfbarkeit: bis dahin war der einzige Weg an den Inhalt das E-Paper am
+Gerät selbst, ein paar Zeilen auf einmal, nicht kopierbar und nicht
+nebeneinanderzulegen. Ob eine Zusammenfassung zu ihren Aufnahmen passt,
+ließ sich so nicht beurteilen, ohne sie abzuschreiben. Ändern und Löschen
+bleiben bewusst am Gerät, wo der Besitzer sieht, was er anfasst.
+
 Auto-Sleep ist aufgeteilt auf eine Policy-Komponente und einen
 Produkt-Runtime-Helfer: `device_sleep_service` besitzt Sleep-Status,
 Timer, Timeout-Validierung, Blocker-Status und Übergangs-Ereignisse,

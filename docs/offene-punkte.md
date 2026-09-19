@@ -1,11 +1,37 @@
 # Offene Punkte — folloup-waveshare / lokale KI
 
-Stand: 2026-09-13 (Board da, erster echter Probelauf gelaufen — der
+Stand: 2026-09-19 (Zeitfenster fürs Zusammenfassen gefixt, Archiv von
+außen lesbar; Board da, erster echter Probelauf gelaufen — der
 frühere Blocker "kein Board" ist damit weg und deshalb hier entfernt).
 Noch keine GitHub-Issues, nur damit hier nichts verloren geht.
 Reihenfolge = ungefähre Priorität.
 
 ## Vor dem nächsten Probelauf klären
+
+- **Zusammenfassungen antworten auf Englisch, im Ton eines Cheerleaders.**
+  Beim ersten Blick auf den Inhalt aufgefallen (19.09.2026, über die neuen
+  Archiv-Routen): Quellen sind durchweg deutsch, die Zusammenfassung kommt
+  englisch zurück und feuert an statt zusammenzufassen („What an exciting
+  set of tasks we have here!", „You've got this!"). Ursache steckt im
+  Prompt, nicht im Modell: `BuildSummaryInstructionText` in
+  `components/summary_service/summary_service.cpp` ist englisch formuliert
+  und verlangt unter anderem „priorities, completed work, remaining tasks,
+  blockers" — das Modell übernimmt Sprache und Tonfall der Anweisung.
+  **Handgriff zum Schließen:** Anweisungstext auf Deutsch umschreiben und
+  den Ton festlegen, danach am Gerät neu zusammenfassen und mit
+  `scripts/archiv-zeigen.py` nachsehen. Befund gemeldet, nicht gebaut —
+  vom Besitzer nicht bestellt.
+- **Eine laufende Zusammenfassung hält das Gerät nicht wach.**
+  `GetAutoSleepBlocker` in `main/device_sleep_runtime.cpp` kennt Aufnahme,
+  Wiedergabe, Speicherschreiben, AP-Modus, Zeitsync und Display-Refresh,
+  aber keinen Zusammenfass-Lauf. Seit das Zeitfenster auf 15 Minuten steht
+  (`kGenerateTimeoutMs`), kann ein Lauf deutlich länger dauern als die
+  90 Sekunden bis zum Light-Sleep. Beim belegten 92-Sekunden-Lauf am
+  19.09. ging es gut, weil der Besitzer am Gerät stand; unbeaufsichtigt ist
+  es ein Kandidat für „bricht scheinbar grundlos ab". **Handgriff:** einen
+  `BlockerReason::kSummaryRunning` ergänzen und ihn aus
+  `summary_service::GetSnapshot().request.in_flight` speisen. Vorschlag,
+  nicht gebaut.
 
 - **Portal-Check nach OpenAI-Code-Entfernung noch offen.** Der
   ungenutzte OpenAI-Provider-Code wurde aus dem Portal-Frontend

@@ -73,6 +73,22 @@ print('\n'.join(l for l in iter(lambda: s.readline().decode('utf8','replace').rs
 | Erklaert, warum es mal ging und mal nicht | Laufzeiten vergleichen | belegt — 28,9 s fuer eine 5-s-Aufnahme lagen knapp unter der alten 30-s-Grenze, laengere Aufnahmen darueber. Kein Wackelkontakt, ein Grenzfall | 19.09. |
 | Leere Transkripte sind jetzt nachhoerbar statt zu raten | `brain.log` und `~/transcribe_fehlschlaege/` | belegt — Route loggt Bytes/Rate/Kanaele/Bits/Dauer und legt das Audio bei leerem Ergebnis ab | 19.09. |
 
+## Zusammenfassen bricht ab (19.09.2026)
+
+Dieselbe Klasse wie der Abschnitt darueber, nur eine Etage hoeher: nicht
+das Transkribieren lief in sein Zeitfenster, sondern das Zusammenfassen.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Der Abbruch traf eine laufende, fast fertige Antwort | LM-Studio-Log `~/.lmstudio/server-logs/2026-09/2026-09-19.1.log` zur Abbruchszeit lesen | belegt — Lauf 16:30:32, um 16:31:32 `Client disconnected. Stopping generation...`, Generierung stand da bei `n_gen = 154` und lief noch | 19.09. |
+| Das Geraet brach nach exakt 60 s ab | Abstand Anfrageeingang zu `Client disconnected` im Server-Log | belegt — 16:30:32 bis 16:31:32, 60 s auf die Sekunde; `kGenerateTimeoutMs` war 60 000 | 19.09. |
+| Das Modell ist langsamer als das alte Zeitfenster | `print_timing`-Zeilen im selben Log lesen | belegt — gemma-4-e2b auf Pi-5-CPU: 8,6 Token/s Prompt-Eval, 5,8 Token/s Generierung. Todo-Lauf 266 Prompt-Token + ~180 Antwort-Token = ~31 s + ~31 s, also ueber 60 s | 19.09. |
+| Erklaert, warum Notizen durchliefen und Todos nicht | Laufzeiten der drei Laeufe vergleichen | belegt — Notizen 16:23 `total time = 38 489 ms` (180/106 Token) und Todos 16:26 `48 970 ms` (185/163 Token) blieben unter 60 s, der groessere Todo-Lauf 16:30 (266 Token Prompt) nicht. Kein Wackelkontakt, ein Grenzfall | 19.09. |
+| Ein einzelner Chunk allein kann das Fenster sprengen | Prompt auf Chunk-Budget (2500 Token) aufgeblasen, per `curl` an `/v1/chat/completions`, `time` messen | belegt — Lauf ueberschritt 120 s, ohne fertig zu sein. Ein Budget-Chunk liegt rechnerisch bei ~5 min allein fuer das Prompt-Einlesen, und eine Zusammenfassung besteht aus mehreren Chunks plus Rollup | 19.09. |
+| **Mit 900 s Zeitfenster baut und laeuft die Firmware** | `idf.py build`, `idf.py -p /dev/ttyACM0 flash` | belegt — `0x375f40` Bytes, 56 % frei; „Hash of data verified", Board bootet, `Local AI readiness check succeeded: model=google/gemma-4-e2b http=200` | 19.09. |
+| **Eine volle Zusammenfassung am Geraet geht mit dem neuen Fenster durch** | Am Geraet Todos zusammenfassen, dann `curl http://192.168.178.75/api/archive/summaries` und das Server-Log dazu | **belegt** — Lauf 16:46:38 bis 16:48:10, `total time = 91 988 ms` (304 Prompt-, 191 Antwort-Token), kein `Client disconnected`. Ueber die alte 60-s-Grenze hinaus und trotzdem fertig geworden; Ergebnis liegt als `todos` mit `generated 16:48`, 5 Quellen, 5 Transkripte vor | 19.09. |
+| Eine laufende Zusammenfassung haelt das Geraet nicht wach | `GetAutoSleepBlocker` in `main/device_sleep_runtime.cpp` lesen | belegt — die Funktion kennt Aufnahme, Wiedergabe, Speicher, AP-Modus, Zeitsync und Display, aber keinen Zusammenfass-Lauf. Bei 15 min Wartezeit greift der Light-Sleep nach 90 s. **Vorschlag, nicht gebaut:** eigener `BlockerReason` fuer `summary_service` | 19.09. |
+
 ## Startskript auf Kraken (brain)
 
 | Behauptung | Handgriff | Ergebnis | Datum |
@@ -124,3 +140,29 @@ idf.py build && idf.py -p /dev/ttyACM0 flash
 
 Der Rückbau ist gegengeprüft: mit Schwelle 8 erscheint die Zeile nicht
 mehr, das Gerät bootet normal.
+
+## Blick von aussen auf Aufnahmen und Zusammenfassungen (19.09.2026)
+
+Neue Lese-Routen in `components/archive_portal`, eingehaengt neben den
+schon bestehenden Portal-Routen. Zweck: den Inhalt pruefbar machen, ohne
+ihn vom E-Paper abzutippen.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Die Aufnahmen sind von aussen lesbar | `curl http://192.168.178.75/api/archive/recordings` | belegt — HTTP 200, `count: 7`, jede Aufnahme mit Tag, Dauer, Datum, Flags und Transkripttext | 19.09. |
+| Die Zaehlung stimmt mit den gelieferten Eintraegen ueberein | `counts` gegen die Liste halten | belegt — 7 Aufnahmen, davon 2 `idea` und 5 `task`, 2 mit `follow_up`, 0 erledigt; die Liste enthaelt genau diese | 19.09. |
+| `?transcripts=0` spart die Transkript-Lesevorgaenge | `curl '.../recordings?transcripts=0'` | belegt — `transcripts_included: false`, kein `transcript`-Feld an den Eintraegen | 19.09. |
+| Ein Lesefehler ist von einem leeren Archiv unterscheidbar | Antwortfelder pruefen | belegt — `ok` und `status` tragen den `esp_err_t` der Kartenlesung, unabhaengig von `count` | 19.09. |
+| Die Zusammenfassungen sind von aussen lesbar | `curl http://192.168.178.75/api/archive/summaries` | belegt — HTTP 200, `notes` und `todos` je mit Volltext und Herkunft (`source_item_count`, `transcript_item_count`, `truncated`, `chunked`, `window_days`) | 19.09. |
+| Die Route zeigt den frischen Stand, nicht den Stand vom Booten | Am Geraet neu zusammenfassen, dann Route lesen | belegt — `RefreshCachedSummaries()` laeuft vor dem Ausliefern; der 16:48-Lauf erschien ohne Neustart | 19.09. |
+| Der zusaetzliche Handler-Platz reicht | `config.max_uri_handlers` von 24 auf 28, flashen, alle Routen abfragen | belegt — keine `Failed to register archive route`-Zeile im Log, WLAN-, Zeit- und KI-Routen antworten weiterhin | 19.09. |
+| Die Routen sind nur lesend | `archive_portal.cpp` durchsehen | belegt — ausschliesslich `HTTP_GET`; `DeleteRecording`, `MarkRecording*` und `ResetForFormat` werden nicht aufgerufen | 19.09. |
+
+**Befund aus dem ersten Blick auf den Inhalt, nicht gefixt (Vorschlag):**
+Die Zusammenfassungen kommen **auf Englisch** zurueck, obwohl jede Quelle
+deutsch ist — die Prompts in `summary_service.cpp`
+(`BuildSummaryInstructionText`) sind englisch formuliert und das Modell
+antwortet in der Sprache der Anweisung. Dazu ein Ton, der nicht
+zusammenfasst, sondern anfeuert („What an exciting set of tasks we have
+here!", „You've got this!"). Beides steckt im Prompt, nicht im Modell,
+und waere dort zu aendern. Nicht bestellt, deshalb nicht gebaut.

@@ -406,3 +406,52 @@ strukturell in Ordnung ist, nicht dass er auf dem Gerät funktioniert.
   verlassen). **Nicht live getestet** (noch kein Board) -- nur
   code-seitig, gleicher Vorbehalt wie alles andere in diesem Dokument,
   bis echte Hardware ankommt.
+
+## Gemessene Geschwindigkeit und das Zeitfenster (2026-09-19, am Board)
+
+Die offene Stelle aus §6 der Firmware-Änderungen — „die genauen Zahlen
+sollten gegen echt gemessene Prompt-Größen justiert werden, sobald das
+Board existiert" — ist jetzt messbar, das Board läuft. Gemessen am
+LM-Studio-Log auf Kraken (`~/.lmstudio/server-logs/`), Modell
+`google/gemma-4-e2b` auf der Pi-5-CPU:
+
+| Größe | Wert |
+|---|---|
+| Prompt einlesen | ~8,6 Token/s |
+| Antwort schreiben | ~5,8 Token/s |
+| Notiz-Zusammenfassung, 180 Prompt- / 106 Antwort-Token | 38,5 s |
+| Todo-Zusammenfassung, 185 / 163 Token | 49,0 s |
+| Todo-Zusammenfassung, 266 Prompt-Token | über 60 s — **brach ab** |
+
+Daraus folgt zweierlei.
+
+**Erstens: das Zeitfenster war zu klein.** `kGenerateTimeoutMs` stand auf
+60 000 ms. Der dritte Lauf oben riss es am 19.09.2026 um 16:31 Uhr auf die
+Sekunde genau, während der Server noch schrieb (`n_gen = 154` und
+steigend) — das Gerät legte auf, die fertige Antwort lief ins Leere.
+Dieselbe Klasse Fehler wie beim Transkribieren eine Ebene tiefer, und
+dieselbe Lösung: das Fenster steht jetzt auf **900 000 ms (15 Minuten)**,
+auf Ansage des Besitzers reichlich bemessen. Das Zeitfenster sagt nicht,
+wie lange etwas dauern *soll*; es ist die Reißleine für einen Server, der
+gar nicht mehr antwortet. Eine fertige Antwort kommt durch, sobald sie
+fertig ist — großzügig kostet also nichts außer im Fehlerfall.
+
+**Zweitens: die Token-Budgets sind für dieses Modell großzügig
+bemessen.** `kSummaryChunkTokenBudget` steht auf 2500. Ein Chunk, der
+dieses Budget wirklich ausschöpft, braucht bei 8,6 Token/s allein rund
+**5 Minuten fürs Prompt-Einlesen** — und eine Zusammenfassung besteht aus
+mehreren solchen Chunks plus dem Rollup, jeder ein eigener HTTP-Aufruf.
+Die real beobachteten Läufe lagen mit 180 bis 266 Token weit darunter,
+weil bisher nur wenige Aufnahmen im 3-Tage-Fenster liegen. Mit
+wachsendem Bestand wandert die Zusammenfassung in Richtung dieser
+Chunk-Grenze. Die Budgets sind damit keine Schätzung mehr, sondern
+bewusst so gelassen: lieber wenige lange Aufrufe als viele kurze, das
+Fenster trägt es jetzt.
+
+**Was daraus nicht gebaut wurde (Vorschlag, nicht bestellt):** eine
+laufende Zusammenfassung ist kein Sleep-Blocker. `GetAutoSleepBlocker` in
+`main/device_sleep_runtime.cpp` kennt Aufnahme, Wiedergabe,
+Speicherschreiben, AP-Modus, Zeitsync und Display-Refresh — den
+Zusammenfass-Lauf nicht. Wartet das Gerät jetzt minutenlang auf eine
+Antwort, greift der Light-Sleep nach 90 s mitten hinein. Ein eigener
+`BlockerReason` für `summary_service` wäre der passende Handgriff.

@@ -60,7 +60,13 @@ constexpr int kAuthTimeoutMs = 5000;      // LAN round-trip, not a WAN one -- ke
 // Chunks plus Rollup, jeder Schritt ein eigener Aufruf. Reichlich bemessen,
 // weil nur ein Fehlschlag Zeit kostet: eine gelungene Antwort kommt,
 // sobald sie fertig ist.
-constexpr int kGenerateTimeoutMs = 300000;
+//
+// 15 Minuten statt knapp kalkulierter 5 auf Ansage des Besitzers: auf die
+// Zusammenfassung darf gewartet werden. Das Zeitfenster ist keine Vorgabe,
+// wie lange etwas dauern soll, sondern die Reissleine fuer einen Server,
+// der gar nicht mehr antwortet -- und die darf grosszuegig sitzen, solange
+// eine fertige Antwort sofort durchkommt.
+constexpr int kGenerateTimeoutMs = 900000;
 // 30 s waren zu knapp: faster-whisper "medium" auf Krakens Pi-5-CPU (int8,
 // 4 Threads) braucht fuer eine 9-Sekunden-Aufnahme gemessene ~65 s, also ein
 // Vielfaches der Echtzeit. Das Geraet brach mitten in einer laufenden,
