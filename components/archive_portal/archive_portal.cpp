@@ -6,6 +6,7 @@
 #include "cJSON.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "joint_tracker_service.h"
 #include "recording_archive_service.h"
 #include "summary_service.h"
 
@@ -21,6 +22,9 @@ constexpr const char* kApiSummariesUri = "/api/archive/summaries";
 // vorher musste jemand den Knopf druecken, und danach war der Lauf schon
 // vorbei. Loeschen und Aendern bleiben ausdruecklich draussen.
 constexpr const char* kApiSummarizeUri = "/api/archive/summarize";
+// Nur-lesende Route fuer den 420-Track: heutiger Stand, Tagesziel und das
+// Protokoll der vergangenen Tage. Der Pi-Export zieht das in eine Vault-Datei.
+constexpr const char* kApiJointTrackUri = "/api/420track";
 
 // Das Geraet haelt die Zusammenfassungen ohnehin im Schnappschuss; die
 // Aufnahmen kommen frisch von der Karte. Beides landet unveraendert im
@@ -230,6 +234,39 @@ esp_err_t HandleSummarize(httpd_req_t* request)
     return SendJsonResponse(request, 200, root);
 }
 
+// GET /api/420track
+// Nur lesend: heutiger Stand, Tagesziel und das ganze Protokoll (aeltester Tag
+// zuerst, der heutige Tag als letzter Eintrag). Der Pi-Export baut daraus eine
+// Vault-Datei; hier wird nichts gedeutet, nur durchgereicht.
+esp_err_t HandleJointTrack(httpd_req_t* request)
+{
+    const int goal = joint_tracker_service::GetDailyGoal();
+    const int today_count = joint_tracker_service::GetTodayCount();
+    const std::vector<joint_tracker_service::DayCount> history =
+        joint_tracker_service::GetHistory();
+
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddNumberToObject(root, "goal", goal);
+    cJSON_AddNumberToObject(root, "today_count", today_count);
+    // Der heutige Tag steht als letzter Eintrag in history; als eigenes Feld,
+    // damit der Export ihn ohne Sonderfall greifen kann. 0 = Uhr noch ungestellt.
+    const int32_t today_day = history.empty() ? 0 : history.back().day;
+    cJSON_AddNumberToObject(root, "today_day", static_cast<double>(today_day));
+
+    cJSON* days = cJSON_AddArrayToObject(root, "days");
+    for (const joint_tracker_service::DayCount& entry : history) {
+        cJSON* node = cJSON_CreateObject();
+        cJSON_AddNumberToObject(node, "day", static_cast<double>(entry.day));
+        cJSON_AddNumberToObject(node, "count", entry.count);
+        cJSON_AddItemToArray(days, node);
+    }
+
+    ESP_LOGI(kTag, "420track read: today=%d goal=%d days=%u", today_count, goal,
+             static_cast<unsigned>(history.size()));
+    return SendJsonResponse(request, 200, root);
+}
+
 void RegisterRoute(httpd_handle_t server, const httpd_uri_t* handler)
 {
     const esp_err_t err = httpd_register_uri_handler(server, handler);
@@ -267,9 +304,17 @@ void RegisterPortalRoutes(httpd_handle_t server)
         .user_ctx = nullptr,
     };
 
+    httpd_uri_t joint_track = {
+        .uri = kApiJointTrackUri,
+        .method = HTTP_GET,
+        .handler = HandleJointTrack,
+        .user_ctx = nullptr,
+    };
+
     RegisterRoute(server, &recordings);
     RegisterRoute(server, &summaries);
     RegisterRoute(server, &summarize);
+    RegisterRoute(server, &joint_track);
 }
 
 }  // namespace archive_portal

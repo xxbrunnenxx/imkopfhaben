@@ -144,6 +144,10 @@ NavigationModel BuildDashboardPageNavigationModel()
     NavigationModel model = {};
     model.scope = NavigationScope::kDashboard;
 
+    // Der 420-Track sitzt visuell ueber dem Menue, darum steht er auch in der
+    // Fokusreihenfolge ganz oben: mit "hoch" von Follow-up aus erreichbar.
+    AddItem(model, NavigationItemSection::kDashboardJointTracker,
+            NavigationItemRole::kDashboardJointTrackerCard, 0);
     for (int index = 0; index < 5; ++index) {
         AddItem(model, NavigationItemSection::kDashboardPageMenu,
                 NavigationItemRole::kDashboardMenuItem, index);

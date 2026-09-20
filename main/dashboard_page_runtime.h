@@ -18,6 +18,21 @@ esp_err_t UpdateDisplayStateAndRequestRefresh(
 page_actions::FocusMoveOutcome MoveFocus(int delta);
 dashboard_page_interactions::ActivateResult ActivateFocusedItem();
 
+// True, solange der 420-Track-Zaehlmodus laeuft (Up/Down zaehlen statt Fokus).
+bool IsJointTrackerCounting();
+
+// Schaltet den 420-Track-Zaehlmodus um und frischt die Anzeige auf.
+void ToggleJointTrackerCounting();
+
+struct JointCountMoveResult {
+    bool handled = false;  // true = wir waren im Zaehlmodus, der Move ist verbraucht
+    bool changed = false;  // true = der Zaehler hat sich geaendert
+};
+
+// Zaehlt im Zaehlmodus hoch/runter. delta folgt der Navigation (Up = -1,
+// Down = +1); Up erhoeht den Zaehler. Schreibt in NVS und frischt die Anzeige.
+JointCountMoveResult AdjustJointCountForMove(int delta);
+
 footer_runtime::ProjectionState BuildFooterProjectionState();
 page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem item);
 void ResetFocus();

@@ -13,6 +13,11 @@ ActivateResult HandlePrimaryActivate(DashboardPageCoordinator& coordinator)
     result.handled = true;
     result.play_activate_cue = true;
 
+    if (coordinator.IsJointTrackerFocused()) {
+        result.intent = ActivateIntent::kToggleJointTrackerCounting;
+        return result;
+    }
+
     const int menu_index = coordinator.FocusedMenuIndex();
     if (menu_index >= 0) {
         result.intent = ActivateIntent::kOpenMenuItem;
@@ -59,6 +64,11 @@ void ApplyPrimaryActivateResult(const ActivateResult& result, const ActivateCall
         case ActivateIntent::kShowWifi:
             if (callbacks.show_wifi) {
                 callbacks.show_wifi();
+            }
+            break;
+        case ActivateIntent::kToggleJointTrackerCounting:
+            if (callbacks.toggle_joint_tracker_counting) {
+                callbacks.toggle_joint_tracker_counting();
             }
             break;
         case ActivateIntent::kNone:

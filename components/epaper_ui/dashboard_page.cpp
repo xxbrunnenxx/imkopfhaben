@@ -12,7 +12,8 @@ namespace {
 constexpr int kMargin = design::spacing::k16;
 constexpr int kContentTopGap = design::spacing::k32;
 constexpr int kWelcomeMiddleGap = design::spacing::k48;
-constexpr int kMiddleMenuGap = design::spacing::k8;
+constexpr int kTrackerTopGap = design::spacing::k12;
+constexpr int kTrackerMenuGap = design::spacing::k8;
 constexpr auto kProgressLabelRole = design::TypographyRole::kLabelSmallBlack;
 
 constexpr std::array<const char*, kDashboardMenuItemCount> kMenuLabels = {
@@ -46,6 +47,13 @@ ProgressBarStyle ProgressStyle(int width)
     return style;
 }
 
+JointTrackerCardStyle TrackerStyle(int width)
+{
+    JointTrackerCardStyle style = {};
+    style.width = width;
+    return style;
+}
+
 MenuContainerState MenuState(const DashboardPageState& state)
 {
     return {state.menu.selected_index, kDashboardMenuItemCount};
@@ -66,6 +74,7 @@ struct Layout {
     UiRect welcome = {};
     bool shows_banner = false;
     UiRect middle = {};
+    UiRect tracker = {};
     int menu_y = 0;
 };
 
@@ -87,7 +96,10 @@ Layout BuildLayout(int portrait_width, int portrait_height, const DashboardPageS
         layout.middle =
             ProgressBarBounds(kMargin, middle_y, state.current_progress, ProgressStyle(page_width));
     }
-    layout.menu_y = layout.middle.bottom() + kMiddleMenuGap;
+    const int tracker_y = layout.middle.bottom() + kTrackerTopGap;
+    layout.tracker =
+        JointTrackerCardBounds(kMargin, tracker_y, state.joint_tracker, TrackerStyle(page_width));
+    layout.menu_y = layout.tracker.bottom() + kTrackerMenuGap;
     return layout;
 }
 
@@ -127,6 +139,14 @@ const char* DashboardMenuItemLabel(int index)
         return "";
     }
     return kMenuLabels[static_cast<size_t>(index)];
+}
+
+UiRect DashboardJointTrackerBounds(int portrait_width,
+                                   int portrait_height,
+                                   const DashboardPageState& state)
+{
+    const Layout layout = BuildLayout(portrait_width, portrait_height, state);
+    return layout.tracker;
 }
 
 UiRect DashboardMenuItemBounds(int portrait_width,
@@ -199,6 +219,10 @@ void DrawDashboardPage(uint8_t* framebuffer,
                         layout.middle.x, layout.middle.y, state.current_progress,
                         ProgressStyle(page_width));
     }
+
+    DrawJointTrackerCard(framebuffer, raw_width, raw_height, portrait_width, portrait_height,
+                         layout.tracker.x, layout.tracker.y, state.joint_tracker,
+                         TrackerStyle(page_width));
 
     for (int index = 0; index < kDashboardMenuItemCount; ++index) {
         const UiRect bounds = MenuContainerItemBounds(kMargin, layout.menu_y, MenuState(state),

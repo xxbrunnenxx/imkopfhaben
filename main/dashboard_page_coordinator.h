@@ -21,6 +21,15 @@ public:
     // Index of the focused menu item (0..count-1), or -1 when focus is on the footer.
     int FocusedMenuIndex() const;
 
+    // True, wenn der Fokus auf der 420-Track-Karte steht.
+    bool IsJointTrackerFocused() const;
+
+    // Zaehl-Modus der 420-Track-Karte: ist er aktiv, zaehlen Up/Down statt den
+    // Fokus zu bewegen. Ein Klick auf die fokussierte Karte schaltet ihn um.
+    bool joint_tracker_counting() const { return joint_tracker_counting_; }
+    void SetJointTrackerCounting(bool counting) { joint_tracker_counting_ = counting; }
+    void ToggleJointTrackerCounting() { joint_tracker_counting_ = !joint_tracker_counting_; }
+
     epaper_ui::DashboardPageState BuildState() const;
 
     // Number of rotation intervals elapsed since the epoch (0 before the clock is valid).
@@ -40,6 +49,7 @@ private:
     // the greeting also rotates daily (see BuildState).
     uint32_t welcome_seed_ = 0;
     bool welcome_seeded_ = false;
+    bool joint_tracker_counting_ = false;
 };
 
 #endif  // DASHBOARD_PAGE_COORDINATOR_H_

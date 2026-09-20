@@ -15,6 +15,7 @@ enum class ActivateIntent : uint8_t {
     kShowHome,
     kShowSettings,
     kShowWifi,
+    kToggleJointTrackerCounting,
 };
 
 struct ActivateResult {
@@ -31,6 +32,7 @@ struct ActivateCallbacks {
     std::function<void()> show_home;
     std::function<void()> show_settings;
     std::function<void()> show_wifi;
+    std::function<void()> toggle_joint_tracker_counting;
 };
 
 ActivateResult HandlePrimaryActivate(DashboardPageCoordinator& coordinator);

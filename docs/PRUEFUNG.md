@@ -277,3 +277,32 @@ Neuer Dienst `components/audio_settings_service`.
 | Up/Down verstellt die Lautstaerke mit Kontrollton | Am Geraet: Advanced → Volume → Klick → Up/Down | belegt — Besitzer bestaetigt: Ton wird abgespielt | 20.09. |
 | 0 % ist wirklich still | Bis auf Mute herunterstellen | belegt — Besitzer bestaetigt: „mute is ruhig" | 20.09. |
 | Letzter Wert ueberlebt den Neustart | Wert aendern, Board neu starten, Boot-Log pruefen | belegt — Besitzer stellte auf 25 %, Aus/Ein: `audio_settings: Lautstaerke geladen: 25 %`, `Set output volume to 25` | 20.09. |
+
+## 420-Track: Joint-Zaehler auf der Startseite (20.09.2026)
+
+Ein Block „420-Track" auf der Startseite, oberhalb des Menues: heutiger
+Stand als `n / Ziel` und eine Punktreihe (gefuellt = gezaehlt, offen = Rest
+bis zum Richtwert 4, ueber dem Richtwert zusaetzliche Punkte mit hellem Kern
+als Markierung, nicht limitiert). Mit „hoch" von Follow-up aus fokussierbar;
+Klick schaltet den Zaehlmodus ein (Rahmen), dann zaehlt Up = +1, Down = -1
+mit Kontrollton, nochmal Klick zurueck. Reset zum Kalendertag (Mitternacht,
+Ortszeit), Zaehler + 90-Tage-Protokoll in NVS (`jointtrack`). Nur-lesende
+Board-Route `GET /api/420track` reicht Stand + Protokoll durch; der
+Pi-Export baut daraus `06-420Track.md` im Vault und merged die vom Besitzer
+gepflegte `06-420Track-Vermerke.md` nach Datum ein.
+
+Neu: Komponente `components/joint_tracker_service` (NVS-Zaehler, Tagesreset,
+Protokoll), Karte `components/epaper_ui/joint_tracker_card.*`, Route in
+`components/archive_portal/archive_portal.cpp`, Verdrahtung in
+`main/dashboard_page_*` und `main/page_input_runtime.cpp`. Pi-Seite:
+`brain/notizen-exportieren.py` (imkopfhaben-public).
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Firmware baut mit Zaehler + Route | `idf.py build` | belegt — `folloup_sticky.bin` 0x379C20 Bytes, Exit 0 | 20.09. |
+| Firmware laeuft auf dem Board | `idf.py -p /dev/ttyACM0 flash` | belegt — 100 % geschrieben, Exit 0, sauberer Boot | 20.09. |
+| Zaehlstand liegt in NVS und ueberlebt den Flash | Boot-Log nach dem Flash lesen | belegt — `joint_tracker: geladen: heute 5 (Tag 20260920), Protokoll 0 Tage` | 20.09. |
+| Board-Route `/api/420track` antwortet | `curl http://192.168.178.75/api/420track` | belegt — HTTP 200, `{"ok":true,"goal":4,"today_count":5,"today_day":20260920,"days":[…]}` | 20.09. |
+| Ueber-Limit wird markiert, nicht gesperrt | Route bei Stand 6 lesen (Ziel 4) | belegt — `today_count` 6 > goal 4, Route liefert weiter, Karte zeichnet 6 Punkte | 20.09. |
+| Up/Down zaehlt am Geraet mit Kontrollton | Am Geraet: hoch zum 420-Track, Klick, Up/Down | **offen** — nicht vom Besitzer am Geraet bestaetigt (Zaehlerstand stieg zwischen Fluessen 5→6, Ursache noch nicht dem Tastendruck zugeordnet) | 20.09. |
+| Tageswechsel setzt zurueck (Mitternacht) | Ueber Mitternacht beobachten oder Uhr stellen | **offen** — Logik im Code (`RolloverLocked`), noch nicht ueber einen echten Tageswechsel belegt | 20.09. |

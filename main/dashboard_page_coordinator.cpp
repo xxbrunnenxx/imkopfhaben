@@ -9,6 +9,7 @@
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_timer.h"
+#include "joint_tracker_service.h"
 #include "sdkconfig.h"
 
 namespace {
@@ -160,7 +161,14 @@ void DashboardPageCoordinator::PrepareForShow()
                  static_cast<unsigned>(welcome_seed_),
                  static_cast<unsigned>(WelcomePeriodsSinceEpoch()));
     }
-    focus_.Configure(navigation_model_.item_count, 0);
+    // Startfokus bleibt auf dem ersten Menuepunkt (Follow-up). Der 420-Track
+    // steht in der Reihenfolge darueber und wird mit "hoch" erreicht.
+    int start_index = navigation_model_.IndexOfRole(NavigationItemRole::kDashboardMenuItem);
+    if (start_index < 0) {
+        start_index = 0;
+    }
+    focus_.Configure(navigation_model_.item_count, start_index);
+    joint_tracker_counting_ = false;
 }
 
 bool DashboardPageCoordinator::MoveFocus(int delta)
@@ -196,6 +204,11 @@ int DashboardPageCoordinator::FocusedMenuIndex() const
         return -1;
     }
     return item->item_index;
+}
+
+bool DashboardPageCoordinator::IsJointTrackerFocused() const
+{
+    return IsRoleFocused(NavigationItemRole::kDashboardJointTrackerCard);
 }
 
 epaper_ui::DashboardPageState DashboardPageCoordinator::BuildState() const
@@ -239,5 +252,11 @@ epaper_ui::DashboardPageState DashboardPageCoordinator::BuildState() const
     state.menu.follow_up_badge_text = std::to_string(archive_.follow_up_recording_count);
     state.menu.notes_badge_text = std::to_string(archive_.notes_recording_count);
     state.menu.todos_badge_text = std::to_string(archive_.todo_recording_count);
+
+    // 420-Track: heutiger Stand aus dem Dienst. Fokussiert (oder im Zaehl-Modus)
+    // bekommt die Karte einen Rahmen, damit sichtbar ist, dass Up/Down zaehlen.
+    state.joint_tracker.count = joint_tracker_service::GetTodayCount();
+    state.joint_tracker.goal = joint_tracker_service::GetDailyGoal();
+    state.joint_tracker.focused = IsJointTrackerFocused() || joint_tracker_counting_;
     return state;
 }

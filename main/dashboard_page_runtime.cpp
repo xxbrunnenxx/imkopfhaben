@@ -6,6 +6,7 @@
 #include "dashboard_page_coordinator.h"
 #include "epaper_ui/dashboard_page.h"
 #include "esp_log.h"
+#include "joint_tracker_service.h"
 #include "overlay_runtime.h"
 #include "page_navigation/page_focus_projection.h"
 #include "recording_archive_service.h"
@@ -97,6 +98,42 @@ dashboard_page_interactions::ActivateResult ActivateFocusedItem()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
     return dashboard_page_interactions::HandlePrimaryActivate(s_coordinator);
+}
+
+bool IsJointTrackerCounting()
+{
+    std::lock_guard<std::mutex> lock(s_mutex);
+    return s_coordinator.joint_tracker_counting();
+}
+
+void ToggleJointTrackerCounting()
+{
+    {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        s_coordinator.ToggleJointTrackerCounting();
+    }
+    (void)UpdateDisplayStateAndRequestRefresh(display_service::RefreshMode::kPartial);
+}
+
+JointCountMoveResult AdjustJointCountForMove(int delta)
+{
+    JointCountMoveResult result = {};
+    {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        if (!s_coordinator.joint_tracker_counting()) {
+            return result;
+        }
+        result.handled = true;
+    }
+
+    // Navigation: Up = -1, Down = +1. Hochzaehlen soll bei Up passieren.
+    const int before = joint_tracker_service::GetTodayCount();
+    const int after = (delta < 0) ? joint_tracker_service::Increment()
+                                  : joint_tracker_service::Decrement();
+    result.changed = (after != before);
+
+    (void)UpdateDisplayStateAndRequestRefresh(display_service::RefreshMode::kPartial);
+    return result;
 }
 
 footer_runtime::ProjectionState BuildFooterProjectionState()

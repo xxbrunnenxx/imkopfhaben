@@ -6,6 +6,7 @@
 
 #include "epaper_ui/completion_banner.h"
 #include "epaper_ui/global_footer.h"
+#include "epaper_ui/joint_tracker_card.h"
 #include "epaper_ui/menu_item.h"
 #include "epaper_ui/progress_bar.h"
 #include "epaper_ui/status_bar.h"
@@ -43,6 +44,7 @@ struct DashboardPageState {
     bool shows_completion_banner = false;
     CompletionBannerState completion_banner = {};
     ProgressBarState current_progress = {};
+    JointTrackerCardState joint_tracker = {};
     DashboardPageMenuState menu = {};
 
     bool operator==(const DashboardPageState& other) const = default;
@@ -50,6 +52,11 @@ struct DashboardPageState {
 
 // Label + badge-support for each fixed menu slot (0..kDashboardMenuItemCount-1).
 const char* DashboardMenuItemLabel(int index);
+
+// Bounds der 420-Track-Karte (fuer Fokus/Treffertest).
+UiRect DashboardJointTrackerBounds(int portrait_width,
+                                   int portrait_height,
+                                   const DashboardPageState& state);
 
 UiRect DashboardMenuItemBounds(int portrait_width,
                                int portrait_height,

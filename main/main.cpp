@@ -1,6 +1,7 @@
 #include "app_shell.h"
 
 #include "esp_err.h"
+#include "joint_tracker_service.h"
 #include "nvs_flash.h"
 
 extern "C" void app_main(void)
@@ -11,6 +12,10 @@ extern "C" void app_main(void)
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
+
+    // 420-Track laedt seinen Stand aus NVS und holt einen faelligen Tageswechsel
+    // gleich nach, bevor die Startseite zum ersten Mal gezeichnet wird.
+    joint_tracker_service::Load();
 
     app_shell::Run();
 }

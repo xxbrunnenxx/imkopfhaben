@@ -22,7 +22,9 @@ struct MenuItemState {
 };
 
 struct MenuItemStyle {
-    design::TypographyRole role = design::TypographyRole::kLabelXL;
+    // Zwei Stufen kleiner als frueher (kLabelXL/38): die Dashboard-Titel
+    // (Follow up, Summarize, Vibe Check, Notes, Todos) sollen kompakter sein.
+    design::TypographyRole role = design::TypographyRole::kLabelMediumBlack;
     uint8_t background_color = design::color::kWhite;
     uint8_t selected_background_color = design::color::kBlack;
     uint8_t text_color = design::color::kBlack;

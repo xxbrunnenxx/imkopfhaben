@@ -460,6 +460,9 @@ ButtonResult ApplyDashboardActivateResult(
     callbacks.show_wifi = [&result]() {
         result.footer_item = footer_runtime::FooterFocusItem::kWifi;
     };
+    callbacks.toggle_joint_tracker_counting = []() {
+        dashboard_page_runtime::ToggleJointTrackerCounting();
+    };
     dashboard_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
     if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
         result.interaction_result.play_feedback = false;
@@ -1587,6 +1590,23 @@ FocusMoveResult MoveFocusForCurrentScreen(int delta, bool page_jump)
         case display_service::ScreenId::kWifi:
             return ApplyWifiMoveResult(wifi_page_runtime::MoveFocus(delta, page_jump));
         case display_service::ScreenId::kHome:
+            // Im 420-Track-Zaehlmodus zaehlen Up/Down, statt den Fokus zu bewegen.
+            // Kontrollton (kVolume-Cue) nur bei echter Aenderung.
+            if (dashboard_page_runtime::IsJointTrackerCounting()) {
+                const dashboard_page_runtime::JointCountMoveResult joint_result =
+                    dashboard_page_runtime::AdjustJointCountForMove(delta);
+                if (joint_result.handled) {
+                    FocusMoveResult result = {};
+                    result.handled = true;
+                    result.interaction_result.consumed = true;
+                    if (joint_result.changed) {
+                        result.interaction_result.play_feedback = true;
+                        result.interaction_result.feedback_cue =
+                            app_interaction::FeedbackCue::kVolume;
+                    }
+                    return result;
+                }
+            }
             return ApplyDashboardMoveResult(dashboard_page_runtime::MoveFocus(delta));
         case display_service::ScreenId::kVibeCheck:
             return ApplyVibeCheckMoveResult(vibe_check_page_runtime::MoveFocus(delta));
