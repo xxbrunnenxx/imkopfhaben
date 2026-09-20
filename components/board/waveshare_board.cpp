@@ -4,6 +4,7 @@
 
 #include "waveshare_board_config.h"
 
+#include "audio_settings_service.h"
 #include "axp2101.h"
 #include "board_es8311_codec.h"
 #include "esp_log.h"
@@ -136,13 +137,16 @@ AudioCodec* GetAudioCodec()
     // Set the volume before enabling output: EnableOutput is what opens the codec
     // device, and it applies whatever output_volume_ holds at that moment. Setting it
     // after would work too, but this way there is never a window at the default.
-    s_audio_codec->SetOutputVolume(WAVESHARE_AUDIO_OUTPUT_VOLUME);
+    // Die gespeicherte Nutzer-Lautstaerke (NVS, Default 50 %) hat Vorrang vor der
+    // Kompilierkonstante; 0 % schaltet zusaetzlich stumm.
+    audio_settings_service::Load();
+    audio_settings_service::ApplyVolumeToCodec(s_audio_codec.get());
     // Keep the output path (and PA) enabled for the codec's lifetime so system
     // sound cues and clip playback can write to it without per-event PA toggling
     // (input is enabled on demand by the recording service).
     s_audio_codec->EnableOutput(true);
     ESP_LOGI(kTag, "ES8311 audio codec created (%d Hz duplex, output enabled, volume %d)",
-             WAVESHARE_AUDIO_SAMPLE_RATE_HZ, WAVESHARE_AUDIO_OUTPUT_VOLUME);
+             WAVESHARE_AUDIO_SAMPLE_RATE_HZ, audio_settings_service::GetVolume());
     return s_audio_codec.get();
 }
 

@@ -351,6 +351,9 @@ ButtonResult ApplyAdvancedActivateResult(const advanced_page_interactions::Activ
         // Deferred so the screen change happens after input dispatch; app_shell polls for it.
         onboarding_page_runtime::RequestManualLaunch();
     };
+    callbacks.toggle_volume_editing = []() {
+        advanced_page_runtime::ToggleVolumeEditing();
+    };
     advanced_page_interactions::ApplyPrimaryActivateResult(activation, callbacks);
     if (result.footer_item != footer_runtime::FooterFocusItem::kNone) {
         result.interaction_result.play_feedback = false;
@@ -1562,6 +1565,24 @@ FocusMoveResult MoveFocusForCurrentScreen(int delta, bool page_jump)
         case display_service::ScreenId::kSettings:
             return ApplySettingsMoveResult(settings_page_runtime::MoveFocus(delta));
         case display_service::ScreenId::kAdvanced:
+            // Im Lautstaerke-Einstell-Modus stellen Up/Down die Lautstaerke, statt
+            // den Fokus zu bewegen. Der Kontrollton (kVolume) laeuft nur bei echter
+            // Aenderung; an den Stufen-Enden (0/100) bleibt es still.
+            if (advanced_page_runtime::IsVolumeEditing()) {
+                const advanced_page_runtime::VolumeMoveResult volume_result =
+                    advanced_page_runtime::AdjustVolumeForMove(delta);
+                if (volume_result.handled) {
+                    FocusMoveResult result = {};
+                    result.handled = true;
+                    result.interaction_result.consumed = true;
+                    if (volume_result.changed) {
+                        result.interaction_result.play_feedback = true;
+                        result.interaction_result.feedback_cue =
+                            app_interaction::FeedbackCue::kVolume;
+                    }
+                    return result;
+                }
+            }
             return ApplyAdvancedMoveResult(advanced_page_runtime::MoveFocus(delta));
         case display_service::ScreenId::kWifi:
             return ApplyWifiMoveResult(wifi_page_runtime::MoveFocus(delta, page_jump));

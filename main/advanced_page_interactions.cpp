@@ -38,6 +38,13 @@ ActivateResult HandlePrimaryActivate(const AdvancedPageCoordinator& coordinator)
             .play_activate_cue = true,
         };
     }
+    if (coordinator.IsRoleFocused(page_navigation::NavigationItemRole::kAdvancedVolumeSelect)) {
+        return {
+            .intent = ActivateIntent::kToggleVolumeEditing,
+            .handled = true,
+            .play_activate_cue = true,
+        };
+    }
 
     return {};
 }
@@ -78,6 +85,11 @@ void ApplyPrimaryActivateResult(const ActivateResult& result,
         case ActivateIntent::kShowOnboarding:
             if (callbacks.show_onboarding) {
                 callbacks.show_onboarding();
+            }
+            return;
+        case ActivateIntent::kToggleVolumeEditing:
+            if (callbacks.toggle_volume_editing) {
+                callbacks.toggle_volume_editing();
             }
             return;
         case ActivateIntent::kNone:

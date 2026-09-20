@@ -18,6 +18,7 @@ enum class FeedbackEvent {
     kTouchContact,
     kShutdown,
     kError,
+    kVolumeChanged,
 };
 
 esp_err_t Init();

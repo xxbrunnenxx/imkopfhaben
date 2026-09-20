@@ -259,3 +259,21 @@ bewusst nicht im UI-Task).
 | Live-Route am laufenden Brain antwortet | Dienst neu starten, `curl http://127.0.0.1:8000/api/status` | **offen** — laufender Dienst hat den alten Code, nicht eigenmaechtig neu gestartet | 19.09. |
 | Statusblock draengt die Menuepunkte nicht nach unten | Startseite am Geraet ansehen | belegt — nach Umbau auf zwei Spalten (kleinste Schrift 22 px, kurze Labels) stehen die Werte in zwei Spalten unter dem Datum, Todos wieder an gewohnter Stelle | 19.09. |
 | Board erreicht /api/status nach Dienst-Neustart | Boot-Log 40 s lesen, auf `Brain-Status HTTP` achten | belegt — 0 Fehlerzeilen (404 verschwand nach Neustart von imkopfhaben-brain), Route liefert HTTP 200 | 19.09. |
+
+## Lautstaerkeregler in Advanced (20.09.2026)
+
+Neuer Eintrag „Volume" unter den drei Advanced-Buttons. Anwaehlen, Klick
+schaltet in den Einstell-Modus, Up/Down stellen die Lautstaerke in Stufen
+(0/25/50/75/100), 0 % ist Mute, Kontrollton bei jeder echten Aenderung,
+nochmal Klick zurueck in den Auswahlmodus. Wert liegt in NVS (`audio/out_vol`,
+Default 50) und wird beim Boot in `waveshare_board::GetAudioCodec()` gesetzt.
+Neuer Dienst `components/audio_settings_service`.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Firmware baut mit den Aenderungen | `idf.py build` | belegt — `folloup_sticky.bin` 0x378a70 Bytes, 56 % frei | 20.09. |
+| Firmware laeuft auf dem Board | `idf.py -p /dev/ttyACM0 flash` | belegt — „Hash of data verified", hard reset | 20.09. |
+| Gespeicherte Lautstaerke wird beim Boot geladen und angewendet | Boot-Log lesen | belegt — `audio_settings: Lautstaerke geladen: 50 %`, danach `AudioCodec: Set output volume to 50`, `Set output mute to false` | 20.09. |
+| Up/Down verstellt die Lautstaerke mit Kontrollton | Am Geraet: Advanced → Volume → Klick → Up/Down | belegt — Besitzer bestaetigt: Ton wird abgespielt | 20.09. |
+| 0 % ist wirklich still | Bis auf Mute herunterstellen | belegt — Besitzer bestaetigt: „mute is ruhig" | 20.09. |
+| Letzter Wert ueberlebt den Neustart | Wert aendern, Board neu starten, Boot-Log pruefen | **offen** — nach der Handprobe nicht erneut gebootet (Boot-Log oben zeigt den Default 50, nicht einen veraenderten Wert) | 20.09. |

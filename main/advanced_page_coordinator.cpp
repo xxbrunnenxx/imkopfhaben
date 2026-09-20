@@ -3,7 +3,20 @@
 #include <cstdio>
 #include <string>
 
+#include "audio_settings_service.h"
+
 namespace {
+
+// Anzeigetext fuer die aktuelle Lautstaerke: 0 % liest sich als "Mute".
+std::string FormatVolumeValue(int volume)
+{
+    if (volume <= 0) {
+        return "Mute";
+    }
+    char buffer[16] = {};
+    std::snprintf(buffer, sizeof(buffer), "%d %%", volume);
+    return std::string(buffer);
+}
 
 std::string FormatStorageBytes(uint64_t bytes)
 {
@@ -43,6 +56,7 @@ AdvancedPageCoordinator::AdvancedPageCoordinator() = default;
 void AdvancedPageCoordinator::Show()
 {
     focus_.Configure(navigation_model_.item_count, 0);
+    volume_editing_ = false;
 }
 
 bool AdvancedPageCoordinator::MoveFocus(int delta)
@@ -113,5 +127,15 @@ epaper_ui::AdvancedPageState AdvancedPageCoordinator::BuildState(
         .selected = IsRoleFocused(
             page_navigation::NavigationItemRole::kAdvancedManualOnboardingButton),
     };
+
+    const bool volume_focused =
+        IsRoleFocused(page_navigation::NavigationItemRole::kAdvancedVolumeSelect);
+    epaper_ui::SelectInputState volume_select = {};
+    volume_select.label_text = volume_editing_ ? "Volume  (Up/Down)" : "Volume";
+    volume_select.value_text = FormatVolumeValue(audio_settings_service::GetVolume());
+    // Im Einstell-Modus bleibt das Feld hervorgehoben, damit sichtbar ist, dass
+    // Up/Down jetzt die Lautstaerke stellen und nicht den Fokus bewegen.
+    volume_select.focused = volume_focused || volume_editing_;
+    state.volume_select = volume_select;
     return state;
 }

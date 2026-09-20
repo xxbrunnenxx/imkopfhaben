@@ -18,6 +18,23 @@ esp_err_t UpdateDisplayStateAndRequestRefresh(
 page_actions::FocusMoveOutcome MoveFocus(int delta);
 advanced_page_interactions::ActivateResult ActivateFocusedItem();
 
+// True, solange der Lautstaerke-Einstell-Modus laeuft (Up/Down stellen dann die
+// Lautstaerke statt den Fokus zu bewegen).
+bool IsVolumeEditing();
+
+// Schaltet den Lautstaerke-Einstell-Modus um und frischt die Anzeige auf.
+void ToggleVolumeEditing();
+
+struct VolumeMoveResult {
+    bool handled = false;  // true = wir waren im Einstell-Modus, der Move ist verbraucht
+    bool changed = false;  // true = die Lautstaerke hat sich tatsaechlich geaendert
+};
+
+// Verstellt die Lautstaerke, wenn der Einstell-Modus aktiv ist. delta folgt der
+// Navigation (Up = -1, Down = +1); Up macht lauter. Wendet die neue Stufe sofort
+// auf den Codec an und frischt die Anzeige auf.
+VolumeMoveResult AdjustVolumeForMove(int delta);
+
 footer_runtime::ProjectionState BuildFooterProjectionState();
 page_actions::FocusUpdateOutcome FocusFooterItem(footer_runtime::FooterFocusItem item);
 void ResetFocus();

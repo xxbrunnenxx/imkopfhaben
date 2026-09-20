@@ -5,11 +5,13 @@
 
 #include "advanced_page_coordinator.h"
 #include "advanced_page_interactions.h"
+#include "audio_settings_service.h"
 #include "page_navigation/navigation_model.h"
 #include "page_navigation/page_focus_projection.h"
 #include "shared_page_interactions.h"
 #include "storage_service.h"
 #include "ui_refresh_runtime.h"
+#include "waveshare_board.h"
 
 namespace advanced_page_runtime {
 namespace {
@@ -92,6 +94,47 @@ advanced_page_interactions::ActivateResult ActivateFocusedItem()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
     return advanced_page_interactions::HandlePrimaryActivate(s_coordinator);
+}
+
+bool IsVolumeEditing()
+{
+    std::lock_guard<std::mutex> lock(s_mutex);
+    return s_coordinator.volume_editing();
+}
+
+void ToggleVolumeEditing()
+{
+    {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        s_coordinator.ToggleVolumeEditing();
+    }
+    (void)UpdateDisplayStateAndRequestRefresh(display_service::RefreshMode::kPartial);
+}
+
+VolumeMoveResult AdjustVolumeForMove(int delta)
+{
+    VolumeMoveResult result = {};
+    {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        if (!s_coordinator.volume_editing()) {
+            return result;
+        }
+        result.handled = true;
+
+        // Navigation: Up liefert delta -1, Down +1. Lauter soll bei Up passieren,
+        // also gegen die Navigationsrichtung auf den Stufen-Index abbilden.
+        const int step = (delta < 0) ? 1 : -1;
+        const int new_index = audio_settings_service::GetVolumeIndex() + step;
+        result.changed = audio_settings_service::SetVolumeIndex(new_index);
+        if (result.changed) {
+            audio_settings_service::ApplyVolumeToCodec(waveshare_board::GetAudioCodec());
+        }
+    }
+
+    if (result.handled) {
+        (void)UpdateDisplayStateAndRequestRefresh(display_service::RefreshMode::kPartial);
+    }
+    return result;
 }
 
 footer_runtime::ProjectionState BuildFooterProjectionState()

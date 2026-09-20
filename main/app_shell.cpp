@@ -117,6 +117,9 @@ void PlayInteractionFeedback(const app_interaction::InputResult& result)
         case app_interaction::FeedbackCue::kRecordingStart:
             PlayFeedback(feedback_service::FeedbackEvent::kRecordingStart);
             break;
+        case app_interaction::FeedbackCue::kVolume:
+            PlayFeedback(feedback_service::FeedbackEvent::kVolumeChanged);
+            break;
         case app_interaction::FeedbackCue::kNone:
         default:
             break;

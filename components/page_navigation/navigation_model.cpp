@@ -102,6 +102,10 @@ NavigationModel BuildAdvancedPageNavigationModel()
             NavigationItemSection::kAdvancedPageMenu,
             NavigationItemRole::kAdvancedManualOnboardingButton,
             2);
+    AddItem(model,
+            NavigationItemSection::kAdvancedPageMenu,
+            NavigationItemRole::kAdvancedVolumeSelect,
+            3);
     AddFooterNavigationItems(model);
     return model;
 }

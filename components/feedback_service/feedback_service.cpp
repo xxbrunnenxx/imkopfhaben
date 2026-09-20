@@ -34,6 +34,8 @@ SoundCue CueForEvent(FeedbackEvent event)
             return SoundCue::kNavigationMove;
         case FeedbackEvent::kShutdown:
             return SoundCue::kModalNotification;
+        case FeedbackEvent::kVolumeChanged:
+            return SoundCue::kVolume;
         case FeedbackEvent::kError:
         default:
             return SoundCue::kInterrupt;

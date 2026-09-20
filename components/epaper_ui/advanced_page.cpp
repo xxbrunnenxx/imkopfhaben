@@ -21,6 +21,7 @@ struct Layout {
     UiRect enable_otg_button = {};
     UiRect format_sd_button = {};
     UiRect manual_onboarding_button = {};
+    UiRect volume_select = {};
 };
 
 Layout BuildLayout(int portrait_width, int portrait_height, const AdvancedPageState& state)
@@ -58,11 +59,18 @@ Layout BuildLayout(int portrait_width, int portrait_height, const AdvancedPageSt
         ButtonBounds(page_x, format_sd_button.bottom() + kButtonStackGap,
                      state.manual_onboarding_button, manual_button_style);
 
+    TextInputStyle volume_style = {};
+    volume_style.width = page_width;
+    const UiRect volume_select =
+        SelectInputBounds(page_x, manual_onboarding_button.bottom() + kButtonStackGap,
+                          state.volume_select, volume_style);
+
     return {
         .storage_status = storage_status,
         .enable_otg_button = enable_otg_button,
         .format_sd_button = format_sd_button,
         .manual_onboarding_button = manual_onboarding_button,
+        .volume_select = volume_select,
     };
 }
 
@@ -81,6 +89,8 @@ UiRect AdvancedPageItemBounds(int portrait_width,
             return layout.format_sd_button;
         case AdvancedPageItemId::kManualOnboardingButton:
             return layout.manual_onboarding_button;
+        case AdvancedPageItemId::kVolumeSelect:
+            return layout.volume_select;
         case AdvancedPageItemId::kNone:
         default:
             return {};
@@ -110,6 +120,7 @@ bool HitTestAdvancedPageItem(int portrait_width,
         AdvancedPageItemId::kEnableOtgButton,
         AdvancedPageItemId::kFormatSdButton,
         AdvancedPageItemId::kManualOnboardingButton,
+        AdvancedPageItemId::kVolumeSelect,
     };
     for (AdvancedPageItemId candidate : kItems) {
         const UiRect bounds =
@@ -225,6 +236,18 @@ void DrawAdvancedPage(uint8_t* framebuffer,
                layout.manual_onboarding_button.y,
                state.manual_onboarding_button,
                manual_button_style);
+
+    TextInputStyle volume_style = {};
+    volume_style.width = layout.volume_select.width;
+    DrawSelectInput(framebuffer,
+                    raw_width,
+                    raw_height,
+                    portrait_width,
+                    portrait_height,
+                    layout.volume_select.x,
+                    layout.volume_select.y,
+                    state.volume_select,
+                    volume_style);
 
     DrawGlobalFooter(framebuffer,
                      raw_width,

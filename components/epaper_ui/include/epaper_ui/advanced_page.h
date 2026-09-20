@@ -7,6 +7,7 @@
 #include "epaper_ui/button.h"
 #include "epaper_ui/global_footer.h"
 #include "epaper_ui/sd_status.h"
+#include "epaper_ui/select_input.h"
 #include "epaper_ui/status_bar.h"
 
 namespace epaper_ui {
@@ -16,6 +17,7 @@ enum class AdvancedPageItemId : uint8_t {
     kEnableOtgButton,
     kFormatSdButton,
     kManualOnboardingButton,
+    kVolumeSelect,
 };
 
 struct AdvancedPageState {
@@ -25,6 +27,7 @@ struct AdvancedPageState {
     ButtonState enable_otg_button = {};
     ButtonState format_sd_button = {};
     ButtonState manual_onboarding_button = {};
+    SelectInputState volume_select = {};
 };
 
 UiRect AdvancedPageItemBounds(int portrait_width,

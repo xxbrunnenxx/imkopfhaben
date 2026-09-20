@@ -12,6 +12,7 @@ enum class FeedbackCue : uint8_t {
     kModalOpen,
     kError,
     kRecordingStart,
+    kVolume,
 };
 
 struct InputResult {
