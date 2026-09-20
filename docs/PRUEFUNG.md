@@ -276,4 +276,4 @@ Neuer Dienst `components/audio_settings_service`.
 | Gespeicherte Lautstaerke wird beim Boot geladen und angewendet | Boot-Log lesen | belegt — `audio_settings: Lautstaerke geladen: 50 %`, danach `AudioCodec: Set output volume to 50`, `Set output mute to false` | 20.09. |
 | Up/Down verstellt die Lautstaerke mit Kontrollton | Am Geraet: Advanced → Volume → Klick → Up/Down | belegt — Besitzer bestaetigt: Ton wird abgespielt | 20.09. |
 | 0 % ist wirklich still | Bis auf Mute herunterstellen | belegt — Besitzer bestaetigt: „mute is ruhig" | 20.09. |
-| Letzter Wert ueberlebt den Neustart | Wert aendern, Board neu starten, Boot-Log pruefen | **offen** — nach der Handprobe nicht erneut gebootet (Boot-Log oben zeigt den Default 50, nicht einen veraenderten Wert) | 20.09. |
+| Letzter Wert ueberlebt den Neustart | Wert aendern, Board neu starten, Boot-Log pruefen | belegt — Besitzer stellte auf 25 %, Aus/Ein: `audio_settings: Lautstaerke geladen: 25 %`, `Set output volume to 25` | 20.09. |
