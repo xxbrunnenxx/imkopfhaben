@@ -74,3 +74,28 @@ Es liest nur. Die zugrunde liegenden Routen sind
 in `docs/app-architecture.md`. Anders als die Asset-Generatoren oben
 braucht dieses Skript kein macOS — nur die Python-Standardbibliothek und
 ein erreichbares Gerät.
+
+## Host-Tests (echter Code, ohne Geraet)
+
+Diese Skripte kompilieren **echte** Geraete-Quellen am Host und belegen ihr
+Verhalten, ohne dass ein Board angeschlossen sein muss. Sie sind der Handgriff
+zu den entsprechenden Zeilen in `docs/PRUEFUNG.md`.
+
+- `flush-politik-test.sh`: bildet die Flush-Politik aus dem Display-Treiber
+  nach und gleicht die Konstanten gegen den echten Code ab.
+- `420track-render-test.sh`: rendert die echte 420-Track-Karte
+  (`components/epaper_ui/joint_tracker_card.cpp`) in einen 1bpp-Framebuffer
+  wie auf dem Geraet und klassifiziert die Punkte (Umriss / gefuellt /
+  gefuellt-mit-hellem-Kern) fuer count=2/4/6 gegen Ziel 4. PGM-Vorschau in
+  `/tmp/card*.pgm`.
+- `420track-service-test.sh`: treibt den echten `joint_tracker_service` ueber
+  einen Mitternachts-Tageswechsel (Uhr per Linker-`--wrap=time`, NVS als
+  In-Memory-Stub in `420track-stub/`). Belegt Reset, Protokoll-Fortschreibung
+  und die Zaehl-Logik (+1/-1, kein Negativ, ueber Ziel erlaubt).
+
+```bash
+scripts/420track-render-test.sh
+scripts/420track-service-test.sh
+```
+
+Beide brauchen nur `g++` (C++17/20), kein ESP-IDF und kein Geraet.

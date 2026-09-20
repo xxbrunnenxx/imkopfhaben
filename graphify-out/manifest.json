@@ -2688,9 +2688,9 @@
     "semantic_hash": ""
   },
   "scripts/README.md": {
-    "mtime": 1789829524.590156,
-    "seen": 1789829564.2536614,
-    "ast_hash": "bc2435b3b55e4f6a9d502fe9ebd80026",
+    "mtime": 1789929564.1267672,
+    "seen": 1789929607.9217153,
+    "ast_hash": "9de71afbc567377f97d847dc0a0ab635",
     "semantic_hash": ""
   },
   "webserver/README.md": {
@@ -3294,9 +3294,9 @@
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1789926924.7226102,
-    "seen": 1789926946.5211382,
-    "ast_hash": "fbd143047742259f84ea91026efb2cdf",
+    "mtime": 1789929540.0069277,
+    "seen": 1789929607.9216907,
+    "ast_hash": "b2695a35c0b785bee0379dc4ae0ad998",
     "semantic_hash": ""
   },
   "docs/VERSIONEN.md": {
@@ -3393,6 +3393,42 @@
     "mtime": 1789895254.655076,
     "seen": 1789926407.5927649,
     "ast_hash": "504e52bbdeced1bf037fd3bf3abd8ad8",
+    "semantic_hash": ""
+  },
+  "scripts/420track-render-test.cpp": {
+    "mtime": 1789929482.2504015,
+    "seen": 1789929607.9214346,
+    "ast_hash": "35fc5756e64b1eb0558076b2029ade93",
+    "semantic_hash": ""
+  },
+  "scripts/420track-render-test.sh": {
+    "mtime": 1789929496.6832168,
+    "seen": 1789929607.9214375,
+    "ast_hash": "6244dc7fe1ca8df541d5aa7179f0f39e",
+    "semantic_hash": ""
+  },
+  "scripts/420track-service-test.cpp": {
+    "mtime": 1789929477.518033,
+    "seen": 1789929607.9214396,
+    "ast_hash": "ccf358725f3085046fb9877de855045c",
+    "semantic_hash": ""
+  },
+  "scripts/420track-service-test.sh": {
+    "mtime": 1789929508.5631375,
+    "seen": 1789929607.9214413,
+    "ast_hash": "1e9c3af8cee849a722f56534d905eb9b",
+    "semantic_hash": ""
+  },
+  "scripts/420track-stub/esp_log.h": {
+    "mtime": 1789929477.5210261,
+    "seen": 1789929607.921443,
+    "ast_hash": "d6dd87a37d782c1b8f4d61965d4dabd0",
+    "semantic_hash": ""
+  },
+  "scripts/420track-stub/nvs.h": {
+    "mtime": 1789929477.5209723,
+    "seen": 1789929607.9214451,
+    "ast_hash": "704fb7a6fe78812c25e625a521c0710c",
     "semantic_hash": ""
   }
 }
