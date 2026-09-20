@@ -1,7 +1,7 @@
 # Graph Report - imkopfhaben-esp32  (2026-09-20)
 
 ## Corpus Check
-- 409 files · ~1,507,997 words
+- 409 files · ~1,508,075 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 37 file(s) not represented in the graph (top: .css 16, .ttf 9, (none) 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3677dc84`
+- Built from commit: `b994f3b3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1774,7 +1774,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `ae()` connect `le` to `_`, `SourceEntry`?**
   _High betweenness centrality (0.041) - this node is a cross-community bridge._
 - **Why does `Qmi8658` connect `Qmi8658` to `i2c_device.cc`, `Qmi8658::ConfigFifo`, `details_page_runtime.cpp`, `qmi8658.cc`, `SetRegisterBit`, `Qmi8658Sample`, `InterruptEvent`, `Config`, `Qmi8658::ReadSample`, `Qmi8658::Initialize`?**
-  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+  _High betweenness centrality (0.040) - this node is a cross-community bridge._
 - **Are the 128 inferred relationships involving `ClampPositive()` (e.g. with `BadgeBounds()` and `ButtonBounds()`) actually correct?**
   _`ClampPositive()` has 128 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 114 inferred relationships involving `readRegister` (e.g. with `clrRegisterBit` and `getRegisterBit`) actually correct?**
