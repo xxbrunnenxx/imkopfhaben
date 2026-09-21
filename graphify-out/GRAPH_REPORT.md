@@ -1,17 +1,17 @@
 # Graph Report - imkopfhaben-esp32  (2026-09-21)
 
 ## Corpus Check
-- 423 files · ~1,513,053 words
+- 424 files · ~1,513,935 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 38 file(s) not represented in the graph (top: .css 16, .ttf 9, (none) 7)
 
 ## Summary
-- 7706 nodes · 16226 edges · 391 communities (369 shown, 22 thin omitted)
-- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 1979 edges (avg confidence: 0.85)
+- 7709 nodes · 16229 edges · 385 communities (361 shown, 24 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 1980 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `772e473b`
+- Built from commit: `ffe33cd7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,16 +22,16 @@
 - readRegister
 - string
 - Qmi8658
-- network_list.cpp
+- UiRect
 - xpowers_axp2101_driver.cc
 - esp_err
 - Axp2101Driver
-- timezone_service.cpp
+- Notify
 - .IsEmpty
 - display_service.cpp
 - device_sleep_service.cpp
 - Axp2101
-- notes_page_runtime.cpp
+- overlay_runtime.h
 - qmi8658.cc
 - VibeCardStyle
 - EpaperPanel
@@ -42,8 +42,8 @@
 - le
 - _
 - FollowUpPageCoordinator
-- clrRegisterBit
-- LineHeight
+- SummarizePageCoordinator
+- KeyboardStyle
 - VibeCheckPageCoordinator
 - VibeCheckPageState
 - cstdint
@@ -51,16 +51,16 @@
 - main.ts
 - storage_service.cpp
 - types.ts
-- TimelineListStyle
+- ClampPositive
 - Qmi8658::ConfigFifo
 - DetailsPageCoordinator
 - LayoutGridStyle
-- timeline_list.cpp
+- KeyboardState
 - SystemSoundServiceImpl
-- todos_page_coordinator.cpp
+- TodosPageCoordinator
 - OnboardingPageCoordinator
 - AudioCodec
-- SegmentControlStyle
+- SegmentControlState
 - UiState
 - sd_card.cpp
 - ActivateCallbacks
@@ -70,7 +70,7 @@
 - WelcomeMessageStyle
 - NavigationModel
 - SettingsPageCoordinator
-- AdvancedPageCoordinator
+- SelectItemStyle
 - Axp2101Common
 - Config
 - ActivateCallbacks
@@ -80,58 +80,58 @@
 - pn
 - BottomSheet
 - CardModalState
-- TimelineListState
-- esp_err_to_name
+- settings_page_runtime.cpp
+- app_shell.cpp
 - dashboard_page_runtime.cpp
 - todos_page_runtime.cpp
 - ToggleStyle
 - RequestSnapshot
 - epaper_panel.cpp
-- KeyboardState
-- NetworkListStyle
-- StickyNoteState
+- keyboard_controller.cpp
+- device_status_service.cpp
+- VibeCardState
 - WifiPageState
-- RuntimeSnapshot
+- DrawSdStatus
 - RuntimeSnapshot
 - Input
-- ClampPositive
+- DrawVibeCard
 - details_page_runtime.cpp
 - EpaperPanelConfig
 - Referenz: Sicherheits-Härtung
 - PasswordInputState
-- UiRect
-- settings_page_runtime.cpp
+- SettingsPageState
+- notes_page_runtime.cpp
 - RenderGroup
 - pcf85063.cpp
 - Snapshot
 - local_ai_service.cpp
-- playback_service.cpp
+- StickyNoteState
 - BatteryStatus
 - Status
 - summarize_page_runtime.cpp
 - wifi_page_runtime.cpp
 - Select
 - dom.ts
-- DisplayTask
+- SummarizePageState
 - i2c_device.cc
-- esp_err_t
+- string
 - UiState
 - Ut
 - archive_portal.cpp
 - ActivateCallbacks
 - footer_runtime.cpp
 - common.sh
-- ui_refresh_runtime.cpp
+- RefreshRequest
 - DetailsPageState
 - AdvancedPageState
-- notes_page.cpp
+- NotesPageState
 - DrawStatusBar
 - DrawMenuToggle
 - device_sleep_runtime.cpp
 - vibe_check_page_runtime.cpp
 - Queue & Wartelisten-Architektur
 - Qmi8658Sample
-- advanced_page_runtime.cpp
+- sticky_note.cpp
 - ListItemStyle
 - FooterLayoutForScreen
 - Snapshot
@@ -139,20 +139,20 @@
 - dashboard_page_coordinator.cpp
 - check_plugin_compatibility.py
 - RecordingMetadata
-- MakeConsumedResult
+- FocusMoveOutcome
 - board_es8311_codec.cc
 - compilerOptions
 - compilerOptions
-- follow_up_page.cpp
+- FollowUpPageState
 - LockScreenState
-- string
+- SourceEntry
 - Snapshot
-- todos_page.cpp
+- TodosPageState
 - recording_service.cpp
 - page_input_runtime.cpp
 - app_console_commands.c
 - power_service.cpp
-- font_renderer.cpp
+- LineHeight
 - follow_up_page_runtime.cpp
 - recording_session_service.cpp
 - Gemini Service (auf diesem Branch abgelöst)
@@ -163,7 +163,7 @@
 - SaveResult
 - ImuSample
 - lock_screen.cpp
-- HandlePortalTimeSettingsPatch
+- timezone_service.cpp
 - DurationInput
 - FileUpload
 - uiHelpers.ts
@@ -174,13 +174,13 @@
 - ProgressBarStyle
 - index.ts
 - NavigationInputController
-- DrawDashboardPage
-- mutex
+- DashboardPageState
+- esp_log
 - CompletionBannerStyle
 - esp_timer
 - TextInputState
-- status_bar_runtime.cpp
-- NetworkItemState
+- CurrentDateStyle
+- DrawScrollContainer
 - JointTrackerCardStyle
 - CaptureTask
 - Button
@@ -190,7 +190,7 @@
 - Toggle
 - button_service.cpp
 - waveshare_board.cpp
-- Init
+- project_assets.cpp
 - KeyboardKeySpec
 - RovingFocus
 - ButtonStyle
@@ -205,7 +205,7 @@
 - WavHeader
 - WavHeader
 - transcription_service.cpp
-- cstring
+- system_sound_service_decoder.cc
 - PsramAllocator
 - esp_err_t
 - NetworkList
@@ -217,13 +217,13 @@
 - OTA-Workflow-Referenz
 - audio_settings_service.cpp
 - TagStyle
-- BadgeState
+- SegmentControlStyle
 - RuntimeSnapshot
 - BitmapFont
 - lock_screen_runtime.cpp
 - generate_epaper_fonts.py
 - TimelineEntry
-- SetRegisterBit
+- Qmi8658::ConfigAccelerometer
 - pe
 - nvs_open
 - providerKeys.ts
@@ -233,21 +233,21 @@
 - ESP-IDF-/Plugin-Kompatibilitätsnachweis (ESP-ADF, ESP-SR usw.)
 - MenuContainerStyle
 - todos_monkey.cpp
-- DashboardPageState
-- ListItemState
-- LoadCacheEntry
+- onboarding_page_runtime.cpp
+- getPowerChannelVoltage
+- string
 - Dt
 - ee
 - mn
 - he
-- ProjectPageFocus
+- DrawTextInput
 - RangeSlider
-- SystemSoundService
-- .valid
+- DrawListItemHeader
+- string
 - CarouselStyle
 - TimelineEntry
-- TodosPageCoordinator
-- string
+- Dependencies
+- MenuToggleStyle
 - Snapshot
 - gradualBlur.ts
 - ESP32-Firmware-Ingenieur
@@ -256,15 +256,15 @@
 - Followup App-Architektur
 - Snapshot
 - Followup Produktvorstellung
-- Wie das Sticky-Note-Gerät funktioniert
-- KeyboardActionResult
+- SelectInputState
+- DrawTag
 - ActivateCallbacks
-- ScanSnapshot
+- DrawToggle
 - summary_service.cpp
 - Kt
 - ESP32-Peripherie-Programmierung (ESP-IDF)
 - ActivateCallbacks
-- InputResult
+- ButtonIconStyle
 - duration.ts
 - Qmi8658::Initialize
 - CacheMetadata
@@ -287,7 +287,7 @@
 - SystemSoundServiceImpl::PlayCue
 - ESP32-Firmware-Engineering-Werte
 - ApplySettingsPatch
-- esp_log
+- display_flush_template.c
 - SelectedEntrySnapshot
 - archiv-zeigen.py
 - TimelineGroupHit
@@ -297,7 +297,7 @@
 - InterruptEvent
 - ScopedLogSilencer
 - ActivateCallbacks
-- esp_check
+- ListItemHeaderState
 - ActivateResult
 - ActivateCallbacks
 - ActivateResult
@@ -310,12 +310,12 @@
 - LoadClipContext
 - esp_heap_caps.h
 - ActivateCallbacks
-- task
+- esp_err_to_name
 - InteractiveTarget
 - SettingsSnapshot
 - PsramAllocator
-- MountCardLocked
-- string
+- VibeCardLayout
+- DisplayCommand
 - Auto Sleep
 - tsconfig.json
 - validate.sh
@@ -333,11 +333,11 @@
 - Result
 - Panic- und Log-Triage
 - ESP-IDF-Toolchain- und Shell-Einrichtung (ESP32/ESP-IDF)
-- GlyphBitmap
+- ScrollContainerState
 - PowerSnapshot
 - ESP32-Display- und Grafik-Validierung (ESP-IDF)
 - ESP32-Logging und Observability (ESP-IDF)
-- AdvanceToTagSelection
+- RtcStatus
 - EmbeddedImageAsset
 - string
 - TextResult
@@ -349,13 +349,13 @@
 - ActivateResult
 - vibe_check_page_interactions.cpp
 - main
-- NotesPageState
+- BuildGroups
 - ActivateResult
 - follow_up_page_interactions.cpp
 - ActivateResult
 - TimezoneInfo
 - notes_page_interactions.cpp
-- TodosPageState
+- DrawPortraitMonoAsset
 - Snapshot
 - ActivateResult
 - Skripte
@@ -363,7 +363,7 @@
 - AuthResult
 - ActivateResult
 - Result
-- DrawNetworkItem
+- Layout
 - SaveStoredUrls
 - SystemSoundServiceImpl::PlayCueNow
 - setInterruptImpl
@@ -371,40 +371,34 @@
 - StickyNoteItem
 - Layout
 - CachedCuePcm
-- KeyboardRowSpec
+- StorageStats
 - 420track-service-test.sh script
 - SaveCacheContext
-- BuildSnapshotLocked
-- string
+- summarize_page_interactions.cpp
+- NvsStore
 - SystemSoundService::PlayCue
 - todos_page_interactions.cpp
-- 420track-render-test.cpp
+- DrawJointTrackerCard
 - imkopfhaben-esp32 — Prüfprotokoll
-- NotesTimelineHit
-- CheckboxState
+- MenuToggleState
+- StickyNoteControlRects
 - abgleich
-- v0.1 — ruhiges Display (19.09.2026)
+- GetUiState
 - AuthTaskContext
-- RegisterPortalRoute
-- AutoSleepSettings
+- DeleteContext
+- RefreshBusyGuard
 - audio_settings_service.h
 - recording_archive_service.cpp
 - TimezoneAliasEntry
 - esp_err_to_name
-- button_icon.h
+- SetEventHandler
 - run.sh
-- Layout
-- ListRecordings
-- GetAutoSleepBlocker
-- ApplyWifiActivateResult
+- run_v3.sh
+- esp_err_t
+- FocusUpdateOutcome
 - getPowerOffSource
-- BuildWavHeaderPcm16Mono
-- RegisterPortalRoute
 - RefreshFromService
-- Task-Design-Patterns
-- button_service.h
-- RegisterRoute
-- OnSntpTimeSync
+- ButtonId
 - run_v2.sh
 
 ## God Nodes (most connected - your core abstractions)
@@ -422,95 +416,95 @@
 ## Surprising Connections (you probably didn't know these)
 - `Refresh-Verhalten des Panels` --references--> `DisplayTask()`  [INFERRED]
   docs/PRUEFUNG.md → components/display_service/display_service.cpp
+- `Bekannt, bewusst nicht gefixt (aus dem Review, Besitzer-Entscheidung)` --references--> `FindGlyph()`  [INFERRED]
+  docs/offene-punkte.md → components/epaper_ui/bitmap_font.cpp
 - ``components/sd_card`` --references--> `SdCardPins`  [INFERRED]
   docs/app-architecture.md → components/sd_card/include/sd_card.h
 - `Was tatsächlich verifiziert wurde (2026-09-01, auf Kraken)` --references--> `EstimateTokenCount()`  [INFERRED]
   docs/local-ai-service.md → components/summary_service/summary_service.cpp
-- `Nachtrag v2: grosses realistisches Startset (21.09.2026)` --references--> `SeedRealistic()`  [INFERRED]
-  docs/PRUEFUNG.md → tests/host_monkey/todos_monkey.cpp
 - ``components/board`` --references--> `Es8311Codec`  [INFERRED]
   docs/app-architecture.md → components/audio_hal/include/board_es8311_codec.h
 
 ## Import Cycles
 - None detected.
 
-## Communities (391 total, 22 thin omitted)
+## Communities (385 total, 24 thin omitted)
 
 ### Community 0 - "ButtonResult"
-Cohesion: 0.12
-Nodes (36): ButtonEventInfo, button, event, pressed_ms, ButtonEvent, ApplyAdvancedActivateResult(), ApplyDashboardActivateResult(), ApplyDetailsActivateResult() (+28 more)
+Cohesion: 0.14
+Nodes (38): ButtonEventInfo, button, event, pressed_ms, ButtonEvent, HandleButtonEvent(), IsNavigationMoveEvent(), ApplyAdvancedActivateResult() (+30 more)
 
 ### Community 1 - "wifi_service.cpp"
 Cohesion: 0.08
-Nodes (25): ClearSavedCredentials(), EventHandler, State, DisconnectFromNetwork(), EnterAccessPointMode(), Init(), IsConnected(), QueueTransition() (+17 more)
+Nodes (26): ClearSavedCredentials(), ConnectToNetwork(), EventHandler, DisconnectFromNetwork(), EnterAccessPointMode(), HandlePortalDisconnect(), Init(), IsConnected() (+18 more)
 
 ### Community 2 - "overlay_runtime.cpp"
 Cohesion: 0.05
 Nodes (88): CardModalPurpose, EmbeddedImageAsset, string, ToastState, body_text, close_button_focused, leading_icon, show_close_button (+80 more)
 
 ### Community 3 - "readRegister"
-Cohesion: 0.03
-Nodes (110): readRegister, writeRegister, disableChargerTerminationLimit, disableFastPowerOn, enableChargerTerminationLimit, getALDO1Voltage, getALDO2Voltage, getALDO3Voltage (+102 more)
+Cohesion: 0.04
+Nodes (95): readRegister, writeRegister, disableChargerTerminationLimit, disableFastPowerOn, enableChargerTerminationLimit, getBatfetDieOverTempLevel1, getBatteryParameter, getChargerConstantCurr (+87 more)
 
 ### Community 4 - "string"
-Cohesion: 0.12
-Nodes (36): Authenticate(), AuthenticationTask(), BuildChatCompletionRequestBody(), cJSON, RecordedClip, string, ExtractChatCompletionText(), FindModelInModelsResponse() (+28 more)
+Cohesion: 0.14
+Nodes (30): Authenticate(), AuthenticationTask(), BuildChatCompletionRequestBody(), cJSON, RecordedClip, string, ExtractChatCompletionText(), FindModelInModelsResponse() (+22 more)
 
 ### Community 5 - "Qmi8658"
 Cohesion: 0.03
 Nodes (86): EventCallback, FifoSampleCallback, InterruptCallback, IntPin, mutex, QueueHandle_t, TaskHandle_t, vector (+78 more)
 
-### Community 6 - "network_list.cpp"
-Cohesion: 0.13
-Nodes (38): NetworkListStatus, vector, NetworkListState, active, focus_ring_visible, focused, focused_network_index, networks (+30 more)
+### Community 6 - "UiRect"
+Cohesion: 0.06
+Nodes (74): NetworkListStatus, TypographyRole, vector, NetworkListState, active, focus_ring_visible, focused, focused_network_index (+66 more)
 
 ### Community 7 - "xpowers_axp2101_driver.cc"
 Cohesion: 0.05
 Nodes (78): getRegisterBit, clearProtectedChannel, getBatfetState, getChipModel, getChipNameImpl, getCurrentLimitStatus, getDC1LowVoltagePowerDownEn, getDC2LowVoltagePowerDownEn (+70 more)
 
 ### Community 8 - "esp_err"
-Cohesion: 0.14
-Nodes (7): button_service, display_service, esp_err, functional, ActivateCallbacks, dismiss, function
+Cohesion: 0.10
+Nodes (8): button_service, ctime, display_service, esp_err, functional, ActivateCallbacks, dismiss, function
 
 ### Community 9 - "Axp2101Driver"
-Cohesion: 0.06
-Nodes (72): setRegisterBit, Axp2101Driver, chip_model_, clrWatchdog, enableALDO1, enableALDO2, enableALDO3, enableALDO4 (+64 more)
+Cohesion: 0.04
+Nodes (119): clrRegisterBit, setRegisterBit, Axp2101Driver, chip_model_, clrWatchdog, disableALDO1, disableALDO2, disableALDO3 (+111 more)
 
-### Community 10 - "timezone_service.cpp"
-Cohesion: 0.10
-Nodes (31): cctype, EventHandler, nvs_handle_t, TimeSource, FindTimezoneByName(), Init(), LoadSettingsFromStorage(), LoadString() (+23 more)
+### Community 10 - "Notify"
+Cohesion: 0.20
+Nodes (12): FindTimezoneByName(), Notify(), PickDefaultNtpServer(), ResolveTimezoneAlias(), SetNetworkConnected(), ShouldSyncOnNetworkConnectedLocked(), SyncNow(), SyncWorker() (+4 more)
 
 ### Community 11 - ".IsEmpty"
-Cohesion: 0.05
-Nodes (72): string, TypographyRole, SelectItemState, checked, label_text, selected, SelectItemStyle, background_color (+64 more)
+Cohesion: 0.09
+Nodes (46): vector, SelectListState, active, focused, items, selected_item_index, SelectListStyle, focus_gap (+38 more)
 
 ### Community 12 - "display_service.cpp"
-Cohesion: 0.06
-Nodes (58): ApplyStartupSplash(), AssetPixelSet(), EmbeddedImageAsset, esp_err_t, OverlayRefreshPolicy, RefreshScope, ScreenId, DisplayCommand (+50 more)
+Cohesion: 0.11
+Nodes (64): ApplyAdvanced(), ApplyDetails(), ApplyFollowUp(), ApplyHomeScreen(), ApplyLockScreen(), ApplyNotes(), ApplyOnboarding(), ApplySettings() (+56 more)
 
 ### Community 13 - "device_sleep_service.cpp"
-Cohesion: 0.09
-Nodes (43): ActivitySource, BlockerProvider, ActionName(), ActivitySourceName(), ApplySettings(), BlockerReasonName(), BuildSnapshotLocked(), Action (+35 more)
+Cohesion: 0.06
+Nodes (60): ActivitySource, BlockerProvider, ActionName(), ActivitySourceName(), ApplySettings(), BlockerReasonName(), BuildSnapshotLocked(), Action (+52 more)
 
 ### Community 14 - "Axp2101"
-Cohesion: 0.05
-Nodes (61): Axp2101, Axp2101::Axp2101(), ClearIrqStatus, ConfigureInterruptPin, GetBatteryLevel, GetInterruptLevel, GetIrqStatus, GetTemperature (+53 more)
+Cohesion: 0.04
+Nodes (64): Axp2101, Axp2101::Axp2101(), ClearIrqStatus, ConfigureInterruptPin, GetBatteryLevel, GetInterruptLevel, GetIrqStatus, GetTemperature (+56 more)
 
-### Community 15 - "notes_page_runtime.cpp"
-Cohesion: 0.07
-Nodes (39): advanced_page, card_modal, details_page, keyboard, lock_screen, ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked() (+31 more)
+### Community 15 - "overlay_runtime.h"
+Cohesion: 0.10
+Nodes (24): advanced_page, card_modal, dashboard_page, follow_up_page, lock_screen, navigation_model, notes_page, onboarding_page (+16 more)
 
 ### Community 16 - "qmi8658.cc"
 Cohesion: 0.05
-Nodes (46): ReadRegs, ClearRegisterBit, DecodeFifoBuffer, ResolveFifoFrameBytes, esp_err_t, EventCallback, FifoSampleCallback, InterruptCallback (+38 more)
+Nodes (48): ReadRegs, ClearRegisterBit, SetRegisterBit, esp_err_t, EventCallback, FifoSampleCallback, InterruptCallback, Qmi8658::ClearRegisterBit() (+40 more)
 
 ### Community 17 - "VibeCardStyle"
 Cohesion: 0.06
 Nodes (32): TypographyRole, VibeCardStyle, active_focus_ring_color, background_color, body_color, body_line_gap, body_outline_color, body_outline_thickness (+24 more)
 
 ### Community 18 - "EpaperPanel"
-Cohesion: 0.06
-Nodes (59): EpaperPanel, CanPartialRefresh, config_, CopyFramebufferToPrevious, DeferredFlushPending, DisplayFullBase, HardwareReset, height_ (+51 more)
+Cohesion: 0.05
+Nodes (60): EpaperPanel, CanPartialRefresh, config_, CopyFramebufferToPrevious, DeferredFlushPending, DisplayFullBase, HardwareReset, height_ (+52 more)
 
 ### Community 19 - "usb_storage_backend.cpp"
 Cohesion: 0.20
@@ -521,12 +515,12 @@ Cohesion: 0.16
 Nodes (14): NavigationItemRole, NextPageIndex(), PreviousPageIndex(), ExitNetworkList, HasNetworks, InitializePasswordInput, IsPasswordInputFocused, IsRoleFocused (+6 more)
 
 ### Community 21 - "StickyNoteStyle"
-Cohesion: 0.06
-Nodes (52): TypographyRole, StickyNoteControlRects, close, next, prev, StickyNoteStyle, background_color, body_color (+44 more)
+Cohesion: 0.08
+Nodes (24): TypographyRole, StickyNoteStyle, background_color, body_color, body_line_gap, body_role, border_color, border_thickness (+16 more)
 
 ### Community 22 - "algorithm"
-Cohesion: 0.10
-Nodes (38): algorithm, BadgeBounds(), DrawBadge(), CompletionBannerBounds(), DrawCompletionBanner(), TextMaxWidth(), TextStartX(), string (+30 more)
+Cohesion: 0.08
+Nodes (41): algorithm, badge, BadgeBounds(), DrawBadge(), ButtonIconBounds(), DrawFn, DrawButtonIcon(), DrawOutlinedAsset() (+33 more)
 
 ### Community 23 - "le"
 Cohesion: 0.06
@@ -537,28 +531,28 @@ Cohesion: 0.06
 Nodes (34): _, an(), b, cn(), ct, dn(), en(), Et() (+26 more)
 
 ### Community 25 - "FollowUpPageCoordinator"
-Cohesion: 0.08
-Nodes (34): FollowUpPageState, navigation_focus_index, timeline, title_text, string, NavigationItemRole, string, TimelineEntry (+26 more)
+Cohesion: 0.09
+Nodes (32): EmbeddedImageAsset, NavigationItemRole, string, TimelineEntry, vector, EntryUnixSeconds(), FollowUpPageCoordinator, active_group_index_ (+24 more)
 
-### Community 26 - "clrRegisterBit"
-Cohesion: 0.06
-Nodes (47): clrRegisterBit, disableALDO1, disableALDO2, disableALDO3, disableALDO4, disableBatfetDieOverTempDetect, disableBattDetection, disableBattVoltageMeasure (+39 more)
+### Community 26 - "SummarizePageCoordinator"
+Cohesion: 0.12
+Nodes (23): kSegmentControlDefaultSegmentCount, NavigationItemRole, Snapshot, string, array, SummarizePageCoordinator, BuildContentText, BuildEmptyStateMessage (+15 more)
 
-### Community 27 - "LineHeight"
-Cohesion: 0.10
-Nodes (35): LineHeight(), TypographyRole, KeyboardStyle, border_color, border_thickness, field_gap, horizontal_padding, key_button (+27 more)
+### Community 27 - "KeyboardStyle"
+Cohesion: 0.11
+Nodes (19): TypographyRole, KeyboardStyle, border_color, border_thickness, field_gap, horizontal_padding, key_button, key_gap (+11 more)
 
 ### Community 28 - "VibeCheckPageCoordinator"
 Cohesion: 0.11
 Nodes (44): NavigationItemRole, string, vector, VibeCardActionSelection, FormatArchiveDateLabel(), FormatArchiveDurationLabel(), FormatArchiveTimeLabel(), string (+36 more)
 
 ### Community 29 - "VibeCheckPageState"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (25): string, VibeCheckPageState, card, message_text, navigation_focus_index, progress, title_text, BuildLayout() (+17 more)
 
 ### Community 30 - "cstdint"
-Cohesion: 0.05
-Nodes (36): badge, button, button_icon, checkbox, completion_banner, string, string_view, vector (+28 more)
+Cohesion: 0.06
+Nodes (26): button, button_icon, string, string_view, ButtonIconState, asset, selected, EmbeddedImageAsset (+18 more)
 
 ### Community 31 - "package.json"
 Cohesion: 0.05
@@ -569,95 +563,95 @@ Cohesion: 0.05
 Nodes (53): ref_assets_api_key_svg_raw, ref_assets_check_svg_raw, ref_assets_clock_svg_raw, ref_assets_followup_logo_svg_raw, ref_assets_wifi_1bar_svg_raw, ref_assets_wifi_2bar_svg_raw, ref_assets_wifi_3bar_svg_raw, ref_assets_wifi_4bar_svg_raw (+45 more)
 
 ### Community 33 - "storage_service.cpp"
-Cohesion: 0.15
-Nodes (36): BuildEventLocked(), CaptureNotificationLocked(), CompleteOperation(), esp_err_t, Event, EventHandler, Mode, Operation (+28 more)
+Cohesion: 0.14
+Nodes (41): IsCardInserted, mount_point_, BuildEventLocked(), CaptureNotificationLocked(), CompleteOperation(), esp_err_t, Event, EventHandler (+33 more)
 
 ### Community 34 - "types.ts"
 Cohesion: 0.09
 Nodes (40): fetchApiJson(), fetchAudioStatusJson(), fetchBootstrapJson(), fetchDisplayStatusJson(), fetchEffectsJson(), fetchLocalAiModuleJson(), fetchPortalJson(), fetchPowerRuntimeJson() (+32 more)
 
-### Community 35 - "TimelineListStyle"
-Cohesion: 0.05
-Nodes (43): TypographyRole, TimelineListStyle, active_focus_ring_color, empty_state_gap, empty_state_icon_color, empty_state_icon_size, empty_state_min_height, empty_state_role (+35 more)
+### Community 35 - "ClampPositive"
+Cohesion: 0.04
+Nodes (94): EmbeddedImageAsset, string, TypographyRole, TimelineGroupState, items, label_text, TimelineListState, active_group_index (+86 more)
 
 ### Community 36 - "Qmi8658::ConfigFifo"
-Cohesion: 0.14
-Nodes (31): AccelerometerEnabled, DisableAccelerometer, DisableGyroscope, DisableSyncSampleMode, EnableAccelerometer, EnableGyroscope, GyroscopeEnabled, MgToBytes (+23 more)
+Cohesion: 0.15
+Nodes (27): DecodeFifoBuffer, DisableAccelerometer, DisableGyroscope, DisableSyncSampleMode, EnableAccelerometer, EnableGyroscope, GyroscopeEnabled, MgToBytes (+19 more)
 
 ### Community 37 - "DetailsPageCoordinator"
 Cohesion: 0.07
 Nodes (34): DetailsPageSource, NavigationItemRole, string, vector, DetailsPageCoordinator, ApplyEntry, BuildState, EnterScrollContainer (+26 more)
 
 ### Community 38 - "LayoutGridStyle"
-Cohesion: 0.09
-Nodes (40): LayoutGrid, ColumnWidth, ContentBounds, IsValid, origin_x, origin_y, RowHeight, style (+32 more)
+Cohesion: 0.08
+Nodes (43): LayoutGrid, ColumnWidth, ContentBounds, IsValid, Measure, origin_x, origin_y, RowHeight (+35 more)
 
-### Community 39 - "timeline_list.cpp"
+### Community 39 - "KeyboardState"
 Cohesion: 0.14
-Nodes (31): BuildGroupViewportLayout(), BuildStickyFooterText(), CenterX(), CenterY(), ClampIndex(), ComputeRenderGroups(), ContentWidth(), pair (+23 more)
+Nodes (25): KeyboardLayoutKind, string, KeyboardState, input, layout, selected_key_index, shift_locked, title_text (+17 more)
 
 ### Community 40 - "SystemSoundServiceImpl"
 Cohesion: 0.09
 Nodes (23): array, atomic, AudioCodec, function, mutex, TaskHandle_t, SystemSoundServiceImpl, cache_mutex_ (+15 more)
 
-### Community 41 - "todos_page_coordinator.cpp"
-Cohesion: 0.14
-Nodes (17): EmbeddedImageAsset, RecordingTag, vector, EntryUnixSeconds(), IsTodoTag(), PinIcon(), BuildGroups, EnterFocusedGroup (+9 more)
+### Community 41 - "TodosPageCoordinator"
+Cohesion: 0.11
+Nodes (26): EmbeddedImageAsset, NavigationItemRole, string, TimelineEntry, PinIcon(), TodosPageCoordinator, active_group_index_, EnterFocusedGroup (+18 more)
 
 ### Community 42 - "OnboardingPageCoordinator"
-Cohesion: 0.06
-Nodes (40): EmbeddedFooterIconId, EmbeddedIconId, EmbeddedImageAsset, EmbeddedImageId, EmbeddedLogoId, GetFooterIcon(), GetIcon(), GetImage() (+32 more)
+Cohesion: 0.12
+Nodes (30): EmbeddedImageId, NavigationItemRole, OnboardingControl, OnboardingPageCoordinator, BuildState, ControlSelectable, EnsureFocusEnabled, focus_ (+22 more)
 
 ### Community 43 - "AudioCodec"
 Cohesion: 0.07
 Nodes (16): AudioCodec, EnableInput, EnableOutput, InputData, OutputData, Read, ReadInputSamples, rx_handle_ (+8 more)
 
-### Community 44 - "SegmentControlStyle"
-Cohesion: 0.05
-Nodes (58): string, SegmentControlState, active, focus_ring_visible, focused, labels, segment_count, selected_index (+50 more)
+### Community 44 - "SegmentControlState"
+Cohesion: 0.17
+Nodes (19): string, SegmentControlState, active, focus_ring_visible, focused, labels, segment_count, selected_index (+11 more)
 
 ### Community 45 - "UiState"
 Cohesion: 0.11
 Nodes (18): Event, state, ui_state, State, StopReason, UiState, armed, duration_ms (+10 more)
 
 ### Community 46 - "sd_card.cpp"
-Cohesion: 0.08
-Nodes (35): cerrno, ConfigureDetectPin, ConfigurePowerPin, IsMounted, SetPowerEnabled, SdCardFileEntry, is_directory, name (+27 more)
+Cohesion: 0.07
+Nodes (38): cerrno, ConfigureDetectPin, ConfigurePowerPin, IsMounted, Mount, SetPowerEnabled, Unmount, SdCardFileEntry (+30 more)
 
 ### Community 47 - "ActivateCallbacks"
 Cohesion: 0.18
 Nodes (11): ActivateCallbacks, force_refresh, show_advanced, show_home, show_timezone_modal, show_wifi, sync_time_now, toggle_access_point (+3 more)
 
 ### Community 48 - "Es8311Codec"
-Cohesion: 0.07
-Nodes (29): audio_codec_ctrl_if_t, audio_codec_data_if_t, audio_codec_gpio_if_t, audio_codec_if_t, Es8311Codec::Shutdown(), Es8311Codec::UpdateDeviceState(), Es8311Codec, channels_enabled_ (+21 more)
+Cohesion: 0.08
+Nodes (25): audio_codec_ctrl_if_t, audio_codec_data_if_t, audio_codec_gpio_if_t, audio_codec_if_t, Es8311Codec, channels_enabled_, codec_if_, ctrl_if_ (+17 more)
 
 ### Community 49 - "RenderSnapshot"
-Cohesion: 0.09
-Nodes (41): DeferredFlushDueLocked(), DrawAdvancedUnderlay(), DrawDetailsUnderlay(), DrawFollowUpUnderlay(), DrawHomeUnderlay(), DrawLockScreenUnderlay(), DrawNotesUnderlay(), DrawOnboardingUnderlay() (+33 more)
+Cohesion: 0.10
+Nodes (40): DrawAdvancedUnderlay(), DrawDetailsUnderlay(), DrawFollowUpUnderlay(), DrawHomeUnderlay(), DrawLockScreenUnderlay(), DrawNotesUnderlay(), DrawOnboardingUnderlay(), DrawSettingsUnderlay() (+32 more)
 
 ### Community 50 - "generate_epaper_assets_common.py"
 Cohesion: 0.17
 Nodes (25): argparse, pathlib, AssetGenError, BitmapAsset, build_bitmaps(), convert_png_to_bmp(), emit_byte_array(), pack_bitmap() (+17 more)
 
 ### Community 51 - "WelcomeMessageStyle"
-Cohesion: 0.06
-Nodes (47): CurrentDateBounds(), DrawCurrentDate(), CurrentDateState, date_text, weekday_text, CurrentDateStyle, date_role, segment_gap (+39 more)
+Cohesion: 0.09
+Nodes (32): string, TypographyRole, vector, WelcomeMessageState, current_date, info_lines, title_text, WelcomeMessageStyle (+24 more)
 
 ### Community 52 - "NavigationModel"
 Cohesion: 0.05
-Nodes (61): NavigationItemRole, NavigationItemSection, vector, NavigationItemDescriptor, item_index, role, section, NavigationModel (+53 more)
+Nodes (62): audio_settings_service, NavigationItemRole, NavigationItemSection, vector, NavigationItemDescriptor, item_index, role, section (+54 more)
 
 ### Community 53 - "SettingsPageCoordinator"
-Cohesion: 0.13
-Nodes (20): NavigationItemRole, ToggleVisualState, UiState, string, vector, SettingsPageCoordinator, BuildState, BuildToggleState (+12 more)
+Cohesion: 0.10
+Nodes (24): NavigationItemRole, ToggleVisualState, UiState, string, vector, SettingsPageCoordinator, BuildState, BuildToggleState (+16 more)
 
-### Community 54 - "AdvancedPageCoordinator"
-Cohesion: 0.14
-Nodes (15): audio_settings_service, AdvancedPageCoordinator, BuildState, focus_, IsRoleFocused, MoveFocus, navigation_model_, SetFocusIndex (+7 more)
+### Community 54 - "SelectItemStyle"
+Cohesion: 0.08
+Nodes (26): string, TypographyRole, SelectItemState, checked, label_text, selected, SelectItemStyle, background_color (+18 more)
 
 ### Community 55 - "Axp2101Common"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (26): Axp2101Common, addr_, begin, bus_handle_, end, has_init_, i2c_device_, readRegisterH5L8 (+18 more)
 
 ### Community 56 - "Config"
@@ -669,16 +663,16 @@ Cohesion: 0.17
 Nodes (12): ActivateCallbacks, force_refresh, open_password_keyboard, show_home, show_settings, start_network_scan, toggle_selected_network_connection, ApplySecondaryActivateResult() (+4 more)
 
 ### Community 58 - "ScrollContainerStyle"
-Cohesion: 0.06
-Nodes (54): string, TypographyRole, ScrollContainerState, active, content_text, empty_state_message, focus_ring_visible, focused (+46 more)
+Cohesion: 0.07
+Nodes (30): TypographyRole, ScrollContainerStyle, active_focus_ring_color, content_padding, empty_state_gap, empty_state_icon_color, empty_state_icon_size, empty_state_role (+22 more)
 
 ### Community 59 - "TextInputStyle"
 Cohesion: 0.10
 Nodes (21): TypographyRole, TextInputStyle, background_color, border_color, border_thickness, field_height, focus_gap, focus_gap_color (+13 more)
 
 ### Community 60 - "SdCard"
-Cohesion: 0.09
-Nodes (25): string, SdCard, AppendToFile, card_, CompareEntries, Format, GetDirectoryEntryCount, GetDirectoryFileCount (+17 more)
+Cohesion: 0.08
+Nodes (26): string, SdCard, AppendToFile, card_, CompareEntries, Format, GetDirectoryEntryCount, GetDirectoryFileCount (+18 more)
 
 ### Community 61 - "pn"
 Cohesion: 0.16
@@ -692,53 +686,53 @@ Nodes (10): ref_bottomsheet_css_raw, BOTTOM_SHEET_TEMPLATE, BottomSheet, defineB
 Cohesion: 0.21
 Nodes (20): ActionBoundsFromCard(), BuildButtonStyle(), CardHeight(), CardModalActionBounds(), CardModalActionCount(), CardModalPanelBounds(), ClampedActionCount(), array (+12 more)
 
-### Community 64 - "TimelineListState"
-Cohesion: 0.12
-Nodes (18): EmbeddedImageAsset, string, vector, TimelineGroupState, items, label_text, TimelineLayout, groups (+10 more)
+### Community 64 - "settings_page_runtime.cpp"
+Cohesion: 0.14
+Nodes (19): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildFooterProjectionState(), BuildFooterProjectionStateLocked(), BuildStateLocked(), ActivateResult, esp_err_t, FooterFocusItem (+11 more)
 
-### Community 65 - "esp_err_to_name"
-Cohesion: 0.07
-Nodes (68): esp_ota_ops, esp_partition, BuildRecordingSessionContext(), BuildRecordingTagSelectModalState(), BuildToast(), ButtonEventName(), ButtonIdName(), ConfirmPendingOtaImage() (+60 more)
+### Community 65 - "app_shell.cpp"
+Cohesion: 0.08
+Nodes (45): esp_ota_ops, esp_partition, BuildRecordingSessionContext(), BuildRecordingTagSelectModalState(), BuildToast(), ButtonEventName(), ButtonIdName(), ConfirmPendingOtaImage() (+37 more)
 
 ### Community 66 - "dashboard_page_runtime.cpp"
-Cohesion: 0.11
-Nodes (23): dashboard_page, ActivateFocusedItem(), AdjustJointCountForMove(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, esp_err_t, FooterFocusItem (+15 more)
+Cohesion: 0.12
+Nodes (22): ActivateFocusedItem(), AdjustJointCountForMove(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, esp_err_t, FooterFocusItem, RefreshMode (+14 more)
 
 ### Community 67 - "todos_page_runtime.cpp"
-Cohesion: 0.10
-Nodes (30): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildFooterProjectionState(), BuildFooterProjectionStateLocked(), BuildStateLocked(), ConsumePendingViewDetails(), ActivateResult, esp_err_t (+22 more)
+Cohesion: 0.11
+Nodes (29): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildFooterProjectionState(), BuildFooterProjectionStateLocked(), BuildStateLocked(), ConsumePendingViewDetails(), ActivateResult, esp_err_t (+21 more)
 
 ### Community 68 - "ToggleStyle"
-Cohesion: 0.07
-Nodes (28): TypographyRole, MenuToggleStyle, background_color, border_color, bottom_border_thickness, control_gap, height, horizontal_padding (+20 more)
+Cohesion: 0.12
+Nodes (16): ToggleStyle, focus_gap, focus_gap_color, focus_ring_color, focus_ring_thickness, height, thumb_border_thickness, thumb_inset (+8 more)
 
 ### Community 69 - "RequestSnapshot"
 Cohesion: 0.08
 Nodes (27): CacheEntrySnapshot, available, metadata, text, Event, snapshot, string, SummaryKind (+19 more)
 
 ### Community 70 - "epaper_panel.cpp"
-Cohesion: 0.14
+Cohesion: 0.15
 Nodes (18): esp_err_t, EpaperPanel::HardwareReset(), EpaperPanel::InitGpio(), EpaperPanel::Initialize(), EpaperPanel::InitSpiPort(), EpaperPanel::ReadBusy(), EpaperPanel::SendCommand(), EpaperPanel::SendCommandWithData() (+10 more)
 
-### Community 71 - "KeyboardState"
-Cohesion: 0.14
-Nodes (20): ClampSelection, KeyboardLayoutKind, string, KeyboardState, input, layout, selected_key_index, shift_locked (+12 more)
+### Community 71 - "keyboard_controller.cpp"
+Cohesion: 0.10
+Nodes (27): KeyboardIntent, KeyboardActionResult, intent, state_changed, text_changed, KeyboardController, ActivateFocusedKey, ActivateFocusedKeyDouble (+19 more)
 
-### Community 72 - "NetworkListStyle"
-Cohesion: 0.06
-Nodes (31): TypographyRole, NetworkListStyle, active_focus_ring_color, empty_state_gap, empty_state_icon_color, empty_state_icon_size, empty_state_role, empty_state_stroke_thickness (+23 more)
+### Community 72 - "device_status_service.cpp"
+Cohesion: 0.18
+Nodes (18): cJSON, esp_err_t, esp_http_client_event_t, Snapshot, string, DeriveBrainUrls(), FetchBrainStatus(), GetSnapshot() (+10 more)
 
-### Community 73 - "StickyNoteState"
-Cohesion: 0.05
-Nodes (37): EmbeddedImageAsset, string, ListItemHeaderState, icon_asset, minute_seconds_text, selected, tag_icon_asset, tag_text (+29 more)
+### Community 73 - "VibeCardState"
+Cohesion: 0.12
+Nodes (15): EmbeddedImageAsset, string, VibeCardActionSelection, VibeCardFooterState, selected_action, VibeCardState, body_text, empty (+7 more)
 
 ### Community 74 - "WifiPageState"
-Cohesion: 0.22
-Nodes (19): string, WifiPageState, connect_button, navigation_focus_index, network_list, password_input, scan_button, title_text (+11 more)
+Cohesion: 0.16
+Nodes (24): string, WifiPageState, connect_button, navigation_focus_index, network_list, password_input, scan_button, title_text (+16 more)
 
-### Community 75 - "RuntimeSnapshot"
-Cohesion: 0.08
-Nodes (27): Event, action, reason, snapshot, Action, BlockerReason, Stage, TransitionReason (+19 more)
+### Community 75 - "DrawSdStatus"
+Cohesion: 0.16
+Nodes (18): string, SdStatusState, free_space_text, has_sd_card, used_percent, SdStatusStyle, gap, icon_size (+10 more)
 
 ### Community 76 - "RuntimeSnapshot"
 Cohesion: 0.20
@@ -748,13 +742,13 @@ Nodes (10): TimeSource, RuntimeSnapshot, clock_enabled, current_date, current_ti
 Cohesion: 0.10
 Nodes (10): ref_assets_hide_svg_raw, ref_assets_show_svg_raw, ref_input_css_raw, defaultInputType(), defineInput(), Input, INPUT_TEMPLATE, InputVariant (+2 more)
 
-### Community 78 - "ClampPositive"
-Cohesion: 0.04
-Nodes (93): ButtonIconBounds(), DrawFn, DrawButtonIcon(), DrawOutlinedAsset(), CheckboxBounds(), DrawFn, EmbeddedImageAsset, DrawCheckbox() (+85 more)
+### Community 78 - "DrawVibeCard"
+Cohesion: 0.18
+Nodes (19): ComputeLayout(), DrawFn, string, TypographyRole, vector, VibeCardActionSelection, DrawOutlinedText(), DrawVibeCard() (+11 more)
 
 ### Community 79 - "details_page_runtime.cpp"
 Cohesion: 0.10
-Nodes (20): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, DetailsPageSource, esp_err_t, FooterFocusItem, RefreshMode (+12 more)
+Nodes (20): details_page, ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, DetailsPageSource, esp_err_t, FooterFocusItem (+12 more)
 
 ### Community 80 - "EpaperPanelConfig"
 Cohesion: 0.11
@@ -766,15 +760,15 @@ Nodes (30): Assert-Verhalten, Binärdateien für die Werksfertigung vorab versch
 
 ### Community 82 - "PasswordInputState"
 Cohesion: 0.14
-Nodes (23): KeyboardInputSubmitStyle, string, PasswordInputState, active, cursor_index, focused, label_text, max_length (+15 more)
+Nodes (22): KeyboardInputSubmitStyle, string, PasswordInputState, active, cursor_index, focused, label_text, max_length (+14 more)
 
-### Community 83 - "UiRect"
-Cohesion: 0.06
-Nodes (55): string_view, ToggleVisualState, MenuToggleState, label_text, toggle_state, UiRect, height, width (+47 more)
+### Community 83 - "SettingsPageState"
+Cohesion: 0.12
+Nodes (23): string_view, SettingsPageState, access_point_toggle, advanced_button, navigation_focus_index, playback_toggle, sync_now_button, timezone (+15 more)
 
-### Community 84 - "settings_page_runtime.cpp"
-Cohesion: 0.06
-Nodes (52): Coordinator, ApplyPrimaryActivateResult(), ActivateCallbacks, ActivateResult, HandlePrimaryActivate(), BuildFooterProjectionState(), BuildFooterProjectionStateLocked(), BuildFooterProjectionState() (+44 more)
+### Community 84 - "notes_page_runtime.cpp"
+Cohesion: 0.05
+Nodes (65): Coordinator, ActivateFocusedItem(), AdjustVolumeForMove(), AdvanceInteractionGenerationLocked(), BuildFooterProjectionState(), BuildFooterProjectionStateLocked(), BuildStateLocked(), ActivateResult (+57 more)
 
 ### Community 85 - "RenderGroup"
 Cohesion: 0.08
@@ -789,28 +783,28 @@ Cohesion: 0.07
 Nodes (27): Event, snapshot, BlockedReason, Phase, StopReason, string, Snapshot, allowed (+19 more)
 
 ### Community 88 - "local_ai_service.cpp"
-Cohesion: 0.23
-Nodes (23): ApplySettingsPatch(), BeginAuthentication(), BuildSnapshotLocked(), ClearLastErrorLocked(), CompleteAuthentication(), EventHandler, Result, UrlSource (+15 more)
-
-### Community 89 - "playback_service.cpp"
 Cohesion: 0.21
-Nodes (12): BeginPlayback(), AudioCodec, esp_err_t, RecordedClipPtr, IsPlaying(), PlayClip(), PlayFile(), PlayingGuard (+4 more)
+Nodes (27): cctype, ApplySettingsPatch(), BeginAuthentication(), BuildSnapshotLocked(), ClearLastErrorLocked(), CompleteAuthentication(), Result, UrlSource (+19 more)
+
+### Community 89 - "StickyNoteState"
+Cohesion: 0.12
+Nodes (18): StickyNoteControl, string, StickyNoteState, active_index, body_text, date_text, header, scroll_active (+10 more)
 
 ### Community 90 - "BatteryStatus"
 Cohesion: 0.08
 Nodes (24): BatteryStatus, available, average_current_ma, btp_charge_set, btp_discharge_set, btp_thresholds_available, current_ma, cycle_count (+16 more)
 
 ### Community 91 - "Status"
-Cohesion: 0.10
-Nodes (21): ChargeState, RtcStatus, alarm_flag, alarm_interrupt_enabled, available, control_status_2, timer_flag, timer_interrupt_enabled (+13 more)
+Cohesion: 0.14
+Nodes (14): ChargeState, Status, battery, charge_state, charger_enabled, initialized, power_input_raw_average, power_input_raw_max (+6 more)
 
 ### Community 92 - "summarize_page_runtime.cpp"
-Cohesion: 0.15
-Nodes (19): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, esp_err_t, FooterFocusItem, RefreshMode, Snapshot (+11 more)
+Cohesion: 0.08
+Nodes (34): local_ai_service, BuildState(), BuildTimeText(), BuildWifiStatus(), esp_err_t, RefreshMode, string, UiState (+26 more)
 
 ### Community 93 - "wifi_page_runtime.cpp"
-Cohesion: 0.16
-Nodes (24): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), CommitNetworkListSelectionAndExit(), ActivateResult, esp_err_t, FooterFocusItem, KeyboardIntent (+16 more)
+Cohesion: 0.17
+Nodes (23): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), CommitNetworkListSelectionAndExit(), ActivateResult, esp_err_t, FooterFocusItem, KeyboardIntent (+15 more)
 
 ### Community 94 - "Select"
 Cohesion: 0.11
@@ -820,29 +814,29 @@ Nodes (6): ref_assets_expand_svg_raw, ref_select_css_raw, defineSelect(), Select
 Cohesion: 0.15
 Nodes (20): createPortalDom(), getRequiredElement(), PortalDom, bindPortalEvents(), BindPortalEventsDeps, PortalEventControllers, PortalEventHelpers, runWithButtonFocus() (+12 more)
 
-### Community 96 - "DisplayTask"
-Cohesion: 0.44
-Nodes (23): ApplyAdvanced(), ApplyDetails(), ApplyFollowUp(), ApplyHomeScreen(), ApplyLockScreen(), ApplyNotes(), ApplyOnboarding(), ApplySettings() (+15 more)
+### Community 96 - "SummarizePageState"
+Cohesion: 0.20
+Nodes (17): string, SummarizePageState, get_summary_button, navigation_focus_index, scroll_container, segment_control, title_text, BuildLayout() (+9 more)
 
 ### Community 97 - "i2c_device.cc"
-Cohesion: 0.12
-Nodes (21): esp_err_t, i2c_master_bus_handle_t, I2cDevice::I2cDevice(), I2cDevice::ReadBytes(), I2cDevice::ReadReg(), I2cDevice::ReadRegOrDie(), I2cDevice::ReadRegs(), I2cDevice::WriteBytes() (+13 more)
+Cohesion: 0.11
+Nodes (22): esp_err_t, i2c_master_bus_handle_t, I2cDevice::I2cDevice(), I2cDevice::ReadBytes(), I2cDevice::ReadReg(), I2cDevice::ReadRegOrDie(), I2cDevice::ReadRegs(), I2cDevice::WriteBytes() (+14 more)
 
-### Community 98 - "esp_err_t"
-Cohesion: 0.22
-Nodes (19): ArchiveMetadata, CandidateBasePaths(), array, esp_err_t, FileModifiedSeconds(), JoinPath(), ListEntriesInDirectory(), ListEntriesOnMountedFilesystem() (+11 more)
+### Community 98 - "string"
+Cohesion: 0.26
+Nodes (17): ArchiveMetadata, CandidateBasePaths(), array, string, FormatLocalDate(), GenerateRecordingId(), LoadClipOnMountedFilesystem(), LogFileStat() (+9 more)
 
 ### Community 99 - "UiState"
-Cohesion: 0.12
-Nodes (17): Event, detail, state, ui_state, State, string, UiState, access_point_mode (+9 more)
+Cohesion: 0.07
+Nodes (29): Event, detail, state, ui_state, esp_err_t, State, string, vector (+21 more)
 
 ### Community 100 - "Ut"
 Cohesion: 0.14
 Nodes (3): Ft(), H(), Ut
 
 ### Community 101 - "archive_portal.cpp"
-Cohesion: 0.18
-Nodes (22): archive_portal, AppendCacheEntry(), AppendMetadata(), cJSON, esp_err_t, httpd_handle_t, httpd_req_t, httpd_uri_t (+14 more)
+Cohesion: 0.19
+Nodes (21): archive_portal, AppendCacheEntry(), AppendMetadata(), cJSON, esp_err_t, httpd_handle_t, httpd_req_t, httpd_uri_t (+13 more)
 
 ### Community 102 - "ActivateCallbacks"
 Cohesion: 0.20
@@ -856,37 +850,37 @@ Nodes (30): ActivateHandler, AdvanceInteractionGenerationLocked(), ApplyProjecte
 Cohesion: 0.21
 Nodes (16): build.sh script, detect_port(), ensure_target(), log(), os_name(), print_shell_setup_hint(), read_sdkconfig_target(), run_idf() (+8 more)
 
-### Community 105 - "ui_refresh_runtime.cpp"
-Cohesion: 0.18
-Nodes (21): ApplyCallback, AppendSource(), esp_err_t, OverlayRefreshPolicy, RefreshMode, Init(), IsInitialized(), PendingSurface (+13 more)
+### Community 105 - "RefreshRequest"
+Cohesion: 0.15
+Nodes (21): ApplyCallback, RefreshMode, RefreshScope, RefreshRequest, refresh_mode, scope, esp_err_t, OverlayRefreshPolicy (+13 more)
 
 ### Community 106 - "DetailsPageState"
-Cohesion: 0.15
-Nodes (20): BuildLayout(), ButtonVariant, DrawDetailsPage(), FooterTop(), HeaderStyle(), HitTestDetailsBackButton(), HitTestDetailsScrollContainer(), HitTestDetailsTranscribeButton() (+12 more)
+Cohesion: 0.10
+Nodes (27): BuildLayout(), ButtonVariant, DrawDetailsPage(), FooterTop(), HeaderStyle(), HitTestDetailsBackButton(), HitTestDetailsScrollContainer(), HitTestDetailsTranscribeButton() (+19 more)
 
 ### Community 107 - "AdvancedPageState"
-Cohesion: 0.07
-Nodes (41): AdvancedPageItemId, AdvancedPageItemBounds(), AdvancedPageItemVisualBounds(), BuildLayout(), DrawAdvancedPage(), HitTestAdvancedPageItem(), Layout, enable_otg_button (+33 more)
+Cohesion: 0.14
+Nodes (21): AdvancedPageItemId, AdvancedPageItemBounds(), AdvancedPageItemVisualBounds(), BuildLayout(), DrawAdvancedPage(), HitTestAdvancedPageItem(), Layout, enable_otg_button (+13 more)
 
-### Community 108 - "notes_page.cpp"
-Cohesion: 0.36
-Nodes (9): BuildLayout(), DrawNotesPage(), FooterTop(), HitTestNotesTimeline(), Layout, heading, timeline, PageWidth() (+1 more)
+### Community 108 - "NotesPageState"
+Cohesion: 0.13
+Nodes (20): string, NotesPageState, navigation_focus_index, timeline, title_text, NotesTimelineHit, group_index, item_index (+12 more)
 
 ### Community 109 - "DrawStatusBar"
 Cohesion: 0.20
 Nodes (21): AssetPixelSet(), CenterY(), BatteryStatus, DrawFn, EmbeddedImageAsset, string_view, TypographyRole, WifiStatus (+13 more)
 
 ### Community 110 - "DrawMenuToggle"
-Cohesion: 0.15
-Nodes (22): string, string_view, TypographyRole, DrawMenuToggle(), FitLabelCached(), FitLabelRole(), LabelFitCache, fitted_text (+14 more)
+Cohesion: 0.22
+Nodes (13): string, string_view, TypographyRole, DrawMenuToggle(), FitLabelCached(), FitLabelRole(), LabelFitCache, fitted_text (+5 more)
 
 ### Community 111 - "device_sleep_runtime.cpp"
-Cohesion: 0.16
-Nodes (26): AbortLightSleepEntry(), ArmLightSleepGpioWake(), ArmPowerButtonWakeGesture(), AutoSleepTask(), ButtonEventName(), ConfigurePowerButtonWakeInput(), ConsumeWakeOnlyPowerButtonEvent(), ButtonEvent (+18 more)
+Cohesion: 0.12
+Nodes (32): AbortLightSleepEntry(), ArmLightSleepGpioWake(), ArmPowerButtonWakeGesture(), AutoSleepSettings, display_sleep_timeout_seconds, enabled, interaction_wake_enabled, light_sleep_timeout_seconds (+24 more)
 
 ### Community 112 - "vibe_check_page_runtime.cpp"
-Cohesion: 0.06
-Nodes (36): climits, atomic, string, PlaybackWorker(), PlayFileAsync(), ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked() (+28 more)
+Cohesion: 0.15
+Nodes (19): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, esp_err_t, FooterFocusItem, RefreshMode, DeleteCurrentIdea() (+11 more)
 
 ### Community 113 - "Queue & Wartelisten-Architektur"
 Cohesion: 0.07
@@ -896,29 +890,29 @@ Nodes (27): 1. summary_service: FreeRTOS Queue Model, 2. transcription_service: 
 Cohesion: 0.12
 Nodes (18): Command, DecodeStatus, GetInterrupt2Level, interrupt2_callback_, ReadFromFifo, ReadStatus0, ReadStatus1, ReadStatusInt (+10 more)
 
-### Community 115 - "advanced_page_runtime.cpp"
-Cohesion: 0.12
-Nodes (18): ActivateFocusedItem(), AdjustVolumeForMove(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, esp_err_t, FooterFocusItem, RefreshMode (+10 more)
+### Community 115 - "sticky_note.cpp"
+Cohesion: 0.18
+Nodes (18): BodyRegion(), ComputeLayout(), array, StickyNoteControl, FooterButtonSize(), FooterHeight(), HeaderHeight(), HitTestStickyNoteControl() (+10 more)
 
 ### Community 116 - "ListItemStyle"
-Cohesion: 0.07
-Nodes (27): TypographyRole, ListItemStyle, accessory_gap, actions_background_color, actions_border_color, actions_border_thickness, actions_button, actions_gap (+19 more)
+Cohesion: 0.04
+Nodes (57): EmbeddedImageAsset, string, TypographyRole, ListItemAccessoryState, checked, icon_asset, kind, ListItemActionsState (+49 more)
 
 ### Community 117 - "FooterLayoutForScreen"
-Cohesion: 0.28
-Nodes (20): DetailsPageSource, esp_err_t, FooterFocusItem, RefreshMode, string, FooterLayoutForScreen(), HandleDashboardMenuItem(), HandleDetailsBackIfRequested() (+12 more)
+Cohesion: 0.24
+Nodes (23): DetailsPageSource, esp_err_t, FooterFocusItem, RefreshMode, string, FooterLayoutForScreen(), HandleDashboardMenuItem(), HandleDetailsBackIfRequested() (+15 more)
 
 ### Community 118 - "Snapshot"
-Cohesion: 0.10
-Nodes (20): Event, snapshot, esp_err_t, Mode, Operation, OperationPhase, Snapshot, initialized (+12 more)
+Cohesion: 0.13
+Nodes (15): Event, snapshot, esp_err_t, Mode, Operation, OperationPhase, Snapshot, initialized (+7 more)
 
 ### Community 119 - "TimeInputState"
 Cohesion: 0.15
 Nodes (18): string, TimeInputState, active, cursor_index, focused, max_length, placeholder_text, show_cursor (+10 more)
 
 ### Community 120 - "dashboard_page_coordinator.cpp"
-Cohesion: 0.06
-Nodes (50): cJSON, esp_err_t, esp_http_client_event_t, Snapshot, string, DeriveBrainUrls(), FetchBrainStatus(), GetSnapshot() (+42 more)
+Cohesion: 0.08
+Nodes (33): Startseite: Sprueche durch Kennzahlen ersetzt (19.09.2026), esp_random, BuildInfoLines(), NavigationItemRole, Snapshot, string, vector, DashboardPageCoordinator (+25 more)
 
 ### Community 121 - "check_plugin_compatibility.py"
 Cohesion: 0.18
@@ -928,13 +922,13 @@ Nodes (24): adf_check(), CheckResult, cross_stack_check(), detect_used_plugins()
 Cohesion: 0.17
 Nodes (12): RecordingMetadata, completed, created_local_date, created_unix_seconds, duration_ms, follow_up, follow_up_completed, has_transcript (+4 more)
 
-### Community 123 - "MakeConsumedResult"
-Cohesion: 0.24
-Nodes (21): FocusMoveOutcome, apply_page_state, handled, play_navigation_cue, sync_footer_projection, ApplyAdvancedMoveResult(), ApplyDashboardMoveResult(), ApplyDetailsMoveResult() (+13 more)
+### Community 123 - "FocusMoveOutcome"
+Cohesion: 0.07
+Nodes (36): FeedbackCue, InputResult, consumed, feedback_cue, play_feedback, request_exit_usb_mode, request_format_sd_card, request_shutdown (+28 more)
 
 ### Community 124 - "board_es8311_codec.cc"
-Cohesion: 0.12
-Nodes (11): board_es8311_codec, cassert, gpio_num_t, Es8311Codec::CreateDuplexChannels(), Es8311Codec::EnableInput(), Es8311Codec::EnableOutput(), Es8311Codec::Es8311Codec(), CreateDuplexChannels (+3 more)
+Cohesion: 0.11
+Nodes (15): board_es8311_codec, cassert, gpio_num_t, Es8311Codec::CreateDuplexChannels(), Es8311Codec::EnableInput(), Es8311Codec::EnableOutput(), Es8311Codec::Es8311Codec(), Es8311Codec::Shutdown() (+7 more)
 
 ### Community 125 - "compilerOptions"
 Cohesion: 0.10
@@ -944,33 +938,33 @@ Nodes (19): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, moduleResolution, noEmit (+11 more)
 
-### Community 127 - "follow_up_page.cpp"
-Cohesion: 0.31
-Nodes (10): BuildLayout(), DrawFollowUpPage(), FooterTop(), HitTestFollowUpTimeline(), Layout, heading, timeline, PageWidth() (+2 more)
+### Community 127 - "FollowUpPageState"
+Cohesion: 0.15
+Nodes (17): BuildLayout(), DrawFollowUpPage(), FooterTop(), HitTestFollowUpTimeline(), Layout, heading, timeline, PageWidth() (+9 more)
 
 ### Community 128 - "LockScreenState"
-Cohesion: 0.33
-Nodes (6): string, LockScreenState, date_text, hour_text, minute_text, weekday_text
+Cohesion: 0.29
+Nodes (7): SetLockScreenState(), string, LockScreenState, date_text, hour_text, minute_text, weekday_text
 
-### Community 129 - "string"
-Cohesion: 0.20
-Nodes (26): AppendSourceEntriesToPrompt(), BuildChunkGroups(), BuildChunkSummaryPrompt(), BuildPromptText(), BuildRollupPrompt(), BuildSummaryInstructionText(), CountPromptTokens(), string (+18 more)
+### Community 129 - "SourceEntry"
+Cohesion: 0.19
+Nodes (22): AppendSourceEntriesToPrompt(), BuildChunkGroups(), BuildChunkSummaryPrompt(), BuildRollupPrompt(), CountPromptTokens(), vector, FindSplitOffset(), GenerateChunkedSummary() (+14 more)
 
 ### Community 130 - "Snapshot"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (21): Snapshot, brain_host, brain_http_status, brain_ip, brain_reachable, brain_uptime_seconds, brain_uptime_valid, cpu_load_percent (+13 more)
 
-### Community 131 - "todos_page.cpp"
-Cohesion: 0.27
-Nodes (11): BuildLayout(), DrawTodosPage(), FooterTop(), HitTestTodosTimeline(), Layout, heading, timeline, PageWidth() (+3 more)
+### Community 131 - "TodosPageState"
+Cohesion: 0.16
+Nodes (16): string, TodosPageState, navigation_focus_index, timeline, title_text, BuildLayout(), DrawTodosPage(), FooterTop() (+8 more)
 
 ### Community 132 - "recording_service.cpp"
 Cohesion: 0.14
 Nodes (16): ArmPreviewTimerCallback(), BuildWavHeader(), ChunkList, EventHandler, RecordedClip, GetRecordedClip(), PathUsesStorageMount(), PrerollCapacitySamples() (+8 more)
 
 ### Community 133 - "page_input_runtime.cpp"
-Cohesion: 0.09
-Nodes (39): RefreshMode, RefreshScope, RefreshRequest, refresh_mode, scope, FocusUpdateOutcome, apply_page_state, handled (+31 more)
+Cohesion: 0.16
+Nodes (20): ApplyAdvancedPageAndFooterDisplayState(), ApplyDashboardPageAndFooterDisplayState(), ApplyDetailsFocusUpdate(), ApplyDetailsMoveResult(), ApplyDetailsPageAndFooterDisplayState(), ApplyDetailsPageStateUpdate(), ApplyFollowUpPageAndFooterDisplayState(), ApplyNotesPageAndFooterDisplayState() (+12 more)
 
 ### Community 134 - "app_console_commands.c"
 Cohesion: 0.12
@@ -978,19 +972,19 @@ Nodes (19): app_console_register_commands(), app_console_settings_get(), app_con
 
 ### Community 135 - "power_service.cpp"
 Cohesion: 0.20
-Nodes (20): ClearRtcInterruptsForShutdown(), esp_err_t, esp_sleep_wakeup_cause_t, tm, EnablePowerHold(), EnsureRtc(), FillPowerSnapshot(), FillRtcStatus() (+12 more)
+Nodes (20): ChargeStateName(), ClearRtcInterruptsForShutdown(), esp_err_t, esp_sleep_wakeup_cause_t, tm, EnablePowerHold(), EnsureRtc(), FillRtcStatus() (+12 more)
 
-### Community 136 - "font_renderer.cpp"
-Cohesion: 0.18
-Nodes (15): string_view, TypographyRole, DrawText(), FontForRole(), FontSelection, font, line_height_override, scale_denominator (+7 more)
+### Community 136 - "LineHeight"
+Cohesion: 0.19
+Nodes (17): string_view, TypographyRole, DrawText(), FontForRole(), FontSelection, font, line_height_override, scale_denominator (+9 more)
 
 ### Community 137 - "follow_up_page_runtime.cpp"
-Cohesion: 0.10
-Nodes (29): follow_up_page, ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildFooterProjectionState(), BuildFooterProjectionStateLocked(), BuildStateLocked(), ConsumePendingViewDetails(), ActivateResult (+21 more)
+Cohesion: 0.12
+Nodes (24): ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), ConsumePendingViewDetails(), ActivateResult, esp_err_t, FooterFocusItem, RefreshMode, string (+16 more)
 
 ### Community 138 - "recording_session_service.cpp"
-Cohesion: 0.14
-Nodes (20): BeginArchivedTranscription(), Event, EventHandler, Phase, Snapshot, string, UiState, GetSnapshot() (+12 more)
+Cohesion: 0.05
+Nodes (67): esp_err_t, FeedbackEvent, SoundCue, CueForEvent(), Init(), Play(), Context, lock_screen_active (+59 more)
 
 ### Community 139 - "Gemini Service (auf diesem Branch abgelöst)"
 Cohesion: 0.10
@@ -1001,12 +995,12 @@ Cohesion: 0.24
 Nodes (17): createWiFiController(), applyPortalStatus(), checkStatus(), connect(), disconnect(), handleConnectAction(), handleListboxKeyDown(), isSelectedConnected() (+9 more)
 
 ### Community 141 - "HandlePortalSettingsPatch"
-Cohesion: 0.29
-Nodes (15): AppendSnapshot(), esp_err_t, esp_http_client_event_t, httpd_req_t, SettingsPatch, Snapshot, GetSnapshot(), HandlePortalRuntimeGet() (+7 more)
+Cohesion: 0.20
+Nodes (19): AppendSnapshot(), esp_err_t, esp_http_client_event_t, httpd_handle_t, httpd_req_t, httpd_uri_t, SettingsPatch, Snapshot (+11 more)
 
 ### Community 142 - "joint_tracker_service.cpp"
-Cohesion: 0.17
-Nodes (22): nvs_handle_t, vector, Decrement(), EnsureLoadedLocked(), GetDailyGoal(), GetHistory(), GetTodayCount(), HeuteAlsTag() (+14 more)
+Cohesion: 0.20
+Nodes (18): vector, Decrement(), EnsureLoadedLocked(), GetDailyGoal(), GetHistory(), GetTodayCount(), HeuteAlsTag(), Increment() (+10 more)
 
 ### Community 143 - "LVGL + ESP-IDF Referenz"
 Cohesion: 0.08
@@ -1024,9 +1018,9 @@ Nodes (18): ImuSample, accel_x_g, accel_y_g, accel_z_g, all_ones_count, gyro_x_d
 Cohesion: 0.18
 Nodes (23): AssetPixelSet(), CenterY(), BatteryStatus, DrawFn, EmbeddedImageAsset, string, string_view, TypographyRole (+15 more)
 
-### Community 147 - "HandlePortalTimeSettingsPatch"
-Cohesion: 0.24
-Nodes (16): AppendRuntime(), AppendSnapshot(), cJSON, esp_err_t, httpd_req_t, vector, HandlePortalTimeRuntime(), HandlePortalTimeSettings() (+8 more)
+### Community 147 - "timezone_service.cpp"
+Cohesion: 0.11
+Nodes (34): AppendRuntime(), AppendSnapshot(), BuildSnapshotLocked(), cJSON, esp_err_t, EventHandler, httpd_handle_t, httpd_req_t (+26 more)
 
 ### Community 148 - "DurationInput"
 Cohesion: 0.15
@@ -1037,24 +1031,24 @@ Cohesion: 0.15
 Nodes (15): ModuleId, buildTimezoneLabelMap(), createCardNotifier(), createLiveRegionNotifier(), delayMs(), formatTimezoneLabel(), getTimezoneCityLabel(), getTimezoneFallbackLabel() (+7 more)
 
 ### Community 151 - "GlobalFooterState"
-Cohesion: 0.08
-Nodes (51): BuildFooterButtonStyle(), BuildGrid(), BuildMicStyle(), array, EmbeddedImageAsset, DrawGlobalFooter(), ExpandTouchBounds(), FooterButtonBounds() (+43 more)
+Cohesion: 0.10
+Nodes (42): BuildFooterButtonStyle(), BuildGrid(), BuildMicStyle(), array, EmbeddedImageAsset, DrawGlobalFooter(), ExpandTouchBounds(), FooterButtonBounds() (+34 more)
 
 ### Community 152 - "BadgeStyle"
 Cohesion: 0.08
 Nodes (26): BadgeStyle, background_color, border_color, border_thickness, height, horizontal_padding, inverse_background_color, inverse_text_color (+18 more)
 
 ### Community 153 - "MicStatusStyle"
-Cohesion: 0.12
-Nodes (16): TypographyRole, MicStatusStyle, background_color, border_color, border_thickness, focused_background_color, focused_icon_color, focused_text_color (+8 more)
+Cohesion: 0.09
+Nodes (25): string, TypographyRole, MicStatusState, focused, label_text, MicStatusStyle, background_color, border_color (+17 more)
 
 ### Community 154 - "SdCardPins"
 Cohesion: 0.12
 Nodes (16): gpio_num_t, SdCardPins, bus_width, card_detect, card_detect_active_level, clk, cmd, d0 (+8 more)
 
 ### Community 155 - "ProgressBarStyle"
-Cohesion: 0.12
-Nodes (17): TypographyRole, ProgressBarStyle, bar_height, border_color, border_thickness, fill_color, label_role, meta_gap (+9 more)
+Cohesion: 0.11
+Nodes (20): string, TypographyRole, ProgressBarState, label_text, progress_percent, status_text, ProgressBarStyle, bar_height (+12 more)
 
 ### Community 156 - "index.ts"
 Cohesion: 0.07
@@ -1062,35 +1056,35 @@ Nodes (19): ref_badge_css_raw, ref_fileupload_css_raw, ref_iconbutton_css_raw, r
 
 ### Community 157 - "NavigationInputController"
 Cohesion: 0.06
-Nodes (42): atomic_bool, array, NavigationInputController, BeginPress, CurrentGeneration, EndPress, generation_, hold_repeat_interval_ms_ (+34 more)
+Nodes (43): atomic_bool, array, NavigationInputController, BeginPress, CurrentGeneration, EndPress, generation_, hold_repeat_interval_ms_ (+35 more)
 
-### Community 158 - "DrawDashboardPage"
-Cohesion: 0.31
-Nodes (15): BannerStyle(), BuildLayout(), DashboardJointTrackerBounds(), DashboardMenuItemBounds(), DashboardMenuItemLabel(), DrawDashboardPage(), HitTestDashboardMenuItem(), MenuItemBadge() (+7 more)
+### Community 158 - "DashboardPageState"
+Cohesion: 0.17
+Nodes (23): BannerStyle(), BuildLayout(), DashboardJointTrackerBounds(), DashboardMenuItemBounds(), DashboardMenuItemLabel(), DrawDashboardPage(), HitTestDashboardMenuItem(), MenuItemBadge() (+15 more)
 
-### Community 159 - "mutex"
-Cohesion: 0.07
-Nodes (25): audio_codec, mutex, operator|(), esp_codec_dev, esp_codec_dev_defaults, event_groups, freertos, gpio (+17 more)
+### Community 159 - "esp_log"
+Cohesion: 0.04
+Nodes (53): esp_err_t, esp32_component_template_init(), esp32_component_template_start(), esp32_component_template_stop(), audio_codec, mutex, atomic, BeginPlayback() (+45 more)
 
 ### Community 160 - "CompletionBannerStyle"
-Cohesion: 0.13
-Nodes (15): CompletionBannerStyle, background_color, content_gap, icon_background_color, icon_color, icon_container_size, icon_size, left_corner_radius (+7 more)
+Cohesion: 0.10
+Nodes (25): completion_banner, CompletionBannerBounds(), DrawCompletionBanner(), TextMaxWidth(), TextStartX(), CompletionBannerState, icon, message_text (+17 more)
 
 ### Community 161 - "esp_timer"
-Cohesion: 0.16
-Nodes (13): DispatchCompletion, PlayCueNow, PreloadInteractionCues, AudioCodec, function, SoundCuePlaybackResult, SystemSoundServiceImpl::CompletePendingCompletion(), SystemSoundServiceImpl::DispatchCompletion() (+5 more)
+Cohesion: 0.18
+Nodes (12): DispatchCompletion, PlayCueNow, PreloadInteractionCues, AudioCodec, function, SoundCuePlaybackResult, SystemSoundServiceImpl::CompletePendingCompletion(), SystemSoundServiceImpl::DispatchCompletion() (+4 more)
 
 ### Community 162 - "TextInputState"
 Cohesion: 0.11
 Nodes (18): EmbeddedIconId, KeyboardInputSubmitStyle, string, TextInputState, active, cursor_index, focused, has_trailing_icon (+10 more)
 
-### Community 163 - "status_bar_runtime.cpp"
-Cohesion: 0.18
-Nodes (13): local_ai_service, BuildState(), BuildTimeText(), BuildWifiStatus(), esp_err_t, RefreshMode, string, UiState (+5 more)
+### Community 163 - "CurrentDateStyle"
+Cohesion: 0.13
+Nodes (16): CurrentDateBounds(), DrawCurrentDate(), CurrentDateState, date_text, weekday_text, CurrentDateStyle, date_role, segment_gap (+8 more)
 
-### Community 164 - "NetworkItemState"
-Cohesion: 0.22
-Nodes (8): NetworkSignalStrength, string, NetworkItemState, current_network, private_network, selected, signal_strength, ssid_text
+### Community 164 - "DrawScrollContainer"
+Cohesion: 0.25
+Nodes (17): BuildWrappedLines(), ClampedPercent(), ContentViewport(), string, TypographyRole, vector, DrawScrollContainer(), ExpandRect() (+9 more)
 
 ### Community 165 - "JointTrackerCardStyle"
 Cohesion: 0.14
@@ -1105,8 +1099,8 @@ Cohesion: 0.15
 Nodes (6): ref_button_css_raw, Button, BUTTON_TEMPLATE, ButtonType, defineButton(), normalizeButtonType()
 
 ### Community 168 - "timezone_service_stub.cpp"
-Cohesion: 0.11
-Nodes (14): ApplySettingsPatch(), esp_err_t, EventHandler, httpd_handle_t, Result, SettingsPatch, Snapshot, vector (+6 more)
+Cohesion: 0.13
+Nodes (11): ApplySettingsPatch(), esp_err_t, EventHandler, httpd_handle_t, Result, SettingsPatch, Snapshot, GetSnapshot() (+3 more)
 
 ### Community 169 - "NetworkStatus"
 Cohesion: 0.15
@@ -1128,13 +1122,13 @@ Nodes (24): button_event_t, button_gpio, button_handle_t, ButtonContext, gpio, h
 Cohesion: 0.23
 Nodes (15): AddPcf85063Device(), ConfigurePmicRails(), AudioCodec, esp_err_t, gpio_num_t, i2c_master_bus_handle_t, i2c_master_dev_handle_t, CreateI2cBus() (+7 more)
 
-### Community 174 - "Init"
-Cohesion: 0.23
-Nodes (16): Context, lock_screen_active, overlay_visible, BlockedReasonStatusMessage(), BlockedReason, esp_err_t, EvaluateBlockedReason(), HandlePowerLongPressStart() (+8 more)
+### Community 174 - "project_assets.cpp"
+Cohesion: 0.13
+Nodes (9): EmbeddedFooterIconId, EmbeddedIconId, EmbeddedImageAsset, EmbeddedImageId, EmbeddedLogoId, GetFooterIcon(), GetIcon(), GetImage() (+1 more)
 
 ### Community 175 - "KeyboardKeySpec"
-Cohesion: 0.14
-Nodes (14): string_view, KeyboardKeySpec, kind, label, output, width_units, KeyboardInputSubmitStyle, KeyboardLayoutKind (+6 more)
+Cohesion: 0.15
+Nodes (13): string_view, KeyboardKeySpec, kind, label, output, width_units, KeyboardLayoutSpec, row_count (+5 more)
 
 ### Community 176 - "RovingFocus"
 Cohesion: 0.18
@@ -1165,8 +1159,8 @@ Cohesion: 0.09
 Nodes (21): 10. Build und Flash, 1. Systemübersicht, 2. Wichtige IC-Bauteilnummern, 3. I2C-Peripherie-Adressen, 4.1 E-Paper-Display (SPI3), 4.2 Audio (I2S + Codec), 4.3 I2C und Interrupts, 4.4 Tasten und Navigation (+13 more)
 
 ### Community 183 - "CheckboxStyle"
-Cohesion: 0.15
-Nodes (13): CheckboxStyle, background_color, background_corner_radius, background_visible, icon_color, selected_background_color, selected_background_visible, selected_content_outline_color (+5 more)
+Cohesion: 0.10
+Nodes (22): checkbox, CheckboxBounds(), DrawFn, EmbeddedImageAsset, DrawCheckbox(), ForEachOutlineOffset(), ResolveAsset(), CheckboxState (+14 more)
 
 ### Community 184 - "StatusBarState"
 Cohesion: 0.17
@@ -1185,10 +1179,10 @@ Cohesion: 0.15
 Nodes (13): WavHeader, audio_format, bits_per_sample, block_align, byte_rate, chunk_size, data_size, fmt (+5 more)
 
 ### Community 188 - "transcription_service.cpp"
-Cohesion: 0.21
-Nodes (15): BeginTranscription(), BuildSnapshotLocked(), esp_err_t, EventHandler, RecordedClipPtr, Snapshot, GetSnapshot(), Init() (+7 more)
+Cohesion: 0.14
+Nodes (19): BeginTranscription(), BuildSnapshotLocked(), esp_err_t, EventHandler, RecordedClipPtr, Snapshot, GetSnapshot(), Init() (+11 more)
 
-### Community 189 - "cstring"
+### Community 189 - "system_sound_service_decoder.cc"
 Cohesion: 0.18
 Nodes (16): cmath, PsramVector, SoundCue, vector, ClampI32ToI16(), ConvertToOutputPcm(), DownmixFrameToMono(), InterpolateSample() (+8 more)
 
@@ -1197,8 +1191,8 @@ Cohesion: 0.36
 Nodes (5): size_t, T, U, operator==(), PsramAllocator
 
 ### Community 191 - "esp_err_t"
-Cohesion: 0.23
-Nodes (18): AuthModeToString(), BuildStatusJson(), cJSON, esp_err_t, httpd_req_t, wifi_auth_mode_t, GetScanSnapshot(), HandleCaptivePortalRedirect() (+10 more)
+Cohesion: 0.22
+Nodes (19): AuthModeToString(), BuildStatusJson(), cJSON, esp_err_t, httpd_req_t, wifi_auth_mode_t, GetScanSnapshot(), HandleCaptivePortalRedirect() (+11 more)
 
 ### Community 192 - "NetworkList"
 Cohesion: 0.12
@@ -1213,16 +1207,16 @@ Cohesion: 0.10
 Nodes (21): TypographyRole, PasswordInputStyle, background_color, border_color, border_thickness, field_height, focus_gap, focus_gap_color (+13 more)
 
 ### Community 195 - "EnterAccessPointModeNow"
-Cohesion: 0.18
-Nodes (27): BuildUiStateLocked(), CheckOrAbort(), ConfigureAccessPointConfig(), UiState, DisconnectStationNow(), EnterAccessPointModeNow(), GetUiState(), HandleIpEvent() (+19 more)
+Cohesion: 0.24
+Nodes (20): CheckOrAbort(), ConfigureAccessPointConfig(), ConfigureStationConfig(), State, DisconnectStationNow(), EnterAccessPointModeNow(), HandleScanDoneEvent(), HandleTransitionRequest() (+12 more)
 
 ### Community 196 - "Notify"
 Cohesion: 0.38
 Nodes (12): Arm(), Cancel(), esp_err_t, DiscardClip(), Finish(), Init(), Notify(), RecordDebugClipToWav() (+4 more)
 
 ### Community 197 - "Task-Zuordnung"
-Cohesion: 0.14
-Nodes (14): `components/audio_hal`, `components/axp2101`, `components/board`, `components/button_service`, `components/epaper_panel`, `components/feedback_service`, `components/imu_service`, `components/pcf85063` (+6 more)
+Cohesion: 0.15
+Nodes (13): `components/audio_hal`, `components/axp2101`, `components/board`, `components/button_service`, `components/feedback_service`, `components/imu_service`, `components/pcf85063`, `components/power_service` (+5 more)
 
 ### Community 198 - "OTA-Workflow-Referenz"
 Cohesion: 0.11
@@ -1236,17 +1230,17 @@ Nodes (9): ApplyVolumeToCodec(), AudioCodec, DefaultIndex(), GetVolume(), GetVol
 Cohesion: 0.17
 Nodes (12): TypographyRole, TagStyle, background_color, border_color, border_thickness, horizontal_padding, role, selected_background_color (+4 more)
 
-### Community 201 - "BadgeState"
-Cohesion: 0.17
-Nodes (10): BadgeState, inverse, label_text, string, string, MenuItemState, badge, label_text (+2 more)
+### Community 201 - "SegmentControlStyle"
+Cohesion: 0.12
+Nodes (16): SegmentControlStyle, active_focus_ring_color, active_selected_background_color, background_color, border_color, border_thickness, button, field_height (+8 more)
 
 ### Community 202 - "RuntimeSnapshot"
 Cohesion: 0.17
 Nodes (12): RuntimeSnapshot, auth_checked, authenticated, initialized, last_error_code, last_error_message, last_http_status, last_model_display_name (+4 more)
 
 ### Community 203 - "BitmapFont"
-Cohesion: 0.12
-Nodes (19): bitmap_font, string_view, DecodeUtf8Codepoint(), FindGlyph(), MeasureText(), NormalizeCodepoint(), BitmapFont, ascent (+11 more)
+Cohesion: 0.11
+Nodes (22): bitmap_font, string_view, DecodeUtf8Codepoint(), FindGlyph(), MeasureText(), NormalizeCodepoint(), BitmapFont, ascent (+14 more)
 
 ### Community 204 - "lock_screen_runtime.cpp"
 Cohesion: 0.28
@@ -1260,29 +1254,29 @@ Nodes (19): Face, freetype, math, emit_byte_array(), FontGenError, FontSpec, gen
 Cohesion: 0.17
 Nodes (13): string, vector, TimelineEntry, completed, follow_up, follow_up_completed, item, recording_id (+5 more)
 
-### Community 207 - "SetRegisterBit"
-Cohesion: 0.29
-Nodes (12): ConfigActivityInterruptMap, EnableInt, SetRegisterBit, IntPin, Qmi8658::ConfigActivityInterruptMap(), Qmi8658::EnableAccelerometer(), Qmi8658::EnableGyroscope(), Qmi8658::EnableInt() (+4 more)
+### Community 207 - "Qmi8658::ConfigAccelerometer"
+Cohesion: 0.22
+Nodes (15): AccelerometerEnabled, ConfigActivityInterruptMap, EnableInt, ReadModifyRegister, Reset, ResolveAccLsbDiv, AccOdr, AccRange (+7 more)
 
 ### Community 209 - "nvs_open"
-Cohesion: 0.16
-Nodes (28): PersistLocked(), ClearStoredUrlsFromNvs(), LoadSnapshotFromNvs(), SaveSnapshotToNvs(), SavePlaybackSettingToNvs(), SaveSettingsToStorageLocked(), SaveTimeStatusToStorageLocked(), ClearCredentialsFromNvs() (+20 more)
+Cohesion: 0.18
+Nodes (25): PersistLocked(), nvs_handle_t, PersistHistoryLocked(), PersistTodayLocked(), ClearStoredUrlsFromNvs(), SavePlaybackSettingToNvs(), Init(), LoadSettingsFromStorage() (+17 more)
 
 ### Community 210 - "providerKeys.ts"
 Cohesion: 0.21
 Nodes (10): createProviderKeysController(), applyLocalAiSettings(), resetLocalAiBaseUrl(), saveLocalAiBaseUrl(), LocalAiState, ProviderInput, ProviderKeysDeps, LocalAiModuleResponse (+2 more)
 
 ### Community 211 - "KeyboardInputState"
-Cohesion: 0.13
-Nodes (14): KeyboardInputSubmitStyle, string, KeyboardInputState, active, cursor_index, focused, label_text, max_length (+6 more)
+Cohesion: 0.12
+Nodes (15): KeyboardInputSubmitStyle, string, KeyboardInputState, active, cursor_index, focused, label_text, max_length (+7 more)
 
 ### Community 212 - "ESP32-FreeRTOS-Patterns (ESP-IDF)"
-Cohesion: 0.15
-Nodes (12): Core-Affinität und Prioritäts-Leitfaden, ESP32-FreeRTOS-Patterns (ESP-IDF), ESP-IDF-Event-Loop-Integration, ISR-zu-Task-Übergabe (ESP32-spezifische Einschränkungen), Kritische Abschnitte, Laufzeit-Introspektion über Service-Terminal (empfohlen), Mutexe, Review-Checkliste (zusammengeführt und ESP32-angepasst) (+4 more)
+Cohesion: 0.12
+Nodes (15): Core-Affinität und Prioritäts-Leitfaden, ESP32-FreeRTOS-Patterns (ESP-IDF), ESP-IDF-Event-Loop-Integration, Event-getriebener Task, ISR-zu-Task-Übergabe (ESP32-spezifische Einschränkungen), Kritische Abschnitte, Laufzeit-Introspektion über Service-Terminal (empfohlen), Mutexe (+7 more)
 
 ### Community 213 - "NetworkItemStyle"
-Cohesion: 0.11
-Nodes (19): TypographyRole, NetworkItemStyle, background_color, border_color, bottom_border_thickness, height, horizontal_padding, icon_color (+11 more)
+Cohesion: 0.05
+Nodes (39): NetworkSignalStrength, string, TypographyRole, NetworkItemState, current_network, private_network, selected, signal_strength (+31 more)
 
 ### Community 214 - "ESP-IDF-/Plugin-Kompatibilitätsnachweis (ESP-ADF, ESP-SR usw.)"
 Cohesion: 0.12
@@ -1293,52 +1287,52 @@ Cohesion: 0.13
 Nodes (16): MenuContainerState, item_count, selected_index, MenuContainerStyle, direction, height, item_gap, item_height (+8 more)
 
 ### Community 216 - "todos_monkey.cpp"
-Cohesion: 0.16
-Nodes (18): ExitItemList, HasOnlyEmptyGroup, mt19937_64, random, CheckInvariants(), RecordingTag, string, vector (+10 more)
-
-### Community 217 - "DashboardPageState"
 Cohesion: 0.13
-Nodes (13): CompletionBannerState, icon, message_text, EmbeddedIconId, string, DashboardPageState, completion_banner, current_progress (+5 more)
+Nodes (21): Nachtrag v2: grosses realistisches Startset (21.09.2026), Nachtrag v3: verdoppeltes Set (900), 60 Tage fest, lange Texte (21.09.2026), Todos-Navigation: Monkey-Test gegen Auswahl-Verklemmung (21.09.2026), ExitItemList, HasOnlyEmptyGroup, mt19937_64, random, CheckInvariants() (+13 more)
 
-### Community 218 - "ListItemState"
-Cohesion: 0.11
-Nodes (16): EmbeddedImageAsset, string, ListItemAccessoryState, checked, icon_asset, kind, ListItemActionsState, selected_action_index (+8 more)
+### Community 217 - "onboarding_page_runtime.cpp"
+Cohesion: 0.16
+Nodes (10): climits, ActivateFocusedItem(), AdvanceInteractionGenerationLocked(), BuildStateLocked(), ActivateResult, esp_err_t, RefreshMode, ResetFocus() (+2 more)
 
-### Community 219 - "LoadCacheEntry"
-Cohesion: 0.21
-Nodes (13): esp_err_t, EnsureSummaryDirectory(), Init(), JoinPath(), LoadCacheEntry(), LoadCacheOnMountedFilesystem(), ParseMetadataJson(), ReadTextFile() (+5 more)
+### Community 218 - "getPowerChannelVoltage"
+Cohesion: 0.13
+Nodes (15): getALDO1Voltage, getALDO2Voltage, getALDO3Voltage, getALDO4Voltage, getBLDO1Voltage, getBLDO2Voltage, getButtonBatteryVoltage, getDC1Voltage (+7 more)
+
+### Community 219 - "string"
+Cohesion: 0.30
+Nodes (12): esp_err_t, string, EnsureSummaryDirectory(), EstimateTokenCount(), JoinPath(), LoadCacheEntry(), LoadCacheOnMountedFilesystem(), ParseMetadataJson() (+4 more)
 
 ### Community 222 - "mn"
 Cohesion: 0.22
 Nodes (10): i(), i(), mn(), a(), i(), n(), o(), a() (+2 more)
 
-### Community 224 - "ProjectPageFocus"
-Cohesion: 0.29
-Nodes (10): PageFocusProjection, footer_selected_index, navigation_focus_index, page_menu_selected_index, NavigationItemSection, FooterSelectedIndexForFocus(), PageMenuSelectedIndexForFocus(), ProjectPageFocus() (+2 more)
+### Community 224 - "DrawTextInput"
+Cohesion: 0.36
+Nodes (11): UnionRect(), BuildDisplayText(), string, DrawTextInput(), Expand(), FocusPadding(), Inset(), TextInputBounds() (+3 more)
 
-### Community 226 - "SystemSoundService"
-Cohesion: 0.17
-Nodes (12): esp_err_t, FeedbackEvent, SoundCue, CueForEvent(), Init(), Play(), SystemSoundService, Initialize (+4 more)
+### Community 226 - "DrawListItemHeader"
+Cohesion: 0.31
+Nodes (12): DrawFn, EmbeddedImageAsset, string, TypographyRole, DrawCenteredIcon(), DrawListItemHeader(), DrawOutlinedText(), FitLabelText() (+4 more)
 
-### Community 227 - ".valid"
-Cohesion: 0.19
-Nodes (12): ConfigureStationConfig(), Credentials, password, ssid, HandleWifiEvent(), HasSavedCredentials(), OnIpEvent(), OnWifiEvent() (+4 more)
+### Community 227 - "string"
+Cohesion: 0.14
+Nodes (19): BuildApSsid(), nvs_handle_t, string, Credentials, password, ssid, DisconnectReasonToString(), HandleIpEvent() (+11 more)
 
 ### Community 228 - "CarouselStyle"
-Cohesion: 0.05
-Nodes (63): carousel, BuildLayout(), CarouselBounds(), CarouselContentBounds(), CarouselControlBounds(), CloseButtonState(), ControlIconStyle(), DrawCarousel() (+55 more)
+Cohesion: 0.06
+Nodes (54): carousel, BuildLayout(), CarouselBounds(), CarouselContentBounds(), CarouselControlBounds(), CloseButtonState(), ControlIconStyle(), DrawCarousel() (+46 more)
 
 ### Community 229 - "TimelineEntry"
 Cohesion: 0.18
 Nodes (12): string, vector, TimelineEntry, follow_up, follow_up_completed, item, recording_id, recording_path (+4 more)
 
-### Community 230 - "TodosPageCoordinator"
-Cohesion: 0.14
-Nodes (12): Nachtrag v2: grosses realistisches Startset (21.09.2026), Todos-Navigation: Monkey-Test gegen Auswahl-Verklemmung (21.09.2026), NavigationItemRole, TodosPageCoordinator, active_group_index_, focus_, IsRoleFocused, item_focus_ (+4 more)
+### Community 230 - "Dependencies"
+Cohesion: 0.17
+Nodes (12): InputsEnabledProvider, Configure(), esp_err_t, Dependencies, button_handler, button_handler_context, inputs_enabled, inputs_enabled_context (+4 more)
 
-### Community 231 - "string"
-Cohesion: 0.23
-Nodes (14): string, DeleteRecording(), DeleteRecordingOnMountedFilesystem(), EnsureDirectoryExists(), FileExists(), FormatLocalDate(), GenerateRecordingId(), LogFileStat() (+6 more)
+### Community 231 - "MenuToggleStyle"
+Cohesion: 0.17
+Nodes (12): TypographyRole, MenuToggleStyle, background_color, border_color, bottom_border_thickness, control_gap, height, horizontal_padding (+4 more)
 
 ### Community 232 - "Snapshot"
 Cohesion: 0.18
@@ -1358,7 +1352,7 @@ Nodes (8): function, PcmRingBuffer, capacity_, samples_, size_, write_index_, Re
 
 ### Community 236 - "NotesPageCoordinator"
 Cohesion: 0.09
-Nodes (35): EmbeddedImageAsset, NavigationItemRole, RecordingTag, string, TimelineEntry, vector, EntryUnixSeconds(), IsNotesTag() (+27 more)
+Nodes (34): EmbeddedImageAsset, NavigationItemRole, RecordingTag, string, TimelineEntry, vector, EntryUnixSeconds(), IsNotesTag() (+26 more)
 
 ### Community 237 - "Followup App-Architektur"
 Cohesion: 0.15
@@ -1372,25 +1366,25 @@ Nodes (12): Event, snapshot, string, Snapshot, initialized, last_error_code, las
 Cohesion: 0.13
 Nodes (14): 1. Festhalten im Moment der Eingebung, 2. Lokale KI-Transkription und -Zusammenfassung, 3. Alles auf deiner SD-Karte gespeichert, 4. Vibe-Check für deine Ideen, 5. Follow-up für Aufgaben und Notizen, 6. Deine Follow-ups als Klebezettel anzeigen, Bedienelemente, Followup Produktvorstellung (+6 more)
 
-### Community 240 - "Wie das Sticky-Note-Gerät funktioniert"
-Cohesion: 0.15
-Nodes (13): RecordedClip, GuardrailResult, accepted, error_code, status_message, ResolveClipDurationMs(), ValidateClip(), 1. Aufnahme-Ablauf (+5 more)
+### Community 240 - "SelectInputState"
+Cohesion: 0.26
+Nodes (10): string, SelectInputState, focused, label_text, placeholder_text, value_text, DrawSelectInput(), SelectInputBounds() (+2 more)
 
-### Community 241 - "KeyboardActionResult"
-Cohesion: 0.20
-Nodes (9): KeyboardIntent, KeyboardActionResult, intent, state_changed, text_changed, KeyboardController, ActivateFocusedKey, ActivateFocusedKeyDouble (+1 more)
+### Community 241 - "DrawTag"
+Cohesion: 0.27
+Nodes (10): string, TagState, label_text, selected, DrawFn, DrawOutlinedText(), DrawTag(), ShouldOutlineText() (+2 more)
 
 ### Community 242 - "ActivateCallbacks"
 Cohesion: 0.22
 Nodes (9): ActivateCallbacks, enable_otg, show_format_sd_modal, show_home, show_onboarding, show_settings, show_wifi, toggle_volume_editing (+1 more)
 
-### Community 243 - "ScanSnapshot"
-Cohesion: 0.15
-Nodes (12): esp_err_t, vector, wifi_auth_mode_t, ScannedNetwork, auth_mode, rssi, ssid, ScanSnapshot (+4 more)
+### Community 243 - "DrawToggle"
+Cohesion: 0.33
+Nodes (11): ToggleVisualState, DrawToggle(), FillCircle(), FillRing(), FocusPadding(), InsetRect(), IsFocused(), IsOn() (+3 more)
 
 ### Community 244 - "summary_service.cpp"
-Cohesion: 0.17
-Nodes (26): BuildMetadataJson(), CollectSourceEntries(), CompleteSummaryRequest(), EventHandler, RecordingTag, Snapshot, SummaryKind, FilterWindowedEntries() (+18 more)
+Cohesion: 0.14
+Nodes (31): cjson, BuildMetadataJson(), BuildPromptText(), CollectSourceEntries(), CompleteSummaryRequest(), EventHandler, RecordingTag, Snapshot (+23 more)
 
 ### Community 245 - "Kt"
 Cohesion: 0.20
@@ -1404,9 +1398,9 @@ Nodes (12): ADC-Muster, ESP32-Peripherie-Programmierung (ESP-IDF), ESP32-spezifi
 Cohesion: 0.22
 Nodes (9): ActivateCallbacks, enter_scroll, request_notes_summary, request_todos_summary, show_home, show_settings, show_wifi, toggle_segment (+1 more)
 
-### Community 248 - "InputResult"
-Cohesion: 0.17
-Nodes (12): FeedbackCue, InputResult, consumed, feedback_cue, play_feedback, request_exit_usb_mode, request_format_sd_card, request_shutdown (+4 more)
+### Community 248 - "ButtonIconStyle"
+Cohesion: 0.18
+Nodes (11): ButtonIconStyle, background_color, border_color, border_thickness, icon_color, icon_size, outline_icon_when_unselected, selected_background_color (+3 more)
 
 ### Community 249 - "duration.ts"
 Cohesion: 0.28
@@ -1433,8 +1427,8 @@ Cohesion: 0.17
 Nodes (13): NetworkListStatus, vector, WifiPageCoordinator, focus_, navigation_model_, network_focus_, network_list_focus_ring_visible_, network_status_ (+5 more)
 
 ### Community 255 - "RecordingEntry"
-Cohesion: 0.18
-Nodes (12): RecordingEntry, metadata, metadata_path, modified_unix_seconds, recording_id, recording_path, transcript_path, transcript_text (+4 more)
+Cohesion: 0.25
+Nodes (8): RecordingEntry, metadata, metadata_path, modified_unix_seconds, recording_id, recording_path, transcript_path, transcript_text
 
 ### Community 256 - "ESP32-Kommunikationsprotokolle (ESP-IDF)"
 Cohesion: 0.17
@@ -1445,8 +1439,8 @@ Cohesion: 0.25
 Nodes (8): ActivateCallbacks, play, show_home, show_previous_page, show_settings, show_wifi, transcribe, function
 
 ### Community 258 - "Local AI Service (Ersatz für Gemini)"
-Cohesion: 0.29
-Nodes (5): Local AI Service (Ersatz für Gemini), Offene Anschlusspunkte (bewusst noch nicht erledigt), Warum Gemini überhaupt ersetzen, Was tatsächlich verifiziert wurde (2026-09-01, auf Kraken), Ziel-Architektur
+Cohesion: 0.20
+Nodes (10): AppendLe16(), AppendLe32(), BuildWavHeaderPcm16Mono(), array, Firmware-Änderungen (geschrieben, ungeprüft -- siehe Umsetzungsstand), Local AI Service (Ersatz für Gemini), Offene Anschlusspunkte (bewusst noch nicht erledigt), Warum Gemini überhaupt ersetzen (+2 more)
 
 ### Community 259 - "declaration.d.ts"
 Cohesion: 0.25
@@ -1482,7 +1476,7 @@ Nodes (12): string, vector, TimelineEntry, follow_up, follow_up_completed, item,
 
 ### Community 267 - "SaveClipContext"
 Cohesion: 0.22
-Nodes (11): RecordingTag, SaveOptions, tag, BuildWavHeader(), RecordedClip, SaveClip(), SaveClipContext, clip (+3 more)
+Nodes (10): RecordingTag, SaveOptions, tag, BuildWavHeader(), RecordedClip, SaveClipContext, clip, options (+2 more)
 
 ### Community 268 - "SystemSoundServiceImpl::PlayCue"
 Cohesion: 0.24
@@ -1493,12 +1487,12 @@ Cohesion: 0.17
 Nodes (11): 10. Explizite Unbekannte, explizite Risiken, 1. Hardware-Wahrheit vor Code, 2. Varianten-Gewissheit ist verpflichtend, 3. Konfiguration und Partitionen sind Quellcode, 4. Nur build-erwiesene Änderungen, 5. Kompatibilitätsnachweis vor Fortschritt, 6. Beobachtbarkeit mit hohem Signal, 7. Serviceability standardmäßig (wenn Konsolen-Transport frei ist) (+3 more)
 
 ### Community 270 - "ApplySettingsPatch"
-Cohesion: 0.35
-Nodes (11): ApplySettingsPatch(), ApplyTimezoneByName(), Result, SettingsPatch, string, MakeError(), MakeSuccess(), MakeValidationError() (+3 more)
+Cohesion: 0.17
+Nodes (20): ApplySettingsPatch(), ApplyTimezoneByName(), nvs_handle_t, Result, SettingsPatch, string, time_t, FormatLocalTime() (+12 more)
 
-### Community 271 - "esp_log"
-Cohesion: 0.22
-Nodes (8): esp_err_t, display_flush_checked(), display_caps_t, display_flush_region_t, esp_log, stdbool, stddef, stdint
+### Community 271 - "display_flush_template.c"
+Cohesion: 0.25
+Nodes (7): esp_err_t, display_flush_checked(), display_caps_t, display_flush_region_t, stdbool, stddef, stdint
 
 ### Community 272 - "SelectedEntrySnapshot"
 Cohesion: 0.29
@@ -1509,8 +1503,8 @@ Cohesion: 0.27
 Nodes (10): datetime, json, hole(), main(), Zeigt Aufnahmen und Zusammenfassungen des Geraets als lesbaren Text. Die Routen…, uhrzeit(), zeige_aufnahmen(), zeige_zusammenfassung() (+2 more)
 
 ### Community 274 - "TimelineGroupHit"
-Cohesion: 0.22
-Nodes (9): TimelineGroupHit, active, chip_bounds, focused, group_index, items, TimelineItemHit, bounds (+1 more)
+Cohesion: 0.18
+Nodes (12): vector, TimelineGroupHit, active, chip_bounds, focused, group_index, items, TimelineItemHit (+4 more)
 
 ### Community 275 - "SettingsSnapshot"
 Cohesion: 0.22
@@ -1536,9 +1530,9 @@ Nodes (6): esp_log_level_t, ScopedLogSilencer, tag1_, tag1_level_, tag2_, tag2_l
 Cohesion: 0.29
 Nodes (7): ActivateCallbacks, open_menu_item, show_home, show_settings, show_wifi, toggle_joint_tracker_counting, function
 
-### Community 281 - "esp_check"
-Cohesion: 0.24
-Nodes (8): esp_err_t, esp32_component_template_init(), esp32_component_template_start(), esp32_component_template_stop(), esp32_component_template, esp32_component_template_config_t, esp_check, inttypes
+### Community 281 - "ListItemHeaderState"
+Cohesion: 0.20
+Nodes (9): EmbeddedImageAsset, string, ListItemHeaderState, icon_asset, minute_seconds_text, selected, tag_icon_asset, tag_text (+1 more)
 
 ### Community 282 - "ActivateResult"
 Cohesion: 0.33
@@ -1588,37 +1582,37 @@ Nodes (6): cmd_heap(), Speicher- und Stack-Überwachung (RTOS-fokussiert), Epape
 Cohesion: 0.33
 Nodes (6): ActivateCallbacks, open_item_actions, show_home, show_settings, show_wifi, function
 
-### Community 294 - "task"
-Cohesion: 0.24
-Nodes (8): esp_err_t, Init(), LogDebugStatus(), ReadSample(), imu_service, new, qmi8658, task
+### Community 294 - "esp_err_to_name"
+Cohesion: 0.12
+Nodes (28): esp_err_t, Init(), LogDebugStatus(), ReadSample(), InitButtonService(), InitDeviceSleepRuntime(), InitDeviceStatusService(), InitDisplayService() (+20 more)
 
 ### Community 295 - "InteractiveTarget"
 Cohesion: 0.22
 Nodes (8): Kind, InteractiveTarget, kind, owner, primary_index, secondary_index, operator==(), Owner
 
 ### Community 296 - "SettingsSnapshot"
-Cohesion: 0.22
-Nodes (9): Event, snapshot, SettingsSnapshot, enabled, location, timezone_name, Snapshot, runtime (+1 more)
+Cohesion: 0.20
+Nodes (10): Event, snapshot, string, SettingsSnapshot, enabled, location, timezone_name, Snapshot (+2 more)
 
 ### Community 297 - "PsramAllocator"
 Cohesion: 0.36
 Nodes (5): size_t, T, U, operator==(), PsramAllocator
 
-### Community 298 - "MountCardLocked"
-Cohesion: 0.33
-Nodes (10): IsCardInserted, Mount, Unmount, SdCard::Format(), InitializeCardAtBootLocked(), MountCardLocked(), RecoverAfterLightSleep(), RunWithMountedFilesystem() (+2 more)
+### Community 298 - "VibeCardLayout"
+Cohesion: 0.20
+Nodes (10): array, VibeCardLayout, actions, bounds, content, footer_y, has_actions, has_transcribe (+2 more)
 
-### Community 299 - "string"
-Cohesion: 0.28
-Nodes (9): BuildApSsid(), ConnectToNetwork(), nvs_handle_t, string, DisconnectReasonToString(), HandlePortalConfigure(), LoadString(), ReadRequestBody() (+1 more)
+### Community 299 - "DisplayCommand"
+Cohesion: 0.22
+Nodes (9): ScreenId, DisplayCommand, overlay_refresh_policy, refresh_request, screen, source, type, GetCurrentScreen() (+1 more)
 
 ### Community 300 - "Auto Sleep"
 Cohesion: 0.18
 Nodes (10): Auto Sleep, Display-Sleep, IMU-Inaktivitätserkennung, Konfiguration, Light-Sleep, Logging, Runtime-Zuständigkeit, Sleep-Blocker (+2 more)
 
 ### Community 303 - "Layout"
-Cohesion: 0.29
-Nodes (7): Layout, back_button, header, heading, scroll, scroll_panel_height, transcribe_button
+Cohesion: 0.22
+Nodes (9): Layout, close, content, control_row, dots_x, dots_y, next, prev (+1 more)
 
 ### Community 306 - "RecordedClip"
 Cohesion: 0.22
@@ -1641,8 +1635,8 @@ Cohesion: 0.22
 Nodes (8): Blockierender-Kontext-Checkliste (nicht überspringen), Build-/Validierungs-Checkliste, Code-Review-Checkliste, Debugging-Checkliste, ESP-IDF-Checklisten, Implementierungs-Checkliste, Peripherie-Fokus-Prüfungen, WLAN-/BLE-Fokus-Prüfungen
 
 ### Community 312 - "TypographySpec"
-Cohesion: 0.25
-Nodes (8): TypographyRole, TypographySpec, line_height_override, scale, size, weight, TypographySpecForRole(), MakeFontSelection()
+Cohesion: 0.29
+Nodes (7): TypographyRole, TypographySpec, line_height_override, scale, size, weight, TypographySpecForRole()
 
 ### Community 313 - "wifi_page_interactions.cpp"
 Cohesion: 0.32
@@ -1660,13 +1654,13 @@ Nodes (7): Häufige Embedded-Grundursachen zum Prüfen, Logging-Hinweise, Nützl
 Cohesion: 0.25
 Nodes (7): Agenten-Verhalten, ESP-IDF-Toolchain- und Shell-Einrichtung (ESP32/ESP-IDF), Minimale Preflight-Prüfungen, Review-Checkliste, Shell-UX-Helfer (empfohlen), Vor-Build-Toolchain-Regel, zsh-Snippet (Beispiel)
 
-### Community 317 - "GlyphBitmap"
-Cohesion: 0.25
-Nodes (8): GlyphBitmap, advance, bearing_x, bearing_y, bitmap_byte_count, bitmap_offset, height, width
+### Community 317 - "ScrollContainerState"
+Cohesion: 0.22
+Nodes (8): string, ScrollContainerState, active, content_text, empty_state_message, focus_ring_visible, focused, scroll_position_percent
 
 ### Community 318 - "PowerSnapshot"
-Cohesion: 0.29
-Nodes (7): ChargeStateName(), ChargeState, PowerSnapshot, charge_state, usb_detected, vbus_mv, vbus_valid
+Cohesion: 0.33
+Nodes (6): ChargeState, PowerSnapshot, charge_state, usb_detected, vbus_mv, vbus_valid
 
 ### Community 319 - "ESP32-Display- und Grafik-Validierung (ESP-IDF)"
 Cohesion: 0.29
@@ -1676,9 +1670,9 @@ Nodes (6): Erstes Prinzip: Den Display-Datenpfad validieren, ESP32-Display- und 
 Cohesion: 0.29
 Nodes (6): ESP32-Logging und Observability (ESP-IDF), Logging-Richtlinie, Praktische ESP-IDF-Logging-Hinweise, Review-Checkliste, Strategie zur Rauschreduzierung, Wie gute Logs aussehen
 
-### Community 321 - "AdvanceToTagSelection"
+### Community 321 - "RtcStatus"
 Cohesion: 0.29
-Nodes (7): AdvanceToTagSelection(), RecordedClipPtr, SoundCuePlaybackResult, HandleStopCueResult(), PlaybackWorker(), StartClipPlayback(), Aufnahme-Ablauf
+Nodes (7): RtcStatus, alarm_flag, alarm_interrupt_enabled, available, control_status_2, timer_flag, timer_interrupt_enabled
 
 ### Community 322 - "EmbeddedImageAsset"
 Cohesion: 0.29
@@ -1721,12 +1715,12 @@ Cohesion: 0.40
 Nodes (5): ApplyPrimaryActivateResult(), ActivateCallbacks, ActivateResult, HandleMoveFocus(), HandlePrimaryActivate()
 
 ### Community 332 - "main"
-Cohesion: 0.17
-Nodes (7): Check(), CheckZahl(), main(), Task, display_sleeping, flush_due, panel
+Cohesion: 0.16
+Nodes (8): `components/epaper_panel`, Check(), CheckZahl(), main(), Task, display_sleeping, flush_due, panel
 
-### Community 333 - "NotesPageState"
-Cohesion: 0.33
-Nodes (5): string, NotesPageState, navigation_focus_index, timeline, title_text
+### Community 333 - "BuildGroups"
+Cohesion: 0.29
+Nodes (7): RecordingTag, vector, EntryUnixSeconds(), IsTodoTag(), BuildGroups, RefreshFromArchive, Show
 
 ### Community 334 - "ActivateResult"
 Cohesion: 0.40
@@ -1741,16 +1735,16 @@ Cohesion: 0.40
 Nodes (5): ActivateResult, handled, intent, play_activate_cue, ActivateIntent
 
 ### Community 337 - "TimezoneInfo"
-Cohesion: 0.29
-Nodes (7): string, TimezoneInfo, description, name, Snapshot, vector, RefreshTimezoneFromService
+Cohesion: 0.25
+Nodes (8): TimezoneInfo, description, name, Snapshot, vector, RefreshTimezoneFromService, vector, ListTimezones()
 
 ### Community 338 - "notes_page_interactions.cpp"
 Cohesion: 0.40
 Nodes (5): ApplyPrimaryActivateResult(), ActivateCallbacks, ActivateResult, HandleMoveFocus(), HandlePrimaryActivate()
 
-### Community 339 - "TodosPageState"
-Cohesion: 0.29
-Nodes (6): string, TodosPageState, navigation_focus_index, timeline, title_text, BuildState
+### Community 339 - "DrawPortraitMonoAsset"
+Cohesion: 0.40
+Nodes (6): AssetPixelSet(), EmbeddedImageAsset, DrawPortraitMonoAsset(), DrawPortraitPixel(), DrawRawPixel(), DrawSplashScreen()
 
 ### Community 340 - "Snapshot"
 Cohesion: 0.40
@@ -1776,9 +1770,9 @@ Nodes (5): ActivateResult, handled, intent, play_activate_cue, ActivateIntent
 Cohesion: 0.29
 Nodes (7): Result, error_code, field, message, status_code, success, validation_error
 
-### Community 347 - "DrawNetworkItem"
-Cohesion: 0.23
-Nodes (11): DrawFn, EmbeddedImageAsset, NetworkSignalStrength, string, string_view, TypographyRole, DrawNetworkItem(), DrawOutlined() (+3 more)
+### Community 347 - "Layout"
+Cohesion: 0.33
+Nodes (6): Layout, button, heading, scroll, scroll_panel_height, segment
 
 ### Community 348 - "SaveStoredUrls"
 Cohesion: 0.29
@@ -1804,21 +1798,21 @@ Nodes (6): Layout, menu_y, middle, shows_banner, tracker, welcome
 Cohesion: 0.50
 Nodes (4): CachedCuePcm, ready, samples, PsramVector
 
-### Community 355 - "KeyboardRowSpec"
+### Community 355 - "StorageStats"
 Cohesion: 0.33
-Nodes (6): KeyboardLayoutSpec, row_count, rows, KeyboardRowSpec, key_count, keys
+Nodes (6): StorageStats, available, free_bytes, total_bytes, used_percent, GetStorageStats()
 
 ### Community 357 - "SaveCacheContext"
 Cohesion: 0.40
 Nodes (5): SaveCacheContext, kind, metadata_json, saved, text
 
-### Community 358 - "BuildSnapshotLocked"
-Cohesion: 0.47
-Nodes (6): BuildSnapshotLocked(), Snapshot, time_t, FormatLocalDate(), FormatLocalTime(), GetSnapshot()
+### Community 358 - "summarize_page_interactions.cpp"
+Cohesion: 0.40
+Nodes (5): ApplyPrimaryActivateResult(), ActivateCallbacks, ActivateResult, HandleMoveFocus(), HandlePrimaryActivate()
 
-### Community 359 - "string"
+### Community 359 - "NvsStore"
 Cohesion: 0.33
-Nodes (6): string, TimelineEntry, FindEntry, FocusRecording, SelectedEntry, SetEntryChecked
+Nodes (6): map, string, vector, NvsStore, blob, i32
 
 ### Community 360 - "SystemSoundService::PlayCue"
 Cohesion: 0.33
@@ -1828,94 +1822,62 @@ Nodes (5): AudioCodec, function, SoundCue, SystemSoundService::Initialize(), Sys
 Cohesion: 0.40
 Nodes (5): ApplyPrimaryActivateResult(), ActivateCallbacks, ActivateResult, HandleMoveFocus(), HandlePrimaryActivate()
 
-### Community 362 - "420track-render-test.cpp"
-Cohesion: 0.47
-Nodes (5): joint_tracker_card, analyse(), vector, main(), PortraitBlack()
+### Community 362 - "DrawJointTrackerCard"
+Cohesion: 0.17
+Nodes (15): string, JointTrackerCardState, count, focused, goal, label_text, ContentHeight(), DrawJointTrackerCard() (+7 more)
 
 ### Community 363 - "imkopfhaben-esp32 — Prüfprotokoll"
-Cohesion: 0.14
-Nodes (13): 420-Track: Joint-Zaehler auf der Startseite (20.09.2026), imkopfhaben-esp32 — Prüfprotokoll, Lauf anstossen, ohne am Geraet zu stehen (19.09.2026), Lautstaerkeregler in Advanced (20.09.2026), Mitschrift auf dem Pi (19.09.2026), Notizinhalte gehoeren nicht auf GitHub (19.09.2026), Refresh-Verhalten des Panels, Schlaf waehrend einer Zusammenfassung (19.09.2026) (+5 more)
+Cohesion: 0.08
+Nodes (24): BuildSummaryInstructionText(), Gemessene Geschwindigkeit und das Zeitfenster (2026-09-19, am Board), Bekannt, bewusst nicht gefixt (aus dem Review, Besitzer-Entscheidung), Display-Refresh (erledigt, siehe `docs/VERSIONEN.md`), Offene Punkte — folloup-waveshare / lokale KI, Später, nicht dringend, Vor dem nächsten Probelauf klären, 420-Track: Joint-Zaehler auf der Startseite (20.09.2026) (+16 more)
 
-### Community 364 - "NotesTimelineHit"
+### Community 364 - "MenuToggleState"
 Cohesion: 0.40
-Nodes (5): NotesTimelineHit, group_index, item_index, kind, NotesTimelineHitKind
+Nodes (5): string_view, ToggleVisualState, MenuToggleState, label_text, toggle_state
 
-### Community 365 - "CheckboxState"
+### Community 365 - "StickyNoteControlRects"
 Cohesion: 0.50
-Nodes (3): CheckboxState, checked, selected
+Nodes (4): StickyNoteControlRects, close, next, prev
 
-### Community 367 - "v0.1 — ruhiges Display (19.09.2026)"
-Cohesion: 0.50
-Nodes (3): Nächster Einstieg (Stand 19.09.2026, 10:18), v0.1 — ruhiges Display (19.09.2026), Versionen — folloup-waveshare
+### Community 367 - "GetUiState"
+Cohesion: 0.14
+Nodes (14): BuildUiStateLocked(), httpd_handle_t, httpd_uri_t, UiState, GetUiState(), RegisterRoute(), StartCaptiveDns(), StartConfigPortal() (+6 more)
 
 ### Community 368 - "AuthTaskContext"
 Cohesion: 0.50
 Nodes (4): AuthTaskContext, base_url, generation, model_name
 
-### Community 369 - "RegisterPortalRoute"
+### Community 369 - "DeleteContext"
 Cohesion: 0.67
-Nodes (4): httpd_handle_t, httpd_uri_t, RegisterPortalRoute(), RegisterPortalRoutes()
-
-### Community 370 - "AutoSleepSettings"
-Cohesion: 0.33
-Nodes (6): AutoSleepSettings, display_sleep_timeout_seconds, enabled, interaction_wake_enabled, light_sleep_timeout_seconds, motion_wake_enabled
+Nodes (3): DeleteContext, deleted, recording_id
 
 ### Community 372 - "recording_archive_service.cpp"
-Cohesion: 0.15
-Nodes (16): cjson, EventHandler, Snapshot, DeleteContext, deleted, recording_id, GetSnapshot(), Init() (+8 more)
+Cohesion: 0.16
+Nodes (21): EventHandler, Snapshot, DeleteRecording(), GetSnapshot(), Init(), LoadSnapshotFromNvs(), MarkRecordingCompleted(), MarkRecordingFollowUp() (+13 more)
 
 ### Community 373 - "TimezoneAliasEntry"
 Cohesion: 0.67
 Nodes (3): TimezoneAliasEntry, alias, canonical
 
-### Community 375 - "button_icon.h"
-Cohesion: 0.50
-Nodes (4): ButtonIconState, asset, selected, EmbeddedImageAsset
+### Community 379 - "esp_err_t"
+Cohesion: 0.20
+Nodes (15): esp_err_t, vector, DeleteRecordingOnMountedFilesystem(), EnsureDirectoryExists(), FileExists(), FileModifiedSeconds(), JoinPath(), ListEntriesContext (+7 more)
 
-### Community 378 - "Layout"
-Cohesion: 0.40
-Nodes (5): Layout, connect_button, network_list, password_input, scan_button
-
-### Community 379 - "ListRecordings"
-Cohesion: 0.40
-Nodes (5): vector, ListEntriesContext, entries, include_transcript_text, ListRecordings()
-
-### Community 380 - "GetAutoSleepBlocker"
-Cohesion: 0.40
-Nodes (5): Gemessene Geschwindigkeit und das Zeitfenster (2026-09-19, am Board), Zusammenfassen bricht ab (19.09.2026), BlockerReason, GetAutoSleepBlocker(), IsShutdownPending()
-
-### Community 381 - "ApplyWifiActivateResult"
-Cohesion: 0.50
-Nodes (5): ApplyWifiActivateResult(), ApplyWifiFocusUpdate(), ApplyWifiPageStateUpdate(), ApplyWifiSecondaryActivateResult(), HandleWifiButtonEvent()
+### Community 381 - "FocusUpdateOutcome"
+Cohesion: 0.15
+Nodes (15): FocusUpdateOutcome, apply_page_state, handled, sync_footer_projection, ApplyAdvancedFocusUpdate(), ApplyAdvancedMoveResult(), ApplyAdvancedPageStateUpdate(), ApplySettingsFocusUpdate() (+7 more)
 
 ### Community 382 - "getPowerOffSource"
 Cohesion: 0.33
 Nodes (4): getPowerOffSource, getPowerOnSource, xpower_power_off_source_t, xpower_power_on_source_t
 
-### Community 383 - "BuildWavHeaderPcm16Mono"
-Cohesion: 0.83
-Nodes (4): AppendLe16(), AppendLe32(), BuildWavHeaderPcm16Mono(), array
-
-### Community 384 - "RegisterPortalRoute"
-Cohesion: 0.67
-Nodes (4): httpd_handle_t, httpd_uri_t, RegisterPortalRoute(), RegisterPortalRoutes()
-
 ### Community 385 - "RefreshFromService"
 Cohesion: 0.50
 Nodes (4): string, UiState, RefreshFromService, SelectedNetworkSsid
 
-### Community 386 - "Task-Design-Patterns"
-Cohesion: 0.67
-Nodes (3): Event-getriebener Task, Periodischer Task (ohne Drift), Task-Design-Patterns
-
-### Community 388 - "RegisterRoute"
-Cohesion: 0.67
-Nodes (3): httpd_handle_t, httpd_uri_t, RegisterRoute()
-
 ## Knowledge Gaps
-- **2451 isolated node(s):** `common.sh script`, `validate.sh script`, `SetOutputVolume`, `SetOutputMuted`, `SetInputGain` (+2446 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3468 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2452 isolated node(s):** `common.sh script`, `validate.sh script`, `SetOutputVolume`, `SetOutputMuted`, `SetInputGain` (+2447 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3470 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -1924,13 +1886,13 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.041) - this node is a cross-community bridge._
 - **Why does `ae()` connect `le` to `_`, `summary_service.cpp`?**
   _High betweenness centrality (0.040) - this node is a cross-community bridge._
-- **Why does `Qmi8658` connect `Qmi8658` to `i2c_device.cc`, `Qmi8658::ConfigFifo`, `SetRegisterBit`, `qmi8658.cc`, `Qmi8658Sample`, `InterruptEvent`, `Config`, `Qmi8658::ReadSample`, `Qmi8658::Initialize`, `mutex`?**
+- **Why does `Qmi8658` connect `Qmi8658` to `i2c_device.cc`, `Qmi8658::ConfigFifo`, `Qmi8658::ConfigAccelerometer`, `qmi8658.cc`, `Qmi8658Sample`, `InterruptEvent`, `Config`, `Qmi8658::ReadSample`, `Qmi8658::Initialize`, `esp_log`?**
   _High betweenness centrality (0.039) - this node is a cross-community bridge._
 - **Are the 151 inferred relationships involving `esp_err_to_name()` (e.g. with `HandleRecordings()` and `RegisterRoute()`) actually correct?**
   _`esp_err_to_name()` has 151 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 128 inferred relationships involving `ClampPositive()` (e.g. with `BadgeBounds()` and `ButtonBounds()`) actually correct?**
   _`ClampPositive()` has 128 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `common.sh script`, `validate.sh script`, `SetOutputVolume` to the rest of the system?**
-  _2451 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2452 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ButtonResult` be split into smaller, more focused modules?**
-  _Cohesion score 0.12222222222222222 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.1422475106685633 - nodes in this community are weakly interconnected._

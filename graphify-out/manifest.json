@@ -3294,9 +3294,9 @@
     "semantic_hash": ""
   },
   "docs/PRUEFUNG.md": {
-    "mtime": 1790012308.3336165,
-    "seen": 1790012334.4957478,
-    "ast_hash": "c3a4a5a49f9bc00c7f4986447526a818",
+    "mtime": 1790012590.9278939,
+    "seen": 1790012609.8971348,
+    "ast_hash": "11ece8f19d39ba43f37cac096099e256",
     "semantic_hash": ""
   },
   "docs/VERSIONEN.md": {
@@ -3468,15 +3468,21 @@
     "semantic_hash": ""
   },
   "tests/host_monkey/todos_monkey.cpp": {
-    "mtime": 1790012095.6603835,
-    "seen": 1790012334.495515,
-    "ast_hash": "e71a52b6615573fc7c8fe8512db59fbe",
+    "mtime": 1790012449.0967646,
+    "seen": 1790012609.8969257,
+    "ast_hash": "b236900f3d3a48ed0239eb9a3a7f52e9",
     "semantic_hash": ""
   },
   "tests/host_monkey/run_v2.sh": {
     "mtime": 1790012120.0009,
     "seen": 1790012334.4954994,
     "ast_hash": "566af6d2088235235c7e8f6ee75b347d",
+    "semantic_hash": ""
+  },
+  "tests/host_monkey/run_v3.sh": {
+    "mtime": 1790012461.0382156,
+    "seen": 1790012609.8969107,
+    "ast_hash": "215ab201a483900061348db6e74dd616",
     "semantic_hash": ""
   }
 }
