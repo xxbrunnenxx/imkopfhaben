@@ -18,23 +18,28 @@ struct JointTrackerCardState {
     std::string label_text = "420-Track";
     int count = 0;   // heute gezaehlt (>= 0)
     int goal = 4;    // Tagesziel
-    bool focused = false;
+    bool focused = false;   // Regler steht drauf -> Zeile invertiert (wie Menue)
+    bool counting = false;  // Zaehlmodus aktiv -> zurueck-invertiert, Punkte fuellbar
 
     bool operator==(const JointTrackerCardState& other) const = default;
 };
 
 struct JointTrackerCardStyle {
-    design::TypographyRole label_role = design::TypographyRole::kLabelSmallBlack;
+    design::TypographyRole label_role = design::TypographyRole::kLabelMediumBlack;
     design::TypographyRole count_role = design::TypographyRole::kLabelSmallBlack;
     uint8_t text_color = design::color::kBlack;
     uint8_t dot_color = design::color::kBlack;
-    uint8_t background_color = design::status_bar::kBackgroundColor;
+    uint8_t background_color = design::color::kWhite;
+    // Invertiert (Regler steht drauf): wie eine ausgewaehlte Menuezeile.
+    uint8_t selected_background_color = design::color::kBlack;
+    uint8_t selected_text_color = design::color::kWhite;
+    uint8_t border_color = design::color::kBlack;
     int width = 0;
     int dot_diameter = 14;
     int dot_gap = design::spacing::k8;
     int label_gap = design::spacing::k4;   // Abstand Label -> Punktreihe
-    int border_thickness = design::progress_bar::kBorderThickness;
-    int corner_radius = 6;
+    int top_border_thickness = design::menu_item::kBottomBorderThickness;
+    int horizontal_padding = design::menu_item::kHorizontalPadding;
     int padding = design::spacing::k8;
 };
 
