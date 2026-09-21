@@ -1,7 +1,7 @@
-# Graph Report - imkopfhaben-esp32  (2026-09-20)
+# Graph Report - imkopfhaben-esp32  (2026-09-21)
 
 ## Corpus Check
-- 415 files · ~1,510,416 words
+- 415 files · ~1,510,472 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 37 file(s) not represented in the graph (top: .css 16, .ttf 9, (none) 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e1ac8696`
+- Built from commit: `42ebc1eb`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1813,9 +1813,9 @@ Nodes (4): string, UiState, RefreshFromService, SelectedNetworkSsid
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Sprache und Ton der Zusammenfassung (19.09.2026)` connect `imkopfhaben-esp32 — Prüfprotokoll` to `BitmapFont`, `le`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.040) - this node is a cross-community bridge._
 - **Why does `ae()` connect `le` to `_`, `imkopfhaben-esp32 — Prüfprotokoll`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.040) - this node is a cross-community bridge._
 - **Why does `Qmi8658` connect `Qmi8658` to `i2c_device.cc`, `Qmi8658::ConfigFifo`, `Qmi8658::ConfigAccelerometer`, `qmi8658.cc`, `Qmi8658Sample`, `InterruptEvent`, `Config`, `Qmi8658::ReadSample`, `Qmi8658::Initialize`, `esp_log`?**
   _High betweenness centrality (0.039) - this node is a cross-community bridge._
 - **Are the 151 inferred relationships involving `esp_err_to_name()` (e.g. with `HandleRecordings()` and `RegisterRoute()`) actually correct?**

@@ -177,7 +177,15 @@ esp_err_t SyncFromArchive(bool request_refresh_if_active)
         recording_archive_service::ListRecordings();
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        s_coordinator.RefreshFromArchive(entries);
+        if (request_refresh_if_active) {
+            // In-place refresh while the page is shown (after complete/delete/follow-up):
+            // preserve the user's focus and any entered item list.
+            s_coordinator.RefreshFromArchive(entries);
+        } else {
+            // Fresh page entry (from Home / details back): always land on the topmost
+            // group ("Today") with no item list locked. Show() resets focus to index 0.
+            s_coordinator.Show(entries);
+        }
     }
     const esp_err_t err =
         request_refresh_if_active
