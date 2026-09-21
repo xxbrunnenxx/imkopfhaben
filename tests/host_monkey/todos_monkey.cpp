@@ -17,6 +17,7 @@
 //   REFRESH_ACTIVE       -> Archiv-Aenderung waehrend Seite offen (RefreshFromArchive)
 //   MUTATE               -> Todo abhaken/loeschen/Follow-up (veraendert das Archiv)
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <random>
@@ -38,22 +39,82 @@ struct FakeArchive {
     int next_id = 1;
 
     void AddTask(const std::string& date, int64_t unix_seconds, bool completed) {
+        AddEntry(RecordingTag::kTask, date, unix_seconds, "Aufgabe", completed);
+    }
+
+    // Allgemeiner Eintrag mit frei waehlbarem Tag/Text -- fuer das grosse
+    // realistische Startset (Notizen, Aufgaben, Ideen gemischt).
+    void AddEntry(RecordingTag tag, const std::string& date, int64_t unix_seconds,
+                  const std::string& text, bool completed) {
         RecordingEntry e = {};
         e.recording_id = "rec_" + std::to_string(next_id++);
         e.recording_path = "/sd/" + e.recording_id + ".wav";
-        e.transcript_text = "Aufgabe " + e.recording_id;
+        e.transcript_text = text + " " + e.recording_id;
         e.modified_unix_seconds = unix_seconds;
         e.metadata.recording_id = e.recording_id;
         e.metadata.created_unix_seconds = unix_seconds;
         e.metadata.created_local_date = date;
         e.metadata.time_valid = true;
-        e.metadata.duration_ms = 5000;
         e.metadata.has_transcript = true;
+        e.metadata.duration_ms = 3000 + (next_id % 20) * 900;
         e.metadata.completed = completed;
-        e.metadata.tag = RecordingTag::kTask;
+        e.metadata.tag = tag;
         entries.push_back(std::move(e));
     }
 };
+
+// ---- Realistisches Startset -------------------------------------------------
+// Kurze, echte Sprachnotiz-Texte, wie sie das Geraet taeglich sammelt:
+// gemischt aus kurzen Kommandos/Aufgaben, Notizen und Ideen, verteilt ueber
+// viele Kalendertage. Der Todos-Coordinator filtert selbst auf kTask -- das
+// Set testet damit auch den Filter unter Last (Notizen/Ideen als Ballast).
+void SeedRealistic(FakeArchive& a, int target, std::mt19937_64& rng) {
+    static const char* aufgaben[] = {
+        "Muell rausbringen", "Zahnarzt anrufen", "Rechnung bezahlen",
+        "Milch kaufen", "Paket abholen", "Oma zurueckrufen", "Auto tanken",
+        "Wasser fuer die Pflanzen", "Termin bestaetigen", "Akku laden",
+        "Buch zurueckgeben", "Fenster putzen", "Steuer sortieren",
+        "Kraken updaten", "Backup pruefen", "SD-Karte formatieren",
+    };
+    static const char* notizen[] = {
+        "Idee war ganz gut heute", "der Regen war schoen", "Kaffee war zu stark",
+        "Gespraech mit Tom", "Podcast-Folge merken", "Zitat aus dem Buch",
+        "Traum von gestern", "Gedanke beim Laufen", "Wetter dreht sich",
+        "Rezept ausprobiert", "Preis vergleichen", "Adresse notiert",
+    };
+    static const char* ideen[] = {
+        "App fuer Vogelstimmen", "Regal selber bauen", "Reise nach Norden",
+        "Podcast starten", "Garten umgraben", "kleines Spiel programmieren",
+        "Brief schreiben", "Fotobuch machen", "Sprache lernen",
+    };
+
+    // ~60 Tage rueckwaerts ab heute, ungleich verteilt (manche Tage voll,
+    // manche leer) -- so entstehen viele Gruppen unterschiedlicher Groesse.
+    std::uniform_int_distribution<int> tag_zurueck(0, 59);
+    std::uniform_int_distribution<int> art(0, 99);
+    std::uniform_int_distribution<int> ai(0, 15);
+    std::uniform_int_distribution<int> ni(0, 11);
+    std::uniform_int_distribution<int> ii(0, 8);
+    const int64_t heute = 1'700'000'000;  // fixer Bezugspunkt
+
+    for (int i = 0; i < target; ++i) {
+        const int d = tag_zurueck(rng);
+        // Datum als 2026-07-DD..2026-09-DD grob abbilden (Text reicht dem Test,
+        // die Gruppierung nutzt created_local_date als String-Schluessel).
+        char buf[16];
+        std::snprintf(buf, sizeof(buf), "2026-%02d-%02d", 7 + (d / 28), 1 + (d % 28));
+        const int64_t ts = heute - static_cast<int64_t>(d) * 86400 - i;
+        const int r = art(rng);
+        if (r < 55) {  // 55% Aufgaben (das ist, was die Todos-Seite zeigt)
+            const bool done = (rng() % 3) == 0;  // ~1/3 erledigt
+            a.AddEntry(RecordingTag::kTask, buf, ts, aufgaben[ai(rng)], done);
+        } else if (r < 85) {  // 30% Notizen (Ballast fuer den Filter)
+            a.AddEntry(RecordingTag::kNote, buf, ts, notizen[ni(rng)], false);
+        } else {  // 15% Ideen
+            a.AddEntry(RecordingTag::kIdea, buf, ts, ideen[ii(rng)], false);
+        }
+    }
+}
 
 // ---- Invarianten-Pruefung: gibt bei Bruch eine Meldung zurueck -------------
 // Wir pruefen ausschliesslich ueber die oeffentliche API + BuildState(), also
@@ -113,19 +174,48 @@ void PressOk(TodosPageCoordinator& c) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    // Reproduzierbar: Seed als Argument, sonst fest. Schrittzahl als 2. Arg.
+    // Reproduzierbar: Seed als Argument, sonst fest. Schrittzahl als 2. Arg,
+    // Groesse des Startsets als 3. Arg (0 = kleines festes Set wie v1).
     uint64_t seed = (argc > 1) ? std::stoull(argv[1]) : 20260921ULL;
     long steps = (argc > 2) ? std::stol(argv[2]) : 2'000'000L;
+    int seed_count = (argc > 3) ? std::stoi(argv[3]) : 0;
 
     std::mt19937_64 rng(seed);
 
-    // Ein Archiv mit mehreren Tagen und mehreren Todos pro Tag.
     FakeArchive archive;
-    archive.AddTask("2026-09-21", 1'000'100, false);
-    archive.AddTask("2026-09-21", 1'000'050, true);
-    archive.AddTask("2026-09-20", 1'000'000, false);
-    archive.AddTask("2026-09-19",   999'900, false);
-    archive.AddTask("2026-09-19",   999'800, true);
+    if (seed_count > 0) {
+        // Grosses, realistisches Startset (v2): Aufgaben/Notizen/Ideen ueber
+        // viele Tage gemischt.
+        SeedRealistic(archive, seed_count, rng);
+    } else {
+        // Kleines festes Set (v1): mehrere Tage, mehrere Todos pro Tag.
+        archive.AddTask("2026-09-21", 1'000'100, false);
+        archive.AddTask("2026-09-21", 1'000'050, true);
+        archive.AddTask("2026-09-20", 1'000'000, false);
+        archive.AddTask("2026-09-19",   999'900, false);
+        archive.AddTask("2026-09-19",   999'800, true);
+    }
+
+    // Kennzahlen des Startsets ausgeben (Tags + Tage), damit der Bericht
+    // belegte Zahlen hat statt behaupteter.
+    {
+        long t = 0, n = 0, ie = 0;
+        std::vector<std::string> tage;
+        for (const auto& e : archive.entries) {
+            switch (e.metadata.tag) {
+                case RecordingTag::kTask: ++t; break;
+                case RecordingTag::kNote: ++n; break;
+                case RecordingTag::kIdea: ++ie; break;
+            }
+        }
+        // grobe Tageszahl
+        std::vector<std::string> d;
+        for (const auto& e : archive.entries) d.push_back(e.metadata.created_local_date);
+        std::sort(d.begin(), d.end());
+        d.erase(std::unique(d.begin(), d.end()), d.end());
+        std::printf("startset: %zu eintraege  (aufgaben=%ld notizen=%ld ideen=%ld)  ueber %zu tage\n",
+                    archive.entries.size(), t, n, ie, d.size());
+    }
 
     TodosPageCoordinator coord;
     EnterPage(coord, archive);

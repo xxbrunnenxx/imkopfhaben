@@ -338,3 +338,19 @@ Darstellung, Lesbarkeit, Haptik, E-Paper-Optik.
 | Der gepruefte Zustand ist ueberwiegend die GEFUELLTE Liste (dort verklemmt es) | Zaehlzeile „leer gesehen" in der Ausgabe lesen | belegt — nach Gewichtung ~0,31 Mio von 2 Mio leer (~15 %), also ~85 % gefuellt; vor der Gewichtung waren es ~62 % leer | 21.09. |
 | Reproduzierbar | fester Seed als erstes Argument | belegt — Seed + Schrittzahl steuern den Lauf, gleicher Seed = gleicher Verlauf | 21.09. |
 | Optik/Haptik am Schirm | Am Geraet: Todos oeffnen, navigieren, betreten, verlassen | **offen** — nur am Board pruefbar, braucht den Besitzer (Logik ist mit dem Monkey-Test belegt) | 21.09. |
+
+### Nachtrag v2: grosses realistisches Startset (21.09.2026)
+
+Der Besitzer wollte den Test naeher am echten Geraet: statt 5 fester Todos ein
+Startset von ~450 gemischten Eintraegen (Aufgaben/Notizen/Ideen) ueber 60
+Kalendertage. Die Todos-Seite filtert selbst auf Aufgaben — Notizen/Ideen sind
+Ballast, den der Filter unter Last aussortieren muss. Neu: `run_v2.sh`
+(Startset-Groesse als Argument), `SeedRealistic()` in `todos_monkey.cpp`. Der
+alte 5-Eintrag-Lauf (`run.sh`) bleibt unveraendert lauffaehig.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| v2 baut und laeuft mit grossem Startset | `bash tests/host_monkey/run_v2.sh 450` | belegt — kompiliert, `startset: 450 eintraege (aufgaben=241 notizen=142 ideen=67) ueber 60 tage` | 21.09. |
+| Keine Invariante bricht auch bei 450 Eintraegen | `bash tests/host_monkey/run_v2.sh 450` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK", Exit 0. Aufgaben je Seed 223–262 | 21.09. |
+| v1 (kleines Set) laeuft unveraendert weiter | `bash tests/host_monkey/run.sh` | belegt — `startset: 5 eintraege … ueber 3 tage`, grün | 21.09. |
+| Set-Groesse ist frei waehlbar | `./tests/host_monkey/todos_monkey 20260921 500000 800` | belegt — `startset: 800 eintraege (aufgaben=418 …) ueber 60 tage`, 500k Schritte grün | 21.09. |
