@@ -311,3 +311,61 @@ Protokoll), Karte `components/epaper_ui/joint_tracker_card.*`, Route in
 | Zaehler springt nicht von selbst | Route 5x ueber 45 s lesen, Board unberuehrt | belegt — konstant `today_count` 6, kein Drift | 20.09. |
 | Export laeuft am echten Dienstpfad in den Vault | `sudo systemctl start imkopfhaben-stick.service`, danach Vault mounten und `06-420Track.md` lesen | belegt — Dienst zog den neuen Code, mountete den GigaStick, Journal `420-Track: 1 Tage (heute 7)`; im Vault liegt `06-420Track.md` (`heute 7 ⚑`, 7 Punkte) real, Notiz-Dateien daneben unberuehrt | 20.09. |
 | Tageswechsel setzt zurueck (Mitternacht) | `scripts/420track-service-test.sh` stellt die Uhr ueber Mitternacht | belegt — Zaehler faellt auf 0, gestriger Stand wandert lueckenlos ins Protokoll, Reset loest auch ohne Tastendruck aus (nur ueber den Getter). 14 Pruefungen gruen | 20.09. |
+
+## Todos-Navigation: Monkey-Test gegen Auswahl-Verklemmung (21.09.2026)
+
+Der Besitzer erlebte, dass die Auswahl in der Todos-Liste sich verklemmt
+(gelockte Auswahl, aus der man nicht mehr herauskommt). Der Fix „frisches
+Betreten landet oben statt in gelockter Auswahl" (Merge #12) sollte das
+schliessen. Beleg dafuer ist ein Host-Monkey-Test, der die ECHTE
+Navigationslogik (`TodosPageCoordinator`, `todos_page_interactions`,
+`navigation_model`, `roving_focus`, `timeline_format`) gegen zwei Host-Stubs
+kompiliert (project_assets → nullptr, timezone_service → festes Datum) und mit
+zufaelligen Tastenfolgen bombardiert: hoch/runter, OK, Zurueck, frisches
+Betreten, Refresh waehrend offen, Archiv veraendern. Nach JEDEM Schritt
+pruefen harte Invarianten (gueltiger Fokus, aktive Liste trifft existierende
+Gruppe mit gueltigem Auswahlindex, keine widerspruechlichen Zustaende).
+
+Neu: `tests/host_monkey/` (`todos_monkey.cpp`, `run.sh`, `stubs/`).
+
+Nicht abgedeckt (Grenze eines Host-Tests, bleibt Sichtpruefung am Geraet):
+Darstellung, Lesbarkeit, Haptik, E-Paper-Optik.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Test kompiliert gegen die echten Logikquellen | `bash tests/host_monkey/run.sh` | belegt — `g++ -std=c++20 -Wall -Wextra` ohne Fehler | 21.09. |
+| Keine Invariante bricht ueber viele Schritte und Seeds | `bash tests/host_monkey/run.sh` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK — keine Invariante gebrochen, kein Absturz, keine Sackgasse", Exit 0 | 21.09. |
+| Der gepruefte Zustand ist ueberwiegend die GEFUELLTE Liste (dort verklemmt es) | Zaehlzeile „leer gesehen" in der Ausgabe lesen | belegt — nach Gewichtung ~0,31 Mio von 2 Mio leer (~15 %), also ~85 % gefuellt; vor der Gewichtung waren es ~62 % leer | 21.09. |
+| Reproduzierbar | fester Seed als erstes Argument | belegt — Seed + Schrittzahl steuern den Lauf, gleicher Seed = gleicher Verlauf | 21.09. |
+| Optik/Haptik am Schirm | Am Geraet: Todos oeffnen, navigieren, betreten, verlassen | **offen** — nur am Board pruefbar, braucht den Besitzer (Logik ist mit dem Monkey-Test belegt) | 21.09. |
+
+### Nachtrag v2: grosses realistisches Startset (21.09.2026)
+
+Der Besitzer wollte den Test naeher am echten Geraet: statt 5 fester Todos ein
+Startset von ~450 gemischten Eintraegen (Aufgaben/Notizen/Ideen) ueber 60
+Kalendertage. Die Todos-Seite filtert selbst auf Aufgaben — Notizen/Ideen sind
+Ballast, den der Filter unter Last aussortieren muss. Neu: `run_v2.sh`
+(Startset-Groesse als Argument), `SeedRealistic()` in `todos_monkey.cpp`. Der
+alte 5-Eintrag-Lauf (`run.sh`) bleibt unveraendert lauffaehig.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| v2 baut und laeuft mit grossem Startset | `bash tests/host_monkey/run_v2.sh 450` | belegt — kompiliert, `startset: 450 eintraege (aufgaben=241 notizen=142 ideen=67) ueber 60 tage` | 21.09. |
+| Keine Invariante bricht auch bei 450 Eintraegen | `bash tests/host_monkey/run_v2.sh 450` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK", Exit 0. Aufgaben je Seed 223–262 | 21.09. |
+| v1 (kleines Set) laeuft unveraendert weiter | `bash tests/host_monkey/run.sh` | belegt — `startset: 5 eintraege … ueber 3 tage`, grün | 21.09. |
+| Set-Groesse ist frei waehlbar | `./tests/host_monkey/todos_monkey 20260921 500000 800` | belegt — `startset: 800 eintraege (aufgaben=418 …) ueber 60 tage`, 500k Schritte grün | 21.09. |
+
+### Nachtrag v3: verdoppeltes Set (900), 60 Tage fest, lange Texte (21.09.2026)
+
+Auf Besitzer-Wunsch: Nachrichtenzahl verdoppelt (450 -> 900), 60 Tage fest,
+und die Aufnahmen deutlich komplexer -- statt Stichworten jetzt ganze
+gesprochene Saetze mit Nebengedanken und Wortspielen (z. B. „aus Hackepeter
+wird Kackepaeter"). Neu: `run_v3.sh` (Default 900), erweiterte Textlisten in
+`SeedRealistic()`. Damit wird auch langer Text in Liste/Gruppierung belastet.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| v3 baut und laeuft mit 900 Eintraegen ueber 60 Tage | `bash tests/host_monkey/run_v3.sh 900` | belegt — `startset: 900 eintraege (aufgaben=466 notizen=303 ideen=131) ueber 60 tage` | 21.09. |
+| Keine Invariante bricht bei 900 Eintraegen | `bash tests/host_monkey/run_v3.sh 900` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK", Exit 0. Aufgaben je Seed 466–503 | 21.09. |
+| Texte sind lang/komplex, nicht Stichworte | Textlaengen im Quelltext messen | belegt — Aufgaben Schnitt 92 Zeichen (78–103), Notizen 110 (103–118), Ideen 106 (94–112); vorher ~15 | 21.09. |
+| Lange Texte am Schirm (Umbruch/Abschnitt/Lesbarkeit) | Am Geraet mit vollem Archiv durch die Todos scrollen | **offen** — nur am Board pruefbar, braucht den Besitzer (die Navigationslogik ist mit dem Monkey-Test belegt) | 21.09. |
