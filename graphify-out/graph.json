@@ -32141,7 +32141,7 @@
       "file_type": "code",
       "norm_label": "showitemactionsmodal()",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L224"
+      "source_location": "L232"
     },
     {
       "id": "scripts_420track_stub_nvs_esp_err_to_name",
@@ -32429,7 +32429,7 @@
       "file_type": "code",
       "norm_label": "consumependingviewdetails()",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L337"
+      "source_location": "L345"
     },
     {
       "id": "main_todos_page_runtime_exitactivecontrol",
@@ -32441,7 +32441,7 @@
       "file_type": "code",
       "norm_label": "exitactivecontrol()",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L192"
+      "source_location": "L200"
     },
     {
       "id": "main_todos_page_runtime_focusfooteritem",
@@ -32477,7 +32477,7 @@
       "file_type": "code",
       "norm_label": "handleitemactionselection()",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L272"
+      "source_location": "L280"
     },
     {
       "id": "main_todos_page_runtime_movefocus",
@@ -32513,7 +32513,7 @@
       "file_type": "code",
       "norm_label": "setentrychecked()",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L215"
+      "source_location": "L223"
     },
     {
       "id": "main_todos_page_runtime_setentryfollowupstate",
@@ -32525,7 +32525,7 @@
       "file_type": "code",
       "norm_label": "setentryfollowupstate()",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L205"
+      "source_location": "L213"
     },
     {
       "id": "main_todos_page_runtime_syncfromarchive",
@@ -115139,7 +115139,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L200",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -115175,7 +115175,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L305",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -115187,7 +115187,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L317",
+      "source_location": "L325",
       "weight": 1.0
     },
     {
@@ -115235,7 +115235,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L221",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -115247,7 +115247,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L212",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -115259,7 +115259,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L184",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -115271,7 +115271,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L185",
+      "source_location": "L193",
       "weight": 1.0
     },
     {
@@ -199366,7 +199366,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L215",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -199378,7 +199378,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L205",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
@@ -210454,7 +210454,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L337",
+      "source_location": "L345",
       "weight": 1.0
     },
     {
@@ -245476,7 +245476,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L192",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -245487,7 +245487,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L205",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
@@ -245498,7 +245498,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L215",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -245509,7 +245509,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L224",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -245520,7 +245520,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L272",
+      "source_location": "L280",
       "weight": 1.0
     },
     {
@@ -245531,7 +245531,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L337",
+      "source_location": "L345",
       "weight": 1.0
     },
     {
@@ -276112,7 +276112,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L266",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -276124,7 +276124,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "main/todos_page_runtime.cpp",
-      "source_location": "L187",
+      "source_location": "L195",
       "weight": 1.0
     },
     {
@@ -279129,5 +279129,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e1ac86968c9cf5df7a674b348cdb4160cbf02d9e"
+  "built_at_commit": "42ebc1eb385eb22bee5fdfb29c3b11aacdf01b7c"
 }
