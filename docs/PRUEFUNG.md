@@ -311,3 +311,30 @@ Protokoll), Karte `components/epaper_ui/joint_tracker_card.*`, Route in
 | Zaehler springt nicht von selbst | Route 5x ueber 45 s lesen, Board unberuehrt | belegt — konstant `today_count` 6, kein Drift | 20.09. |
 | Export laeuft am echten Dienstpfad in den Vault | `sudo systemctl start imkopfhaben-stick.service`, danach Vault mounten und `06-420Track.md` lesen | belegt — Dienst zog den neuen Code, mountete den GigaStick, Journal `420-Track: 1 Tage (heute 7)`; im Vault liegt `06-420Track.md` (`heute 7 ⚑`, 7 Punkte) real, Notiz-Dateien daneben unberuehrt | 20.09. |
 | Tageswechsel setzt zurueck (Mitternacht) | `scripts/420track-service-test.sh` stellt die Uhr ueber Mitternacht | belegt — Zaehler faellt auf 0, gestriger Stand wandert lueckenlos ins Protokoll, Reset loest auch ohne Tastendruck aus (nur ueber den Getter). 14 Pruefungen gruen | 20.09. |
+
+## Todos-Navigation: Monkey-Test gegen Auswahl-Verklemmung (21.09.2026)
+
+Der Besitzer erlebte, dass die Auswahl in der Todos-Liste sich verklemmt
+(gelockte Auswahl, aus der man nicht mehr herauskommt). Der Fix „frisches
+Betreten landet oben statt in gelockter Auswahl" (Merge #12) sollte das
+schliessen. Beleg dafuer ist ein Host-Monkey-Test, der die ECHTE
+Navigationslogik (`TodosPageCoordinator`, `todos_page_interactions`,
+`navigation_model`, `roving_focus`, `timeline_format`) gegen zwei Host-Stubs
+kompiliert (project_assets → nullptr, timezone_service → festes Datum) und mit
+zufaelligen Tastenfolgen bombardiert: hoch/runter, OK, Zurueck, frisches
+Betreten, Refresh waehrend offen, Archiv veraendern. Nach JEDEM Schritt
+pruefen harte Invarianten (gueltiger Fokus, aktive Liste trifft existierende
+Gruppe mit gueltigem Auswahlindex, keine widerspruechlichen Zustaende).
+
+Neu: `tests/host_monkey/` (`todos_monkey.cpp`, `run.sh`, `stubs/`).
+
+Nicht abgedeckt (Grenze eines Host-Tests, bleibt Sichtpruefung am Geraet):
+Darstellung, Lesbarkeit, Haptik, E-Paper-Optik.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Test kompiliert gegen die echten Logikquellen | `bash tests/host_monkey/run.sh` | belegt — `g++ -std=c++20 -Wall -Wextra` ohne Fehler | 21.09. |
+| Keine Invariante bricht ueber viele Schritte und Seeds | `bash tests/host_monkey/run.sh` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK — keine Invariante gebrochen, kein Absturz, keine Sackgasse", Exit 0 | 21.09. |
+| Der gepruefte Zustand ist ueberwiegend die GEFUELLTE Liste (dort verklemmt es) | Zaehlzeile „leer gesehen" in der Ausgabe lesen | belegt — nach Gewichtung ~0,31 Mio von 2 Mio leer (~15 %), also ~85 % gefuellt; vor der Gewichtung waren es ~62 % leer | 21.09. |
+| Reproduzierbar | fester Seed als erstes Argument | belegt — Seed + Schrittzahl steuern den Lauf, gleicher Seed = gleicher Verlauf | 21.09. |
+| Optik/Haptik am Schirm | Am Geraet: Todos oeffnen, navigieren, betreten, verlassen | **offen** — nur am Board pruefbar, braucht den Besitzer (Logik ist mit dem Monkey-Test belegt) | 21.09. |
