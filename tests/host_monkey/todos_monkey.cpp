@@ -69,23 +69,51 @@ struct FakeArchive {
 // viele Kalendertage. Der Todos-Coordinator filtert selbst auf kTask -- das
 // Set testet damit auch den Filter unter Last (Notizen/Ideen als Ballast).
 void SeedRealistic(FakeArchive& a, int target, std::mt19937_64& rng) {
+    // Laengere, komplexere Aufnahmen -- so, wie ein Mensch sie wirklich
+    // einspricht: ganze Saetze, Nebengedanken, Wortspiele. Das testet auch
+    // langen Text in der Listendarstellung/Gruppierung, nicht nur Stichworte.
     static const char* aufgaben[] = {
-        "Muell rausbringen", "Zahnarzt anrufen", "Rechnung bezahlen",
-        "Milch kaufen", "Paket abholen", "Oma zurueckrufen", "Auto tanken",
-        "Wasser fuer die Pflanzen", "Termin bestaetigen", "Akku laden",
-        "Buch zurueckgeben", "Fenster putzen", "Steuer sortieren",
-        "Kraken updaten", "Backup pruefen", "SD-Karte formatieren",
+        "Muell rausbringen, aber diesmal wirklich bevor die Tonne ueberquillt und die Nachbarn wieder gucken",
+        "Beim Zahnarzt anrufen und einen Termin machen, am besten vormittags, weil ich nachmittags nie Zeit habe",
+        "Die Stromrechnung bezahlen bevor die Mahnung kommt, Ueberweisung diesmal nicht vergessen",
+        "Milch kaufen, Hafermilch und die normale, und wenn ich schon da bin auch gleich Kaffee",
+        "Das Paket bei der Packstation abholen, der Code liegt irgendwo in den Mails vom Montag",
+        "Oma zurueckrufen, sie hat dreimal versucht mich zu erreichen, bestimmt wegen dem Geburtstag",
+        "Auto tanken bevor die Reservelampe wieder eine halbe Stunde lang blinkt und ich Panik kriege",
+        "Aus Hackepeter wird Kackepaeter, aber bitte trotzdem Hackfleisch fuer die Bolognese besorgen",
+        "Den Termin beim Buergeramt bestaetigen, sonst verfaellt er und ich warte wieder sechs Wochen",
+        "Den Akkuschrauber laden, morgen will ich endlich das Regal an die Wand duebeln",
+        "Das Buch in die Bibliothek zurueckbringen, ist schon zwei Wochen ueberfaellig und kostet Gebuehren",
+        "Fenster putzen solange die Sonne noch nicht drauf knallt, sonst sieht man jede Schliere",
+        "Steuerunterlagen sortieren, die Belege vom letzten Jahr liegen immer noch in der Schuhschachtel",
+        "Den Kraken updaten und danach pruefen ob der Timer noch alle 15 Minuten sauber durchzieht",
+        "Backup pruefen, ich will nicht wieder eine SD-Karte verlieren wie damals bei barthalomeus",
+        "Die alte SD-Karte formatieren und beschriften, damit ich sie nicht nochmal aus Versehen ueberschreibe",
     };
     static const char* notizen[] = {
-        "Idee war ganz gut heute", "der Regen war schoen", "Kaffee war zu stark",
-        "Gespraech mit Tom", "Podcast-Folge merken", "Zitat aus dem Buch",
-        "Traum von gestern", "Gedanke beim Laufen", "Wetter dreht sich",
-        "Rezept ausprobiert", "Preis vergleichen", "Adresse notiert",
+        "Der Gedanke von heute morgen unter der Dusche war eigentlich richtig gut, ich muss ihn nur festhalten bevor er weg ist",
+        "Der Regen heute hatte so einen eigenen Geruch, erdig und kalt, hat mich an das Haus meiner Grosseltern erinnert",
+        "Der Kaffee war heute deutlich zu stark, ich glaube die neue Muehle mahlt feiner als die alte, morgen weniger nehmen",
+        "Im Gespraech mit Tom kam raus, dass er auch an so einem Notizgeraet bastelt, wir sollten uns mal austauschen",
+        "In der Podcast-Folge kam ein Zitat vor, sinngemaess: man baut nur das nach, was man nicht schon hat, passt zum Kraken",
+        "Aus Hackepeter wird Kackepaeter, solche Buchstabendreher sind eigentlich ein lustiger Test fuer die Textdarstellung",
+        "Der Traum von gestern Nacht war seltsam konkret, es ging um ein Haus mit zu vielen Tueren und keiner davon passte",
+        "Beim Laufen ist mir eingefallen, dass die Idle-Veredelung der Notizen eigentlich genau das loesen wuerde",
+        "Das Wetter dreht sich, der Wind kommt jetzt von Norden und es riecht nach dem ersten richtig kalten Tag",
+        "Das Rezept mit den gebratenen Kichererbsen war ueberraschend gut, naechstes Mal mehr Paprika und Kreuzkuemmel",
+        "Preise vergleichen lohnt sich diesmal wirklich, der Unterschied bei dem einen Teil war fast das Doppelte",
+        "Die Adresse fuer Samstag: zweiter Hinterhof, dritter Stock, Klingel ohne Namen, einfach zweimal kurz laeuten",
     };
     static const char* ideen[] = {
-        "App fuer Vogelstimmen", "Regal selber bauen", "Reise nach Norden",
-        "Podcast starten", "Garten umgraben", "kleines Spiel programmieren",
-        "Brief schreiben", "Fotobuch machen", "Sprache lernen",
+        "Eine kleine App, die Vogelstimmen erkennt und dir sagt wer da gerade im Garten singt, offline und ohne Konto",
+        "Ein Regal komplett selbst bauen, aus alten Geruestbohlen, roh gelassen und nur geoelt, keine Schrauben sichtbar",
+        "Eine Reise weit in den Norden, dahin wo es im Winter kaum hell wird, nur um zu sehen wie sich das anfuehlt",
+        "Einen Podcast starten, aber nur ganz kurze Folgen, drei Minuten, ein Gedanke, sonst hoert das ja keiner zu Ende",
+        "Den Garten hinten komplett umgraben und ein Hochbeet anlegen, dieses Jahr endlich eigenes Gemuese",
+        "Ein winziges Spiel programmieren, so klein dass es auf den ESP32 passt, nur schwarz-weiss auf dem E-Paper",
+        "Einen richtigen Brief schreiben, mit der Hand, an jemanden der damit nicht rechnet, einfach so",
+        "Ein Fotobuch von dem letzten Jahr machen, nicht digital, gedruckt, damit man es wirklich in die Hand nehmen kann",
+        "Eine Sprache lernen die keiner in meinem Umfeld spricht, damit ich einen Grund habe irgendwann dorthin zu fahren",
     };
 
     // ~60 Tage rueckwaerts ab heute, ungleich verteilt (manche Tage voll,

@@ -354,3 +354,18 @@ alte 5-Eintrag-Lauf (`run.sh`) bleibt unveraendert lauffaehig.
 | Keine Invariante bricht auch bei 450 Eintraegen | `bash tests/host_monkey/run_v2.sh 450` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK", Exit 0. Aufgaben je Seed 223–262 | 21.09. |
 | v1 (kleines Set) laeuft unveraendert weiter | `bash tests/host_monkey/run.sh` | belegt — `startset: 5 eintraege … ueber 3 tage`, grün | 21.09. |
 | Set-Groesse ist frei waehlbar | `./tests/host_monkey/todos_monkey 20260921 500000 800` | belegt — `startset: 800 eintraege (aufgaben=418 …) ueber 60 tage`, 500k Schritte grün | 21.09. |
+
+### Nachtrag v3: verdoppeltes Set (900), 60 Tage fest, lange Texte (21.09.2026)
+
+Auf Besitzer-Wunsch: Nachrichtenzahl verdoppelt (450 -> 900), 60 Tage fest,
+und die Aufnahmen deutlich komplexer -- statt Stichworten jetzt ganze
+gesprochene Saetze mit Nebengedanken und Wortspielen (z. B. „aus Hackepeter
+wird Kackepaeter"). Neu: `run_v3.sh` (Default 900), erweiterte Textlisten in
+`SeedRealistic()`. Damit wird auch langer Text in Liste/Gruppierung belastet.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| v3 baut und laeuft mit 900 Eintraegen ueber 60 Tage | `bash tests/host_monkey/run_v3.sh 900` | belegt — `startset: 900 eintraege (aufgaben=466 notizen=303 ideen=131) ueber 60 tage` | 21.09. |
+| Keine Invariante bricht bei 900 Eintraegen | `bash tests/host_monkey/run_v3.sh 900` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK", Exit 0. Aufgaben je Seed 466–503 | 21.09. |
+| Texte sind lang/komplex, nicht Stichworte | Textlaengen im Quelltext messen | belegt — Aufgaben Schnitt 92 Zeichen (78–103), Notizen 110 (103–118), Ideen 106 (94–112); vorher ~15 | 21.09. |
+| Lange Texte am Schirm (Umbruch/Abschnitt/Lesbarkeit) | Am Geraet mit vollem Archiv durch die Todos scrollen | **offen** — nur am Board pruefbar, braucht den Besitzer (die Navigationslogik ist mit dem Monkey-Test belegt) | 21.09. |
