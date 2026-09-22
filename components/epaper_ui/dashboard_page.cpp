@@ -10,10 +10,12 @@ namespace epaper_ui {
 namespace {
 
 constexpr int kMargin = design::spacing::k16;
-constexpr int kContentTopGap = design::spacing::k32;
-constexpr int kWelcomeMiddleGap = design::spacing::k48;
-constexpr int kTrackerTopGap = design::spacing::k12;
-constexpr int kTrackerMenuGap = design::spacing::k8;
+// Abstaende gestrafft (Live-Rueckmeldung 21.09.: zu weit auseinander; 22.09.:
+// noch eine Stufe enger). Frueher k32/k48/k12/k8.
+constexpr int kContentTopGap = design::spacing::k16;
+constexpr int kWelcomeMiddleGap = design::spacing::k16;
+constexpr int kTrackerTopGap = design::spacing::k4;
+constexpr int kTrackerMenuGap = design::spacing::k2;
 constexpr auto kProgressLabelRole = design::TypographyRole::kLabelSmallBlack;
 
 constexpr std::array<const char*, kDashboardMenuItemCount> kMenuLabels = {

@@ -253,10 +253,13 @@ epaper_ui::DashboardPageState DashboardPageCoordinator::BuildState() const
     state.menu.notes_badge_text = std::to_string(archive_.notes_recording_count);
     state.menu.todos_badge_text = std::to_string(archive_.todo_recording_count);
 
-    // 420-Track: heutiger Stand aus dem Dienst. Fokussiert (oder im Zaehl-Modus)
-    // bekommt die Karte einen Rahmen, damit sichtbar ist, dass Up/Down zaehlen.
+    // 420-Track: heutiger Stand aus dem Dienst. focused = Regler steht drauf
+    // (Zeile invertiert wie ein Menuepunkt); counting = Zaehlmodus aktiv (Zeile
+    // springt zurueck auf weiss, Punkte werden gefuellt). Getrennt gesetzt, damit
+    // die Karte beide Zustaende unterscheiden kann.
     state.joint_tracker.count = joint_tracker_service::GetTodayCount();
     state.joint_tracker.goal = joint_tracker_service::GetDailyGoal();
     state.joint_tracker.focused = IsJointTrackerFocused() || joint_tracker_counting_;
+    state.joint_tracker.counting = joint_tracker_counting_;
     return state;
 }

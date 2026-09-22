@@ -51,7 +51,7 @@ static void analyse(int count, int goal, const char* pgm)
     //   Punkt i bei dot_x = content_x + i*(dot+dot_gap), Mitte +dot/2
     const int dot = style.dot_diameter;      // 14
     const int gap = style.dot_gap;           // 8
-    const int pad = style.padding;           // 8
+    const int pad = style.horizontal_padding;  // 12 (Menue-Padding)
     const int content_x = ox + pad;
     const int total = (st.count > st.goal ? st.count : st.goal);
 
@@ -62,43 +62,36 @@ static void analyse(int count, int goal, const char* pgm)
     // dots_y bestimmen wir robust: das schwarze Band im unteren Kartendrittel.
     // Wir suchen die Zeile mit dem laengsten horizontalen Schwarzanteil an den
     // Punktspalten.
-    int dots_y = b.y + b.height - pad - dot;  // aus der Geometrie
+    int dots_y = b.y + b.height - dot;  // aus der Geometrie (kein Bottom-Padding)
 
     int solid = 0, ring = 0, outline = 0, leer = 0;
     for (int i = 0; i < total; ++i) {
         const int dx = content_x + i * (dot + gap);
         const int cx = dx + dot / 2;
         const int cy = dots_y + dot / 2;
-        // Rand der Scheibe (nahe Mitte-oben) vs. echte Mitte:
-        const bool center_black = PortraitBlack(fb, cx, cy);
-        // Ringtest: bei einem Umriss ist die Mitte NICHT schwarz, aber der
-        // Rand (cx, dots_y+1) schon. Bei gefuellt-mit-Kern ist die Mitte hell
-        // und ein Kranz darum schwarz. Wir zaehlen schwarze Pixel auf einem
-        // kleinen Kreuz durch die Mitte und am Rand.
-        int rand_black = 0;
-        for (int t = 0; t < dot; ++t)
-            if (PortraitBlack(fb, dx + t, dots_y + dot/2)) ++rand_black;  // Horizontallinie
-        // Kernpixel (3x3 um die Mitte)
-        int kern_black = 0, kern_n = 0;
-        for (int yy=-1; yy<=1; ++yy) for (int xx=-1; xx<=1; ++xx) {
-            ++kern_n; if (PortraitBlack(fb, cx+xx, cy+yy)) ++kern_black;
-        }
-        // Klassifikation:
-        //  - fast keine schwarzen Randpixel -> leerer Platz (>goal nicht erreicht)
-        //  - viel Rand, Kern voll schwarz -> massiv gefuellt
-        //  - viel Rand, Kern hell -> Umriss ODER gefuellt-mit-hellem-Kern
-        if (rand_black <= 2) { ++leer; }
-        else if (kern_black >= 7) { ++solid; }
-        else {
-            // Kern hell: Umriss (offen, unter Ziel) oder ueber-Limit-Markierung.
-            // Unterscheidung ueber die Fuellung zwischen Rand und Kern: bei der
-            // ueber-Limit-Scheibe ist der Bereich Rand..Kern schwarz (Kranz),
-            // beim reinen Umriss nur eine duenne Linie am Rand.
-            int mid_black = 0;
-            const int qx = dx + dot/4;  // Viertelposition (zwischen Rand und Mitte)
-            for (int yy = dots_y+2; yy < dots_y+dot-2; ++yy)
-                if (PortraitBlack(fb, qx, yy)) ++mid_black;
-            if (mid_black >= 4) ++ring; else ++outline;
+        // Robuste Messung ueber die ganze Punkt-Box statt einer einzelnen
+        // Mittellinie (die 1px-Umrisse verfehlt hat): Schwarzflaeche in der Box
+        // plus 3x3-Kern um die Mitte. Aus den echten Renderwerten:
+        //   massiv gefuellt : ~164 schwarz, Kern voll (9)
+        //   offener Umriss  : ~44 schwarz,  Kern leer (0)
+        //   ueber Limit     : ~112 schwarz, Kern leer (heller Innenkern)
+        int box_black = 0;
+        for (int yy = 0; yy < dot; ++yy)
+            for (int xx = 0; xx < dot; ++xx)
+                if (PortraitBlack(fb, dx + xx, dots_y + yy)) ++box_black;
+        int kern_black = 0;
+        for (int yy = -1; yy <= 1; ++yy)
+            for (int xx = -1; xx <= 1; ++xx)
+                if (PortraitBlack(fb, cx + xx, cy + yy)) ++kern_black;
+
+        if (box_black <= 20) {
+            ++leer;  // praktisch nichts gezeichnet
+        } else if (kern_black >= 7) {
+            ++solid;  // Kern voll schwarz -> massiv gefuellt
+        } else if (box_black >= 80) {
+            ++ring;  // viel Flaeche, heller Kern -> ueber-Limit-Markierung
+        } else {
+            ++outline;  // wenig Flaeche, heller Kern -> offener Umriss
         }
     }
     printf("Gemessen: %d massiv gefuellt, %d gefuellt-mit-Kern (ueber Limit), %d Umriss (offen), %d leer\n",

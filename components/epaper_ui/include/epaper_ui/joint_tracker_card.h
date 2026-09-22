@@ -9,11 +9,16 @@
 
 namespace epaper_ui {
 
-// Der 420-Track auf der Startseite: ein Label, der Zaehlstand als Text und eine
-// Reihe Punkte. Gefuellte Punkte sind bereits gezaehlt, offene Punkte der Rest
-// bis zum Tagesziel. Ueber dem Ziel kommen zusaetzliche gefuellte Punkte mit
-// einem Ring dazu (markiert, nicht limitiert). Fokussiert wird die Karte
-// hervorgehoben, damit sichtbar ist, dass Up/Down jetzt zaehlen.
+// Der 420-Track auf der Startseite, jetzt im gleichen Stil wie die
+// Menuezeilen darunter (Follow up, Notes ...): eine obere Trennlinie, darunter
+// die Zeile "420-Track" (rechts der Zaehlstand), und in der Zeile DRUNTER die
+// Punktreihe. Gefuellte Punkte sind gezaehlt, offene der Rest bis zum Ziel;
+// ueber dem Ziel kommen markierte Zusatzpunkte dazu.
+//
+// Fokus/Zaehlmodus steuern die Invertierung der Labelzeile - genau wie eine
+// ausgewaehlte Menuezeile:
+//   focused && !counting -> Zeile invertiert (schwarz/weiss)
+//   counting             -> zurueck-invertiert (weiss), Punkte fuellbar
 struct JointTrackerCardState {
     std::string label_text = "420-Track";
     int count = 0;   // heute gezaehlt (>= 0)
@@ -37,10 +42,11 @@ struct JointTrackerCardStyle {
     int width = 0;
     int dot_diameter = 14;
     int dot_gap = design::spacing::k8;
-    int label_gap = design::spacing::k4;   // Abstand Label -> Punktreihe
+    int label_gap = design::spacing::k4;   // Abstand Labelzeile -> Punktreihe
+    int row_vertical_padding = design::spacing::k8;  // oben/unten in der Labelzeile
     int top_border_thickness = design::menu_item::kBottomBorderThickness;
     int horizontal_padding = design::menu_item::kHorizontalPadding;
-    int padding = design::spacing::k8;
+    int corner_radius = 4;  // wie die Menuezeilen (kControlCornerRadius)
 };
 
 UiRect JointTrackerCardBounds(int origin_x,

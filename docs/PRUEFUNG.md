@@ -312,6 +312,30 @@ Protokoll), Karte `components/epaper_ui/joint_tracker_card.*`, Route in
 | Export laeuft am echten Dienstpfad in den Vault | `sudo systemctl start imkopfhaben-stick.service`, danach Vault mounten und `06-420Track.md` lesen | belegt — Dienst zog den neuen Code, mountete den GigaStick, Journal `420-Track: 1 Tage (heute 7)`; im Vault liegt `06-420Track.md` (`heute 7 ⚑`, 7 Punkte) real, Notiz-Dateien daneben unberuehrt | 20.09. |
 | Tageswechsel setzt zurueck (Mitternacht) | `scripts/420track-service-test.sh` stellt die Uhr ueber Mitternacht | belegt — Zaehler faellt auf 0, gestriger Stand wandert lueckenlos ins Protokoll, Reset loest auch ohne Tastendruck aus (nur ueber den Getter). 14 Pruefungen gruen | 20.09. |
 
+## 420-Track im Menue-Stil + gestraffte Abstaende (22.09.2026)
+
+Live-Rueckmeldung des Besitzers am Board (Zweig `live-test-hampelmann-fixes`):
+(1) die Startseite hatte zu grosse Abstaende zwischen Strichen und Texten,
+(2) die 420-Track-Box war als Auswahl zu unauffaellig und sollte in denselben
+Stil wie die Menuezeilen (Follow up, Notes ...): obere Trennlinie, Zeile
+"420-Track" (Zaehlstand rechts), darunter die Punkte; beim Drueberfahren
+invertiert die Zeile wie ein Menuepunkt, im Zaehlmodus springt sie zurueck auf
+weiss und die Punkte werden fuellbar. Umgebaut in
+`components/epaper_ui/joint_tracker_card.*` (neues Feld `counting` getrennt von
+`focused`, Menue-Optik statt Rahmen/Rundung), Abstaende in
+`components/epaper_ui/dashboard_page.cpp` (`kContentTopGap` k32→k16,
+`kWelcomeMiddleGap` k48→k16, `kTrackerTopGap` k12→k4, `kTrackerMenuGap` k8→k2),
+Zustandsweitergabe in `main/dashboard_page_coordinator.cpp`.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Firmware baut nach dem Umbau | `idf.py build` | belegt — `folloup_sticky.bin` 0x379D90 Bytes, 56 % frei, Exit 0 | 22.09. |
+| Firmware laeuft auf dem Board | `idf.py -p /dev/ttyACM0 flash` | belegt — 100 % geschrieben, Hash verifiziert, Hard-Reset, Exit 0 (zweimal: erster Bau + eine Stufe engere Abstaende) | 22.09. |
+| Punktdarstellung im neuen Aufbau stimmt | `scripts/420track-render-test.sh` (an neue Geometrie angepasst) | belegt — count=2/4/6 gegen Ziel 4: 2 gefuellt+2 Umriss, 4 gefuellt, 4 gefuellt+2 ueber Limit markiert. PGM-Vorschau `/tmp/card*.pgm` | 22.09. |
+| Abstaende sind enger als vorher | Layout-Konstanten in `dashboard_page.cpp` gegen die alten k32/k48/k12/k8 pruefen | belegt — k16/k16/k4/k2, jede Zeile kleiner; Kartenhoehe im Render-Test 67 px | 22.09. |
+| Auswahl-Optik am Schirm (invertiert wie Menue, Zaehlmodus zurueck) | Am Geraet: hoch zum 420-Track, Regler drueber, Klick, Up/Down | belegt (Besitzer live 22.09.) — "passt, schreib das so fest"; Invertier-Logik zusaetzlich im Code getrennt (`focused` vs `counting`) | 22.09. |
+| Abstaende am Schirm harmonisch | Besitzer sieht die Startseite live | belegt (Besitzer live 22.09.) — nach einer weiteren Stufe enger: "passt" | 22.09. |
+
 ## Todos-Navigation: Monkey-Test gegen Auswahl-Verklemmung (21.09.2026)
 
 Der Besitzer erlebte, dass die Auswahl in der Todos-Liste sich verklemmt
