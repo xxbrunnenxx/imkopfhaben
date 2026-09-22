@@ -1338,6 +1338,21 @@ void HandleDispatchedButtonEvent(const button_service::ButtonEventInfo& event)
         }
     }
 
+    // Rotary-Druck (FN) lange halten -> zurueck zur Startseite, aus jedem Menue.
+    // Global vor der Seitenlogik ausgewertet, damit keine Seite ihn vorher
+    // schluckt. Ausgenommen: der Sperrbildschirm, dort gehoert FN dem Entsperren.
+    // Auf der Startseite selbst ist der Griff wirkungslos (nichts zu tun).
+    if (event.button == button_service::ButtonId::kFunction &&
+        event.event == button_service::ButtonEvent::kLongPressStart &&
+        !lock_screen_runtime::IsActive() &&
+        display_service::GetCurrentScreen() != display_service::ScreenId::kHome) {
+        const app_interaction::InputResult home_result =
+            HandleFooterActivate(footer_runtime::FooterFocusItem::kHome, nullptr);
+        PlayInteractionFeedback(home_result);
+        FlushOverlayFeedback();
+        return;
+    }
+
     const page_input_runtime::ButtonResult page_button_result =
         page_input_runtime::HandleButtonEventForCurrentScreen(event);
     if (page_button_result.handled) {

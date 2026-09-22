@@ -393,3 +393,22 @@ wird Kackepaeter"). Neu: `run_v3.sh` (Default 900), erweiterte Textlisten in
 | Keine Invariante bricht bei 900 Eintraegen | `bash tests/host_monkey/run_v3.sh 900` | belegt — 7 Seeds x 2 Mio = 14 Mio Schritte, jeder „OK", Exit 0. Aufgaben je Seed 466–503 | 21.09. |
 | Texte sind lang/komplex, nicht Stichworte | Textlaengen im Quelltext messen | belegt — Aufgaben Schnitt 92 Zeichen (78–103), Notizen 110 (103–118), Ideen 106 (94–112); vorher ~15 | 21.09. |
 | Lange Texte am Schirm (Umbruch/Abschnitt/Lesbarkeit) | Am Geraet mit vollem Archiv durch die Todos scrollen | **offen** — nur am Board pruefbar, braucht den Besitzer (die Navigationslogik ist mit dem Monkey-Test belegt) | 21.09. |
+
+## FN-Langdruck: aus jedem Menue zurueck zur Startseite (22.09.2026)
+
+Besitzer-Wunsch am Board (Zweig `live-test-hampelmann-fixes`): egal in welchem
+Menue, der Rotary-Druck (im Code FN, GPIO5) lange gehalten soll zurueck auf die
+Startseite fuehren. Global in `main/app_shell.cpp` vor der Seitenlogik
+ausgewertet (`HandleDispatchedButtonEvent`), damit keine Seite den Griff vorher
+schluckt; ruft `HandleFooterActivate(kHome)` -> `ShowHomeScreen(kFull)`.
+Ausgenommen: Sperrbildschirm (dort bleibt FN dem Entsperren), und auf der
+Startseite selbst ist der Griff wirkungslos. ACTION (GPIO0, linke Taste) bleibt
+unberuehrt der Aufnahme-Knopf.
+
+| Behauptung | Handgriff | Ergebnis | Datum |
+|---|---|---|---|
+| Firmware baut mit dem Heim-Griff | `idf.py build` | belegt — `folloup_sticky.bin`, Exit 0 | 22.09. |
+| Firmware laeuft auf dem Board | `idf.py -p /dev/ttyACM0 flash` | belegt — 100 % geschrieben, Hash verifiziert, Hard-Reset, Exit 0 | 22.09. |
+| FN-Langdruck fuehrt aus jedem Menue heim | Am Geraet: in mehrere Menues wechseln, FN lange halten | belegt (Besitzer live 22.09.) — "schaut gut aus" | 22.09. |
+| Aufnahme bleibt unberuehrt (ACTION) | Am Geraet: ACTION lange halten nimmt weiter auf | belegt (Code) — Heim-Griff prueft ausschliesslich `ButtonId::kFunction`, ACTION-Pfad davor unveraendert | 22.09. |
+| Sperrbildschirm ausgenommen | Code: Bedingung `!lock_screen_runtime::IsActive()` | belegt (Code) — bei aktivem Lock faellt der Griff durch, FN bleibt Entsperren | 22.09. |
